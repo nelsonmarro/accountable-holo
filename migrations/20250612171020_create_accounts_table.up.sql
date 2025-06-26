@@ -1,0 +1,9 @@
+CREATE TABLE accounts (
+  id SERIAL PRIMARY KEY,
+  name VARCHAR(100) DEFAULT '' NOT NULL,
+  type VARCHAR(100) DEFAULT '' NOT NULL,
+  initial_balance REAL NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL,
+  updated_at TIMESTAMPTZ NOT NULL
+);
+

@@ -1,0 +1,66 @@
+// Package ui provides the UI implementation for the application.
+package ui
+
+import (
+	"log"
+	"os"
+
+	"fyne.io/fyne/v2"
+	"fyne.io/fyne/v2/app"
+	"fyne.io/fyne/v2/container"
+	"fyne.io/fyne/v2/widget"
+	"github.com/nelsonmarro/accountable-holo/internal/domain"
+)
+
+// The UI struct holds the dependencies and state for the Fyne UI.
+type UI struct {
+	// ---- Dependencies ----
+	accService AccountService
+
+	// ---- Fyne App Objects ----
+	app        fyne.App
+	mainWindow fyne.Window
+
+	// ---- UI widgets (State) ----
+	accountList *widget.List
+	accounts    []domain.Account
+
+	// ---- Debug ----
+	infoLogger  *log.Logger
+	errorLogger *log.Logger
+}
+
+// NewUI is the constructor for the UI struct.
+func NewUI(accService AccountService) *UI {
+	a := app.NewWithID("51af2ee4-c61c-4608-a3f1-d8576343af14")
+	a.Settings().SetTheme(NewAppTheme())
+
+	w := a.NewWindow("Accountable Holo")
+
+	return &UI{
+		accService:  accService,
+		app:         a,
+		mainWindow:  w,
+		infoLogger:  log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime),
+		errorLogger: log.New(os.Stderr, "ERROR\t", log.Ldate|log.Ltime|log.Lshortfile),
+	}
+}
+
+func (ui *UI) Run() {
+	accountIcon := NewThemeAwareResource(resourceAccountstabiconlightPng, resourceAccountstabicondarkPng)
+	transactionIcon := NewThemeAwareResource(resourceTransactionstabiconlightPng, resourceTransactiontabicondarkPng)
+	reportIcon := NewThemeAwareResource(resourceReportstabiconlightPng, resourceReportstabicondarkPng)
+
+	tabs := container.NewAppTabs(
+		container.NewTabItemWithIcon("Accounts", accountIcon, ui.makeAccountTab()),
+		container.NewTabItemWithIcon("Transactions", transactionIcon, widget.NewLabel("Transactions")),
+		container.NewTabItemWithIcon("Reports", reportIcon, widget.NewLabel("Reports")),
+	)
+
+	ui.mainWindow.SetContent(tabs)
+	// set 720p size for the main window
+	ui.mainWindow.Resize(fyne.NewSize(1280, 720))
+	ui.mainWindow.CenterOnScreen()
+	ui.mainWindow.SetMaster()
+	ui.mainWindow.ShowAndRun()
+}
