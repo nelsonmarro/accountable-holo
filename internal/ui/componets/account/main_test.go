@@ -22,7 +22,7 @@ func TestMain(m *testing.M) {
 // setupTest is a helper function to create a consistent test environment.
 // It returns the dialog handler to be tested, the mock service, and a pointer
 // to a boolean flag that tracks if the callback was called.
-func setupTest() (*AddAccountDialog, *mocks.MockAccountService, *bool) {
+func setupTest() (*AddAccountDialog, *mocks.MockAccountService, bool) {
 	// Create a Fyne app and window that run only in memory.
 	test.NewApp()
 	win := test.NewWindow(nil)
@@ -49,7 +49,7 @@ func setupTest() (*AddAccountDialog, *mocks.MockAccountService, *bool) {
 	test.Type(dialogHandler.amountEntry, "150.75")
 	test.Type(dialogHandler.numberEntry, "123456789")
 
-	return dialogHandler, mockService, &callbackFired
+	return dialogHandler, mockService, callbackFired
 }
 
 // waitTimeout is a helper to wait for a WaitGroup with a safety timeout.
