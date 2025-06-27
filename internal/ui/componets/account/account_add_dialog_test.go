@@ -3,6 +3,7 @@ package account
 import (
 	"sync"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -33,12 +34,12 @@ func TestHandleSubmit(t *testing.T) {
 
 		// Assert
 		// Wait for the goroutine to finish, with a 1-second timeout.
-		waitTimeout(t, &wg, 1)
+		waitTimeout(t, &wg, 1*time.Second)
 
 		// Assert that the mock was called as we expected.
 		mockService.AssertExpectations(t)
 
 		// Assert that our success callback was fired.
-		assert.True(t, callbackFired, "Expected callbackAction to be fired on success")
+		assert.Equal(t, *callbackFired, "Callback action fired")
 	})
 }
