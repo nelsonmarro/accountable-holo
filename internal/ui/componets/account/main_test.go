@@ -43,10 +43,11 @@ func setupTest() (*AddAccountDialog, *mocks.MockAccountService, *bool) {
 	dialogHandler := NewAddAccountDialog(win, silentLogger, mockService, callbackFunc)
 
 	// Pre-populate the entry widgets with some valid test data.
-	dialogHandler.nameEntry.SetText("Test Bank Account")
-	dialogHandler.tipoSelect.SetText("Ahorros")
-	dialogHandler.amountEntry.SetText("150.75")
-	dialogHandler.numberEntry.SetText("123456789")
+	test.Type(dialogHandler.nameEntry, "Test Bank Account")
+	test.Type(dialogHandler.nameEntry, "Test Bank Account")
+	test.Type(dialogHandler.tipoSelect, "Ahorros")
+	test.Type(dialogHandler.amountEntry, "150.75")
+	test.Type(dialogHandler.numberEntry, "123456789")
 
 	return dialogHandler, mockService, &callbackFired
 }

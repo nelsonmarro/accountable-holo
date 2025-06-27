@@ -64,8 +64,6 @@ func (d *AddAccountDialog) Show() {
 	formDialog.Show()
 }
 
-// handleSubmit contains the core logic that runs on form submission.
-// This is the method we will unit test.
 func (d *AddAccountDialog) handleSubmit(valid bool) {
 	if !valid {
 		return
