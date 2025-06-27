@@ -21,3 +21,23 @@ func (m *MockAccountService) CreateNewAccount(ctx context.Context, acc *domain.A
 	// Return the pre-programmed error value (or nil).
 	return args.Error(0)
 }
+
+func (m *MockAccountService) GetAllAccounts(ctx context.Context) ([]domain.Account, error) {
+	args := m.Called(ctx)
+	return args.Get(0).([]domain.Account), args.Error(1)
+}
+
+func (m *MockAccountService) GetAccountByID(ctx context.Context, id int) (*domain.Account, error) {
+	args := m.Called(ctx, id)
+	return args.Get(0).(*domain.Account), args.Error(1)
+}
+
+func (m *MockAccountService) UpdateAccount(ctx context.Context, acc *domain.Account) error {
+	args := m.Called(ctx, acc)
+	return args.Error(0)
+}
+
+func (m *MockAccountService) DeleteAccount(ctx context.Context, id int) error {
+	args := m.Called(ctx, id)
+	return args.Error(0)
+}
