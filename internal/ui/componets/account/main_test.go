@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/test"
 	"github.com/nelsonmarro/accountable-holo/internal/ui/mocks"
 )
@@ -21,10 +22,7 @@ func TestMain(m *testing.M) {
 	os.Exit(code)
 }
 
-// setupTestAddDialog is a helper function to create a consistent test environment.
-// It returns the dialog handler to be tested, the mock service, and a pointer
-// to a boolean flag that tracks if the callback was called.
-func setupTestAddDialog(callback func()) (*AddAccountDialog, *mocks.MockAccountService) {
+func setupDependencies() (fyne.Window, *log.Logger, *mocks.MockAccountService) {
 	// Create a Fyne app and window that run only in memory.
 	test.NewApp()
 	win := test.NewWindow(nil)
@@ -35,6 +33,12 @@ func setupTestAddDialog(callback func()) (*AddAccountDialog, *mocks.MockAccountS
 	// Use a silent logger that discards output.
 	silentLogger := log.New(io.Discard, "", 0)
 
+	return win, silentLogger, mockService
+}
+
+func setupTestAddDialog(callback func()) (*AddAccountDialog, *mocks.MockAccountService) {
+	win, silentLogger, mockService := setupDependencies()
+
 	// Create the dialog handler instance with all our test objects.
 	dialogHandler := NewAddAccountDialog(win, silentLogger, mockService, callback)
 
@@ -44,6 +48,15 @@ func setupTestAddDialog(callback func()) (*AddAccountDialog, *mocks.MockAccountS
 	test.Type(dialogHandler.tipoSelect, "Ahorros")
 	test.Type(dialogHandler.amountEntry, "150.75")
 	test.Type(dialogHandler.numberEntry, "123456789")
+
+	return dialogHandler, mockService
+}
+
+func setupTestDelDialog(callback func()) (*DeleteAccountDialog, *mocks.MockAccountService) {
+	win, silentLogger, mockService := setupDependencies()
+
+	// Create the dialog handler instance with all our test objects.
+	dialogHandler := NewDeleteAccountDialog(win, silentLogger, mockService, callback, 1)
 
 	return dialogHandler, mockService
 }

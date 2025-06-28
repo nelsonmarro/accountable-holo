@@ -27,7 +27,7 @@ var delTestCases = []struct {
 		wg:                  &sync.WaitGroup{},
 		tasksToWaint:        1,
 		mockServiceExpectations: func(mockService *mocks.MockAccountService, wg ...*sync.WaitGroup) {
-			mockService.On("CreateNewAccount", mock.Anything, mock.AnythingOfType("*domain.Account")).
+			mockService.On("DeleteAccount", mock.Anything, mock.AnythingOfType("*domain.Account")).
 				Return(nil)
 		},
 		testCallback: func(b *bool, wg ...*sync.WaitGroup) (func(), *bool) {
@@ -46,7 +46,7 @@ var delTestCases = []struct {
 		wg:                  &sync.WaitGroup{},
 		tasksToWaint:        1,
 		mockServiceExpectations: func(mockService *mocks.MockAccountService, wg ...*sync.WaitGroup) {
-			mockService.On("CreateNewAccount", mock.Anything, mock.AnythingOfType("*domain.Account")).
+			mockService.On("DeleteAccount", mock.Anything, mock.AnythingOfType("*domain.Account")).
 				Return(errors.New("sql error")).
 				Run(func(args mock.Arguments) {
 					if len(wg) > 0 {
@@ -76,7 +76,7 @@ var delTestCases = []struct {
 	},
 }
 
-func ExecuteDelete(t *testing.T) {
+func TestExecuteDelete(t *testing.T) {
 	for _, tc := range delTestCases {
 		t.Run(tc.name, func(t *testing.T) {
 			// Arrange
@@ -88,12 +88,12 @@ func ExecuteDelete(t *testing.T) {
 			*callbackFired = false
 			callbackFunc, callbackFired := tc.testCallback(callbackFired, tc.wg)
 
-			d, mockService := setupTestAddDialog(callbackFunc)
+			d, mockService := setupTestDelDialog(callbackFunc)
 
 			tc.mockServiceExpectations(mockService, tc.wg)
 
 			// Act
-			d.handleSubmit()
+			d.executeDelete()
 
 			// Assert
 			if tc.tasksToWaint > 0 {
@@ -101,10 +101,8 @@ func ExecuteDelete(t *testing.T) {
 			}
 
 			mockService.AssertExpectations(t)
+			mockService.AssertCalled(t, "DeleteAccount", mock.Anything, mock.AnythingOfType("*domain.Account"))
 			assert.Equal(t, tc.callbackFired, *callbackFired)
-			if !tc.handleSubmitSuccess {
-				mockService.AssertNotCalled(t, "CreateNewAccount", mock.Anything, mock.AnythingOfType("*domain.Account"))
-			}
 		})
 	}
 }
