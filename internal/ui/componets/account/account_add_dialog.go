@@ -47,8 +47,8 @@ func NewAddAccountDialog(win fyne.Window, l *log.Logger, service AccountService,
 	}
 }
 
-// MakeFormDialog creates the form dialog for adding a new account.
-func (d *AddAccountDialog) MakeFormDialog() *dialog.FormDialog {
+// Show creates and displays the Fyne form dialog.
+func (d *AddAccountDialog) Show() {
 	formDialog := dialog.NewForm("Crear Cuenta", "Guardar", "Cancelar",
 		AccountForm(
 			d.nameEntry,
@@ -60,7 +60,8 @@ func (d *AddAccountDialog) MakeFormDialog() *dialog.FormDialog {
 		d.mainWin,
 	)
 
-	return formDialog
+	formDialog.Resize(fyne.NewSize(480, 300))
+	formDialog.Show()
 }
 
 func (d *AddAccountDialog) handleSubmit(valid bool) {

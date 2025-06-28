@@ -49,12 +49,7 @@ func NewEditAccountDialog(win fyne.Window, l *log.Logger, service AccountService
 func (d *EditAccountDialog) Show() {
 	// Define the function to run on successful data fetch.
 	onSuccess := func(account *domain.Account) {
-		// This logic now runs ONLY after we have the account data.
-		// It's safe to show the form here.
-		// We ensure this UI code runs on the main thread.
-		fyne.Do(func() {
-			d.showEditForm(account)
-		})
+		d.showEditForm(account)
 	}
 
 	// Define the function to run on failure.
@@ -112,8 +107,10 @@ func (d *EditAccountDialog) showEditForm(acc *domain.Account) {
 		d.handleSubmit, // The submit callback
 		d.mainWin,
 	)
-	formDialog.Resize(fyne.NewSize(480, 300))
-	formDialog.Show()
+	fyne.Do(func() {
+		formDialog.Resize(fyne.NewSize(480, 300))
+		formDialog.Show()
+	})
 }
 
 // handleSubmit contains the logic for the UPDATE operation.
