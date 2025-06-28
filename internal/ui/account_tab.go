@@ -35,7 +35,9 @@ func (ui *UI) makeAccountTab() fyne.CanvasObject {
 			ui.refreshAccountList, // This is the callback function
 		)
 
-		dialogHandler.Show()
+		formDialog := dialogHandler.MakeFormDialog()
+		formDialog.Resize(fyne.NewSize(480, 300))
+		formDialog.Show()
 	})
 	accountAddBtn.Importance = widget.HighImportance
 
