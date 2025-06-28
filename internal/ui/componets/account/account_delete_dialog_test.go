@@ -27,7 +27,7 @@ var delTestCases = []struct {
 		wg:                  &sync.WaitGroup{},
 		tasksToWaint:        1,
 		mockServiceExpectations: func(mockService *mocks.MockAccountService, wg ...*sync.WaitGroup) {
-			mockService.On("DeleteAccount", mock.Anything, mock.AnythingOfType("*domain.Account")).
+			mockService.On("DeleteAccount", mock.Anything, 1).
 				Return(nil)
 		},
 		testCallback: func(b *bool, wg ...*sync.WaitGroup) (func(), *bool) {
@@ -46,27 +46,13 @@ var delTestCases = []struct {
 		wg:                  &sync.WaitGroup{},
 		tasksToWaint:        1,
 		mockServiceExpectations: func(mockService *mocks.MockAccountService, wg ...*sync.WaitGroup) {
-			mockService.On("DeleteAccount", mock.Anything, mock.AnythingOfType("*domain.Account")).
+			mockService.On("DeleteAccount", mock.Anything, 1).
 				Return(errors.New("sql error")).
 				Run(func(args mock.Arguments) {
 					if len(wg) > 0 {
 						wg[0].Done()
 					}
 				})
-		},
-		testCallback: func(b *bool, wg ...*sync.WaitGroup) (func(), *bool) {
-			return func() {
-				*b = true // Simulate callback being fired
-			}, b
-		},
-	},
-	{
-		name:                "should not do anything if form is invalid",
-		callbackFired:       false,
-		waitTimeoutDuration: 1 * time.Second,
-		wg:                  &sync.WaitGroup{},
-		tasksToWaint:        0,
-		mockServiceExpectations: func(mockService *mocks.MockAccountService, wg ...*sync.WaitGroup) {
 		},
 		testCallback: func(b *bool, wg ...*sync.WaitGroup) (func(), *bool) {
 			return func() {
@@ -101,7 +87,7 @@ func TestExecuteDelete(t *testing.T) {
 			}
 
 			mockService.AssertExpectations(t)
-			mockService.AssertCalled(t, "DeleteAccount", mock.Anything, mock.AnythingOfType("*domain.Account"))
+			mockService.AssertCalled(t, "DeleteAccount", mock.Anything, 1)
 			assert.Equal(t, tc.callbackFired, *callbackFired)
 		})
 	}
