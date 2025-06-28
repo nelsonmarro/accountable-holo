@@ -10,6 +10,15 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
+var testCases = []struct {
+	name                  string
+	expectedCallbackFired bool
+}{
+	{name: "should call service and trigger callback on success", expectedCallbackFired: true},
+	{name: "should not trigger callback when service returns an error", expectedCallbackFired: false},
+	{name: "should not do anything if form is invalid", expectedCallbackFired: false},
+}
+
 func TestHandleSubmit(t *testing.T) {
 	t.Run("should call service and trigger callback on success", func(t *testing.T) {
 		// Arrange
@@ -25,7 +34,8 @@ func TestHandleSubmit(t *testing.T) {
 		d, mockService := setupTest(testCallback)
 
 		// The mock service now just needs to return success.
-		mockService.On("CreateNewAccount", mock.Anything, mock.AnythingOfType("*domain.Account")).Return(nil)
+		mockService.On("CreateNewAccount", mock.Anything, mock.AnythingOfType("*domain.Account")).
+			Return(nil)
 
 		// Act
 		d.handleSubmit(true)
