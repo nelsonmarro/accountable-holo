@@ -13,8 +13,6 @@ import (
 	"github.com/nelsonmarro/accountable-holo/internal/ui/mocks"
 )
 
-var callbackMsg string = ""
-
 // TestMain is the entry point for all tests in this package.
 func TestMain(m *testing.M) {
 	// --- Run the tests ---
@@ -37,6 +35,22 @@ func setupDependencies() (fyne.Window, *log.Logger, *mocks.MockAccountService) {
 }
 
 func setupTestAddDialog(callback func()) (*AddAccountDialog, *mocks.MockAccountService) {
+	win, silentLogger, mockService := setupDependencies()
+
+	// Create the dialog handler instance with all our test objects.
+	dialogHandler := NewAddAccountDialog(win, silentLogger, mockService, callback)
+
+	// Pre-populate the entry widgets with some valid test data.
+	test.Type(dialogHandler.nameEntry, "Test Bank Account")
+	test.Type(dialogHandler.nameEntry, "Test Bank Account")
+	test.Type(dialogHandler.tipoSelect, "Ahorros")
+	test.Type(dialogHandler.amountEntry, "150.75")
+	test.Type(dialogHandler.numberEntry, "123456789")
+
+	return dialogHandler, mockService
+}
+
+func setupTestEditDialog(callback func()) (*AddAccountDialog, *mocks.MockAccountService) {
 	win, silentLogger, mockService := setupDependencies()
 
 	// Create the dialog handler instance with all our test objects.
