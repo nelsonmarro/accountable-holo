@@ -94,9 +94,7 @@ func TestHandleSubmit(t *testing.T) {
 
 			d, mockService := setupTest(callbackFunc)
 
-			if tc.handleSubmitSuccess {
-				tc.mockServiceExpectations(mockService, tc.wg)
-			}
+			tc.mockServiceExpectations(mockService, tc.wg)
 
 			// Act
 			d.handleSubmit(tc.handleSubmitSuccess)
