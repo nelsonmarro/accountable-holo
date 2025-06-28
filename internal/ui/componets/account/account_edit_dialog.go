@@ -50,6 +50,7 @@ func (d *EditAccountDialog) Show() {
 	progress := dialog.NewCustomWithoutButtons("Cargando Cuenta...", widget.NewProgressBarInfinite(), d.mainWin)
 	progress.Show()
 
+	account := &domain.Account{}
 	go func() {
 		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 		defer cancel()
