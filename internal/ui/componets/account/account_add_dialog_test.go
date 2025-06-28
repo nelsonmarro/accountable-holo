@@ -17,7 +17,7 @@ var testCases = []struct {
 	handleSubmitSuccess     bool
 	waitTimeoutDuration     time.Duration
 	mockServiceExpectations func(*mocks.MockAccountService, ...*sync.WaitGroup)
-	testCallback            func(bool, ...*sync.WaitGroup) bool
+	testCallback            func(bool, ...*sync.WaitGroup) (func(), bool)
 }{
 	{
 		name:                  "should call service and trigger callback on success",
@@ -28,12 +28,13 @@ var testCases = []struct {
 			mockService.On("CreateNewAccount", mock.Anything, mock.AnythingOfType("*domain.Account")).
 				Return(nil)
 		},
-		testCallback: func(b bool, wg ...*sync.WaitGroup) bool {
-			b = true
-			if len(wg) > 0 {
-				wg[0].Done() // Signal completion
-			}
-			return b
+		testCallback: func(b bool, wg ...*sync.WaitGroup) (func(), bool) {
+			return func() {
+				b = true // Simulate callback being fired
+				if len(wg) > 0 {
+					wg[0].Done() // Signal completion
+				}
+			}, b
 		},
 	},
 	{
@@ -50,6 +51,10 @@ var testCases = []struct {
 					}
 				})
 		},
+		testCallback: func(b bool, wg ...*sync.WaitGroup) (func(), bool) {
+			return func() {
+				b = true // Simulate callback being fired
+			}, b
 	},
 	{
 		name:                  "should not do anything if form is invalid",
@@ -57,6 +62,11 @@ var testCases = []struct {
 		handleSubmitSuccess:   false,
 		waitTimeoutDuration:   1 * time.Second,
 		mockServiceExpectations: func(mockService *mocks.MockAccountService, wg ...*sync.WaitGroup) {
+		},
+		testCallback: func(b bool, wg ...*sync.WaitGroup) func() {
+			return func() {
+				b = true // Simulate callback being fired
+			}
 		},
 	},
 }
@@ -69,10 +79,8 @@ func TestHandleSubmit(t *testing.T) {
 			wg.Add(1)
 
 			callbackFired := false
-			testCallback := func() {
-			}
 
-			d, mockService := setupTest(testCallback)
+			d, mockService := setupTest(tc.testCallback(callbackFired, &wg))
 
 			tc.mockServiceExpectations(mockService, &wg)
 
