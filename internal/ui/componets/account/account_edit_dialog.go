@@ -49,7 +49,9 @@ func NewEditAccountDialog(win fyne.Window, l *log.Logger, service AccountService
 func (d *EditAccountDialog) Show() {
 	// Define the function to run on successful data fetch.
 	onSuccess := func(account *domain.Account) {
-		d.showEditForm(account)
+		fyne.Do(func() {
+			d.showEditForm(account)
+		})
 	}
 
 	// Define the function to run on failure.
@@ -70,20 +72,23 @@ func (d *EditAccountDialog) fetchAccount(onSuccess func(acc *domain.Account), on
 	progress.Show()
 
 	go func() {
-		// Ensure the progress dialog is always hidden when the goroutine completes.
-		defer progress.Hide()
-
 		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 		defer cancel()
 
 		account, err := d.service.GetAccountByID(ctx, d.accountID)
 		if err != nil {
 			// If there's an error, call the failure callback.
+			fyne.Do(func() {
+				progress.Hide()
+			})
 			onFailure(err)
 			return
 		}
 
 		// If successful, call the success callback with the fetched data.
+		fyne.Do(func() {
+			progress.Hide()
+		})
 		onSuccess(account)
 	}()
 }
@@ -107,10 +112,8 @@ func (d *EditAccountDialog) showEditForm(acc *domain.Account) {
 		d.handleSubmit, // The submit callback
 		d.mainWin,
 	)
-	fyne.Do(func() {
-		formDialog.Resize(fyne.NewSize(480, 300))
-		formDialog.Show()
-	})
+	formDialog.Resize(fyne.NewSize(480, 300))
+	formDialog.Show()
 }
 
 // handleSubmit contains the logic for the UPDATE operation.
