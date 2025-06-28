@@ -45,6 +45,30 @@ func NewEditAccountDialog(win fyne.Window, l *log.Logger, service AccountService
 	}
 }
 
+// Show begins the entire "edit" process.
+func (d *EditAccountDialog) Show() {
+	// Define the function to run on successful data fetch.
+	onSuccess := func(account *domain.Account) {
+		// This logic now runs ONLY after we have the account data.
+		// It's safe to show the form here.
+		// We ensure this UI code runs on the main thread.
+		fyne.Do(func() {
+			d.showEditForm(account)
+		})
+	}
+
+	// Define the function to run on failure.
+	onFailure := func(err error) {
+		d.logger.Println("Error getting account by ID:", err)
+		fyne.Do(func() {
+			dialog.ShowError(errors.New("error al encontrar la cuenta"), d.mainWin)
+		})
+	}
+
+	// Start the asynchronous fetch process, passing our callbacks.
+	d.fetchAccount(onSuccess, onFailure)
+}
+
 // Show begins the process by fetching the account data first.
 func (d *EditAccountDialog) fetchAccount(onSuccess func(acc *domain.Account), onFailure func(err error)) {
 	progress := dialog.NewCustomWithoutButtons("Cargando Cuenta...", widget.NewProgressBarInfinite(), d.mainWin)
