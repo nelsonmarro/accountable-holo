@@ -11,10 +11,9 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-var addTestCases = []struct {
+var delTestCases = []struct {
 	name                    string
 	callbackFired           bool
-	handleSubmitSuccess     bool
 	waitTimeoutDuration     time.Duration
 	wg                      *sync.WaitGroup
 	tasksToWaint            int
@@ -24,7 +23,6 @@ var addTestCases = []struct {
 	{
 		name:                "should call service and trigger callback on success",
 		callbackFired:       true,
-		handleSubmitSuccess: true,
 		waitTimeoutDuration: 2 * time.Second,
 		wg:                  &sync.WaitGroup{},
 		tasksToWaint:        1,
@@ -44,7 +42,6 @@ var addTestCases = []struct {
 	{
 		name:                "should not trigger callback when service returns an error",
 		callbackFired:       false,
-		handleSubmitSuccess: true,
 		waitTimeoutDuration: 1 * time.Second,
 		wg:                  &sync.WaitGroup{},
 		tasksToWaint:        1,
@@ -66,7 +63,6 @@ var addTestCases = []struct {
 	{
 		name:                "should not do anything if form is invalid",
 		callbackFired:       false,
-		handleSubmitSuccess: false,
 		waitTimeoutDuration: 1 * time.Second,
 		wg:                  &sync.WaitGroup{},
 		tasksToWaint:        0,
@@ -80,8 +76,8 @@ var addTestCases = []struct {
 	},
 }
 
-func TestHandleSubmit(t *testing.T) {
-	for _, tc := range addTestCases {
+func ExecuteDelete(t *testing.T) {
+	for _, tc := range delTestCases {
 		t.Run(tc.name, func(t *testing.T) {
 			// Arrange
 			if tc.tasksToWaint > 0 {
@@ -97,7 +93,7 @@ func TestHandleSubmit(t *testing.T) {
 			tc.mockServiceExpectations(mockService, tc.wg)
 
 			// Act
-			d.handleSubmit(tc.handleSubmitSuccess)
+			d.handleSubmit()
 
 			// Assert
 			if tc.tasksToWaint > 0 {
@@ -112,3 +108,4 @@ func TestHandleSubmit(t *testing.T) {
 		})
 	}
 }
+

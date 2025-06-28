@@ -21,10 +21,10 @@ func TestMain(m *testing.M) {
 	os.Exit(code)
 }
 
-// setupTest is a helper function to create a consistent test environment.
+// setupTestAddDialog is a helper function to create a consistent test environment.
 // It returns the dialog handler to be tested, the mock service, and a pointer
 // to a boolean flag that tracks if the callback was called.
-func setupTest(callback func()) (*AddAccountDialog, *mocks.MockAccountService) {
+func setupTestAddDialog(callback func()) (*AddAccountDialog, *mocks.MockAccountService) {
 	// Create a Fyne app and window that run only in memory.
 	test.NewApp()
 	win := test.NewWindow(nil)
