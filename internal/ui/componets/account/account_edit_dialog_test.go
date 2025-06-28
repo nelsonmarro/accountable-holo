@@ -102,7 +102,7 @@ var editSubmitTestCases = []struct {
 		wg:                  &sync.WaitGroup{},
 		tasksToWaint:        1,
 		mockServiceExpectations: func(mockService *mocks.MockAccountService, wg ...*sync.WaitGroup) {
-			mockService.On("CreateNewAccount", mock.Anything, mock.AnythingOfType("*domain.Account")).
+			mockService.On("UpdateAccount", mock.Anything, mock.AnythingOfType("*domain.Account")).
 				Return(nil)
 		},
 		testCallback: func(b *bool, wg ...*sync.WaitGroup) (func(), *bool) {
@@ -122,7 +122,7 @@ var editSubmitTestCases = []struct {
 		wg:                  &sync.WaitGroup{},
 		tasksToWaint:        1,
 		mockServiceExpectations: func(mockService *mocks.MockAccountService, wg ...*sync.WaitGroup) {
-			mockService.On("CreateNewAccount", mock.Anything, mock.AnythingOfType("*domain.Account")).
+			mockService.On("UpdateAccount", mock.Anything, mock.AnythingOfType("*domain.Account")).
 				Return(errors.New("sql error")).
 				Run(func(args mock.Arguments) {
 					if len(wg) > 0 {
@@ -154,7 +154,7 @@ var editSubmitTestCases = []struct {
 }
 
 func TestEditHandleSumbit(t *testing.T) {
-	for _, tc := range addTestCases {
+	for _, tc := range editSubmitTestCases {
 		t.Run(tc.name, func(t *testing.T) {
 			// Arrange
 			if tc.tasksToWaint > 0 {
@@ -165,7 +165,7 @@ func TestEditHandleSumbit(t *testing.T) {
 			*callbackFired = false
 			callbackFunc, callbackFired := tc.testCallback(callbackFired, tc.wg)
 
-			d, mockService := setupTestAddDialog(callbackFunc)
+			d, mockService := setupTestEditDialog(callbackFunc)
 
 			tc.mockServiceExpectations(mockService, tc.wg)
 
@@ -180,7 +180,7 @@ func TestEditHandleSumbit(t *testing.T) {
 			mockService.AssertExpectations(t)
 			assert.Equal(t, tc.callbackFired, *callbackFired)
 			if !tc.handleSubmitSuccess {
-				mockService.AssertNotCalled(t, "CreateNewAccount", mock.Anything, mock.AnythingOfType("*domain.Account"))
+				mockService.AssertNotCalled(t, "UpdateAccount", mock.Anything, mock.AnythingOfType("*domain.Account"))
 			}
 		})
 	}
