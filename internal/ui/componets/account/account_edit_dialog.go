@@ -46,7 +46,7 @@ func NewEditAccountDialog(win fyne.Window, l *log.Logger, service AccountService
 }
 
 // Show begins the process by fetching the account data first.
-func (d *EditAccountDialog) Show() {
+func (d *EditAccountDialog) getAccountByID() *domain.Account {
 	progress := dialog.NewCustomWithoutButtons("Cargando Cuenta...", widget.NewProgressBarInfinite(), d.mainWin)
 	progress.Show()
 
@@ -55,7 +55,7 @@ func (d *EditAccountDialog) Show() {
 		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 		defer cancel()
 
-		account, err := d.service.GetAccountByID(ctx, d.accountID)
+		a, err := d.service.GetAccountByID(ctx, d.accountID)
 		if err != nil {
 			d.logger.Println("Error getting account by ID:", err)
 
@@ -66,11 +66,13 @@ func (d *EditAccountDialog) Show() {
 			return
 		}
 
+		account = a
 		fyne.Do(func() {
 			progress.Hide()
-			d.showEditForm(account)
 		})
 	}()
+
+	return account
 }
 
 // showEditForm displays the actual form, pre-populated with account data.
