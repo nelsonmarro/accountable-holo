@@ -17,6 +17,7 @@ var testCases = []struct {
 	handleSubmitSuccess     bool
 	waitTimeoutDuration     time.Duration
 	wg                      *sync.WaitGroup
+	tasksToWaint            int
 	mockServiceExpectations func(*mocks.MockAccountService, ...*sync.WaitGroup)
 	testCallback            func(*bool, ...*sync.WaitGroup) (func(), *bool)
 }{
@@ -26,6 +27,7 @@ var testCases = []struct {
 		handleSubmitSuccess:   true,
 		waitTimeoutDuration:   2 * time.Second,
 		wg:                    &sync.WaitGroup{},
+		tasksToWaint:          1,
 		mockServiceExpectations: func(mockService *mocks.MockAccountService, wg ...*sync.WaitGroup) {
 			mockService.On("CreateNewAccount", mock.Anything, mock.AnythingOfType("*domain.Account")).
 				Return(nil)
@@ -45,6 +47,7 @@ var testCases = []struct {
 		handleSubmitSuccess:   true,
 		waitTimeoutDuration:   1 * time.Second,
 		wg:                    &sync.WaitGroup{},
+		tasksToWaint:          1,
 		mockServiceExpectations: func(mockService *mocks.MockAccountService, wg ...*sync.WaitGroup) {
 			mockService.On("CreateNewAccount", mock.Anything, mock.AnythingOfType("*domain.Account")).
 				Return(errors.New("sql error")).
@@ -65,7 +68,8 @@ var testCases = []struct {
 		expectedCallbackFired: false,
 		handleSubmitSuccess:   false,
 		waitTimeoutDuration:   1 * time.Second,
-		wg:                    nil,
+		wg:                    &sync.WaitGroup{},
+		tasksToWaint:          0,
 		mockServiceExpectations: func(mockService *mocks.MockAccountService, wg ...*sync.WaitGroup) {
 		},
 		testCallback: func(b *bool, wg ...*sync.WaitGroup) (func(), *bool) {
@@ -80,26 +84,31 @@ func TestHandleSubmit(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			// Arrange
-			if tc.wg != nil {
-				tc.wg.Add(1)
+			if tc.tasksToWaint > 0 {
+				tc.wg.Add(tc.tasksToWaint)
 			}
 
 			callbackFired := new(bool)
 			*callbackFired = false
-			callbackFunc, callbackFired := tc.testCallback(callbackFired, &wg)
+			callbackFunc, callbackFired := tc.testCallback(callbackFired, tc.wg)
 
 			d, mockService := setupTest(callbackFunc)
 
-			tc.mockServiceExpectations(mockService, &wg)
+			tc.mockServiceExpectations(mockService, tc.wg)
 
 			// Act
 			d.handleSubmit(tc.handleSubmitSuccess)
 
 			// Assert
-			waitTimeout(t, &wg, tc.waitTimeoutDuration)
+			if tc.tasksToWaint > 0 {
+				waitTimeout(t, tc.wg, tc.waitTimeoutDuration)
+			}
 
 			mockService.AssertExpectations(t)
 			assert.Equal(t, tc.expectedCallbackFired, *callbackFired)
+			if !tc.handleSubmitSuccess {
+				mockService.AssertNotCalled(t, "CreateNewAccount")
+			}
 		})
 	}
 }
