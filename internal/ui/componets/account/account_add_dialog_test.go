@@ -20,6 +20,10 @@ var testCases = []struct {
 }
 
 func TestHandleSubmit(t *testing.T) {
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+		})
+	}
 	t.Run("should call service and trigger callback on success", func(t *testing.T) {
 		// Arrange
 		var wg sync.WaitGroup
