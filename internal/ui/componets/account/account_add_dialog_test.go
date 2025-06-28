@@ -16,21 +16,23 @@ var testCases = []struct {
 	expectedCallbackFired   bool
 	handleSubmitSuccess     bool
 	waitTimeoutDuration     time.Duration
+	wg                      *sync.WaitGroup
 	mockServiceExpectations func(*mocks.MockAccountService, ...*sync.WaitGroup)
-	testCallback            func(bool, ...*sync.WaitGroup) (func(), bool)
+	testCallback            func(*bool, ...*sync.WaitGroup) (func(), *bool)
 }{
 	{
 		name:                  "should call service and trigger callback on success",
 		expectedCallbackFired: true,
 		handleSubmitSuccess:   true,
 		waitTimeoutDuration:   2 * time.Second,
+		wg:                    &sync.WaitGroup{},
 		mockServiceExpectations: func(mockService *mocks.MockAccountService, wg ...*sync.WaitGroup) {
 			mockService.On("CreateNewAccount", mock.Anything, mock.AnythingOfType("*domain.Account")).
 				Return(nil)
 		},
-		testCallback: func(b bool, wg ...*sync.WaitGroup) (func(), bool) {
+		testCallback: func(b *bool, wg ...*sync.WaitGroup) (func(), *bool) {
 			return func() {
-				b = true // Simulate callback being fired
+				*b = true // Simulate callback being fired
 				if len(wg) > 0 {
 					wg[0].Done() // Signal completion
 				}
@@ -42,6 +44,7 @@ var testCases = []struct {
 		expectedCallbackFired: false,
 		handleSubmitSuccess:   true,
 		waitTimeoutDuration:   1 * time.Second,
+		wg:                    &sync.WaitGroup{},
 		mockServiceExpectations: func(mockService *mocks.MockAccountService, wg ...*sync.WaitGroup) {
 			mockService.On("CreateNewAccount", mock.Anything, mock.AnythingOfType("*domain.Account")).
 				Return(errors.New("sql error")).
@@ -51,22 +54,24 @@ var testCases = []struct {
 					}
 				})
 		},
-		testCallback: func(b bool, wg ...*sync.WaitGroup) (func(), bool) {
+		testCallback: func(b *bool, wg ...*sync.WaitGroup) (func(), *bool) {
 			return func() {
-				b = true // Simulate callback being fired
+				*b = true // Simulate callback being fired
 			}, b
+		},
 	},
 	{
 		name:                  "should not do anything if form is invalid",
 		expectedCallbackFired: false,
 		handleSubmitSuccess:   false,
 		waitTimeoutDuration:   1 * time.Second,
+		wg:                    nil,
 		mockServiceExpectations: func(mockService *mocks.MockAccountService, wg ...*sync.WaitGroup) {
 		},
-		testCallback: func(b bool, wg ...*sync.WaitGroup) func() {
+		testCallback: func(b *bool, wg ...*sync.WaitGroup) (func(), *bool) {
 			return func() {
-				b = true // Simulate callback being fired
-			}
+				*b = true // Simulate callback being fired
+			}, b
 		},
 	},
 }
@@ -75,12 +80,15 @@ func TestHandleSubmit(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			// Arrange
-			var wg sync.WaitGroup
-			wg.Add(1)
+			if tc.wg != nil {
+				tc.wg.Add(1)
+			}
 
-			callbackFired := false
+			callbackFired := new(bool)
+			*callbackFired = false
+			callbackFunc, callbackFired := tc.testCallback(callbackFired, &wg)
 
-			d, mockService := setupTest(tc.testCallback(callbackFired, &wg))
+			d, mockService := setupTest(callbackFunc)
 
 			tc.mockServiceExpectations(mockService, &wg)
 
@@ -91,7 +99,7 @@ func TestHandleSubmit(t *testing.T) {
 			waitTimeout(t, &wg, tc.waitTimeoutDuration)
 
 			mockService.AssertExpectations(t)
-			assert.Equal(t, tc.expectedCallbackFired, callbackFired)
+			assert.Equal(t, tc.expectedCallbackFired, *callbackFired)
 		})
 	}
 }
