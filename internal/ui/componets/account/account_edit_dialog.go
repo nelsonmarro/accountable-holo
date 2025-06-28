@@ -46,33 +46,27 @@ func NewEditAccountDialog(win fyne.Window, l *log.Logger, service AccountService
 }
 
 // Show begins the process by fetching the account data first.
-func (d *EditAccountDialog) getAccountByID() *domain.Account {
+func (d *EditAccountDialog) fetchAccount(onSuccess func(acc *domain.Account), onFailure func(err error)) {
 	progress := dialog.NewCustomWithoutButtons("Cargando Cuenta...", widget.NewProgressBarInfinite(), d.mainWin)
 	progress.Show()
 
-	account := &domain.Account{}
 	go func() {
+		// Ensure the progress dialog is always hidden when the goroutine completes.
+		defer progress.Hide()
+
 		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 		defer cancel()
 
-		a, err := d.service.GetAccountByID(ctx, d.accountID)
+		account, err := d.service.GetAccountByID(ctx, d.accountID)
 		if err != nil {
-			d.logger.Println("Error getting account by ID:", err)
-
-			fyne.Do(func() {
-				progress.Hide()
-				dialog.ShowError(errors.New("error al encontrar la cuenta"), d.mainWin)
-			})
+			// If there's an error, call the failure callback.
+			onFailure(err)
 			return
 		}
 
-		account = a
-		fyne.Do(func() {
-			progress.Hide()
-		})
+		// If successful, call the success callback with the fetched data.
+		onSuccess(account)
 	}()
-
-	return account
 }
 
 // showEditForm displays the actual form, pre-populated with account data.
