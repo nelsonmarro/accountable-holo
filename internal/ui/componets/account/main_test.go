@@ -50,18 +50,11 @@ func setupTestAddDialog(callback func()) (*AddAccountDialog, *mocks.MockAccountS
 	return dialogHandler, mockService
 }
 
-func setupTestEditDialog(callback func()) (*AddAccountDialog, *mocks.MockAccountService) {
+func setupTestEditDialog(callback func()) (*EditAccountDialog, *mocks.MockAccountService) {
 	win, silentLogger, mockService := setupDependencies()
 
 	// Create the dialog handler instance with all our test objects.
-	dialogHandler := NewAddAccountDialog(win, silentLogger, mockService, callback)
-
-	// Pre-populate the entry widgets with some valid test data.
-	test.Type(dialogHandler.nameEntry, "Test Bank Account")
-	test.Type(dialogHandler.nameEntry, "Test Bank Account")
-	test.Type(dialogHandler.tipoSelect, "Ahorros")
-	test.Type(dialogHandler.amountEntry, "150.75")
-	test.Type(dialogHandler.numberEntry, "123456789")
+	dialogHandler := NewEditAccountDialog(win, silentLogger, mockService, callback, 1)
 
 	return dialogHandler, mockService
 }

@@ -63,6 +63,21 @@ var addTestCases = []struct {
 			}, b
 		},
 	},
+	{
+		name:                "should not do anything if form is invalid",
+		callbackFired:       false,
+		handleSubmitSuccess: false,
+		waitTimeoutDuration: 1 * time.Second,
+		wg:                  &sync.WaitGroup{},
+		tasksToWaint:        0,
+		mockServiceExpectations: func(mockService *mocks.MockAccountService, wg ...*sync.WaitGroup) {
+		},
+		testCallback: func(b *bool, wg ...*sync.WaitGroup) (func(), *bool) {
+			return func() {
+				*b = true // Simulate callback being fired
+			}, b
+		},
+	},
 }
 
 func TestHandleSubmit(t *testing.T) {
@@ -96,7 +111,4 @@ func TestHandleSubmit(t *testing.T) {
 			}
 		})
 	}
-}
-
-func TestShow(t *testing.T) {
 }
