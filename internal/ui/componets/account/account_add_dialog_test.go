@@ -9,7 +9,6 @@ import (
 	"github.com/nelsonmarro/accountable-holo/internal/ui/mocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"github.com/stretchr/testify/require"
 )
 
 var testCases = []struct {
@@ -107,7 +106,9 @@ func TestHandleSubmit(t *testing.T) {
 
 			mockService.AssertExpectations(t)
 			assert.Equal(t, tc.callbackFired, *callbackFired)
-			require.True(t, mockService.AssertNotCalled(t, "CreateNewAccount"), "Expected CreateNewAccount not to be called")
+			if !tc.handleSubmitSuccess {
+				mockService.AssertNotCalled(t, "CreateNewAccount", mock.Anything, mock.AnythingOfType("*domain.Account"))
+			}
 		})
 	}
 }
