@@ -60,5 +60,31 @@ func TestHandleSubmit(t *testing.T) {
 				// correct place to signal completion for the failure test.
 				wg.Done()
 			})
+
+		// Act
+		d.handleSubmit(true)
+
+		// Assert
+		waitTimeout(t, &wg, 1*time.Second)
+
+		mockService.AssertExpectations(t)
+		assert.False(t, callbackFired, "Expected callbackAction NOT to be fired on service error")
+	})
+
+	t.Run("should no to anything is form is invalid", func(t *testing.T) {
+		// Arrange
+		callbackFired := false
+		testCallback := func() {
+			callbackFired = true
+		}
+
+		d, mockService := setupTest(testCallback)
+
+		// Act
+		d.handleSubmit(false)
+
+		// Assert
+		mockService.AssertNotCalled(t, "CreateNewAccount")
+		assert.False(t, callbackFired)
 	})
 }
