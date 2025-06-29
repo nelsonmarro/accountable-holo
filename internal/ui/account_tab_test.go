@@ -93,8 +93,20 @@ func TestFillListData(t *testing.T) {
 
 	// Manually populate the ui.accounts slice with data for the test.
 	ui.accounts = []domain.Account{
-		{BaseEntity: domain.BaseEntity{ID: 101}, Name: "Test Checking", Type: domain.OrdinaryAccount, InitialBalance: 1234.56},
-		{BaseEntity: domain.BaseEntity{ID: 102}, Name: "Test Savings", Type: domain.SavingAcount, InitialBalance: 789.00},
+		{
+			BaseEntity:     domain.BaseEntity{ID: 101},
+			Number:         "22",
+			Name:           "Test Checking",
+			Type:           domain.OrdinaryAccount,
+			InitialBalance: 1234.56,
+		},
+		{
+			BaseEntity:     domain.BaseEntity{ID: 102},
+			Number:         "23",
+			Name:           "Test Savings",
+			Type:           domain.SavingAcount,
+			InitialBalance: 789.00,
+		},
 	}
 
 	// Create a template canvas object, just like Fyne would.
@@ -113,7 +125,7 @@ func TestFillListData(t *testing.T) {
 
 	// Assert Labels are set correctly
 	nameLbl := infoContainer.Objects[0].(*fyne.Container).Objects[0].(*widget.Label)
-	assert.Equal(t, "Test Checking", nameLbl.Text)
+	assert.Equal(t, "Test Checking - 22", nameLbl.Text)
 
 	typeLbl := infoContainer.Objects[0].(*fyne.Container).Objects[1].(*widget.Label)
 	assert.Equal(t, "Tipo de Cuenta: Corriente", typeLbl.Text)

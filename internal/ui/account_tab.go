@@ -91,7 +91,7 @@ func (ui *UI) makeListUI() fyne.CanvasObject {
 				widget.NewLabel("tipo de cuenta"),
 			),
 			container.NewHBox(
-				widget.NewLabel("Balance"),
+				widget.NewLabel("Balance:"),
 				widget.NewLabel("balance inicial"),
 			),
 		),
@@ -113,7 +113,7 @@ func (ui *UI) fillListData(i widget.ListItemID, o fyne.CanvasObject) {
 
 	cuentaInfoContainer := infoContainer.Objects[0].(*fyne.Container)
 	nameLbl := cuentaInfoContainer.Objects[0].(*widget.Label)
-	nameLbl.SetText(ui.accounts[i].Name)
+	nameLbl.SetText(fmt.Sprintf("%s - %s", ui.accounts[i].Name, ui.accounts[i].Number))
 
 	typeLbl := cuentaInfoContainer.Objects[1].(*widget.Label)
 	typeLbl.SetText(fmt.Sprintf("Tipo de Cuenta: %s", helpers.GetDisplayAccountTypeName(ui.accounts[i].Type)))
