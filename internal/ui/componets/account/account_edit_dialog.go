@@ -58,7 +58,8 @@ func (d *EditAccountDialog) Show() {
 	onFailure := func(err error) {
 		d.logger.Println("Error getting account by ID:", err)
 		fyne.Do(func() {
-			dialog.ShowError(errors.New("error al encontrar la cuenta"), d.mainWin)
+			errorDialog := dialog.NewError(fmt.Errorf("%s\n%s", "error al crear la cuenta\n", err.Error()), d.mainWin)
+			errorDialog.Show()
 		})
 	}
 

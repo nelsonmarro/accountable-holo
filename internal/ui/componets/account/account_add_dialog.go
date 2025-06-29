@@ -3,7 +3,6 @@ package account
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"log"
 	"strconv"
@@ -92,7 +91,7 @@ func (d *AddAccountDialog) handleSubmit(valid bool) {
 		if err != nil {
 			fyne.Do(func() {
 				progressDialog.Hide()
-				errorDialog := dialog.NewError(errors.New("error al crear la cuenta"), d.mainWin)
+				errorDialog := dialog.NewError(fmt.Errorf("%s\n%s", "error al crear la cuenta\n", err.Error()), d.mainWin)
 				errorDialog.Show()
 			})
 			d.logger.Println("Error creating account:", err)
