@@ -63,7 +63,7 @@ func TestRefreshAccountList(t *testing.T) {
 
 		// Configure the mock to return an error
 		mockService.On("GetAllAccounts", mock.Anything).
-			Return(nil, errors.New("database is down")).
+			Return([]domain.Account{}, errors.New("database is down")).
 			Run(func(args mock.Arguments) {
 				wg.Done()
 			})
@@ -85,4 +85,46 @@ func TestRefreshAccountList(t *testing.T) {
 		require.Len(t, ui.accounts, 1)
 		assert.Equal(t, 99, ui.accounts[0].ID)
 	})
+}
+
+func TestFillListData(t *testing.T) {
+	// Arrange
+	ui, _ := setupUITest()
+
+	// Manually populate the ui.accounts slice with data for the test.
+	ui.accounts = []domain.Account{
+		{BaseEntity: domain.BaseEntity{ID: 101}, Name: "Test Checking", Type: domain.OrdinaryAccount, InitialBalance: 1234.56},
+		{BaseEntity: domain.BaseEntity{ID: 102}, Name: "Test Savings", Type: domain.SavingAcount, InitialBalance: 789.00},
+	}
+
+	// Create a template canvas object, just like Fyne would.
+	listItemUI := ui.makeListUI()
+
+	// Act
+	// Simulate Fyne calling this function for the first item in the list (ID 101).
+	ui.fillListData(0, listItemUI)
+
+	// Assert
+	// We need to "drill down" into the container hierarchy to find the widgets.
+	borderContainer := listItemUI.(*fyne.Container)
+	infoContainer := borderContainer.Objects[0].(*fyne.Container)
+	buttonsPaddedContainer := borderContainer.Objects[1].(*fyne.Container)
+	buttonsContainer := buttonsPaddedContainer.Objects[0].(*fyne.Container)
+
+	// Assert Labels are set correctly
+	nameLbl := infoContainer.Objects[0].(*fyne.Container).Objects[0].(*widget.Label)
+	assert.Equal(t, "Test Checking", nameLbl.Text)
+
+	typeLbl := infoContainer.Objects[0].(*fyne.Container).Objects[1].(*widget.Label)
+	assert.Equal(t, "Tipo de Cuenta: Corriente", typeLbl.Text)
+
+	balanceLbl := infoContainer.Objects[1].(*fyne.Container).Objects[1].(*widget.Label)
+	assert.Equal(t, "1234.56", balanceLbl.Text)
+
+	// Assert that the buttons have an OnTapped handler assigned.
+	editBtn := buttonsContainer.Objects[1].(*widget.Button)
+	deleteBtn := buttonsContainer.Objects[2].(*widget.Button)
+
+	assert.NotNil(t, editBtn.OnTapped, "Edit button should have an OnTapped handler")
+	assert.NotNil(t, deleteBtn.OnTapped, "Delete button should have an OnTapped handler")
 }

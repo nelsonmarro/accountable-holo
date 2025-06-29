@@ -3,7 +3,6 @@ package ui
 import (
 	"context"
 	"fmt"
-	"log"
 	"strconv"
 	"time"
 
@@ -63,8 +62,8 @@ func (ui *UI) refreshAccountList() {
 
 	accounts, err := ui.accService.GetAllAccounts(ctx)
 	if err != nil {
-		log.Printf("Error fetching accounts: %v", err)
 		dialog.ShowError(err, ui.mainWindow)
+		return
 	}
 
 	ui.accounts = accounts
