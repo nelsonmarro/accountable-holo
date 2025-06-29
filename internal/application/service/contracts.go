@@ -16,13 +16,12 @@ type AccountRepository interface {
 }
 
 type CategoryRepository interface {
-	CreateCategory(ctx context.Context, category *domain.Category) error
+	GetPaginatedCategories(ctx context.Context, page, pageSize int) (*domain.PaginatedResult[domain.Category], error)
 	GetAllCategories(ctx context.Context) ([]domain.Category, error)
 	GetCategoryByID(ctx context.Context, id int) (*domain.Category, error)
+	CreateCategory(ctx context.Context, category *domain.Category) error
 	UpdateCategory(ctx context.Context, category *domain.Category) error
 	DeleteCategory(ctx context.Context, id int) error
-
-	GetPaginatedCategories(ctx context.Context, page, pageSize int) (*domain.PaginatedResult[domain.Category], error)
 }
 
 type TransactionRepository interface {
