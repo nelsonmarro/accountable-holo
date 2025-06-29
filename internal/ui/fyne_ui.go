@@ -24,6 +24,9 @@ type UI struct {
 	accountList *widget.List
 	accounts    []domain.Account
 
+	categoryTable *widget.Table
+	categories    []domain.Category
+
 	// ---- Debug ----
 	infoLogger  *log.Logger
 	errorLogger *log.Logger
