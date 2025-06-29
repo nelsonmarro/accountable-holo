@@ -35,10 +35,11 @@ func (ui *UI) makeCategoryUI() fyne.CanvasObject {
 			return len(data), len(data[0])
 		},
 		func() fyne.CanvasObject {
-			return widget.NewLabel("wide content")
+			return container.NewHBox(widget.NewLabel("content"), layout.NewSpacer(), widget.NewButton("Eliminar", func() {}))
 		},
 		func(i widget.TableCellID, o fyne.CanvasObject) {
-			o.(*widget.Label).SetText(data[i.Row][i.Col])
+			conta := o.(*fyne.Container)
+			conta.Objects[0].(*widget.Label).SetText(data[i.Row][i.Col])
 		})
 
 	// containers
