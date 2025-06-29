@@ -8,13 +8,12 @@ import (
 
 func (ui *UI) makeFinanceTab() fyne.CanvasObject {
 	// UI widgets
-
-	// Containers
 	transactionsTab := container.NewTabItem("Transacciones", widget.NewLabel("Transacciones"))
 	categoriesTab := container.NewTabItem("Categorías", widget.NewLabel("Categorías"))
 
+	// Containers
 	tabContainer := container.NewAppTabs(transactionsTab, categoriesTab)
-	tabContainer.SetTabLocation(container.TabLocationTrailing)
+	tabContainer.SetTabLocation(container.TabLocationBottom)
 
 	return tabContainer
 }

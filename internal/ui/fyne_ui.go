@@ -53,7 +53,7 @@ func (ui *UI) buildMainUI() {
 
 	tabs := container.NewAppTabs(
 		container.NewTabItemWithIcon("Cuentas", accountIcon, ui.makeAccountTab()),
-		container.NewTabItemWithIcon("Finanzas", transactionIcon, widget.NewLabel("Transactions")),
+		container.NewTabItemWithIcon("Finanzas", transactionIcon, ui.makeFinanceTab()),
 		container.NewTabItemWithIcon("Reportes", reportIcon, widget.NewLabel("Reports")),
 	)
 
