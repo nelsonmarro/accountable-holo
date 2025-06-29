@@ -44,7 +44,7 @@ func (ui *UI) makeCategoryUI() fyne.CanvasObject {
 	ui.categoryTable.CreateHeader = func() fyne.CanvasObject {
 		return widget.NewLabel("Categorías")
 	}
-	ui.categoryTable.UpdateHeader(widget.TableCellID{Row: 1, Col: 1}, widget.NewLabel("Categorías"))
+	ui.categoryTable.UpdateHeader(widget.TableCellID{Row: 0, Col: 0}, ui.categoryTable.CreateHeader())
 
 	// containers
 	headerArea := container.NewVBox(
