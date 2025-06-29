@@ -5,6 +5,7 @@ import (
 	"log"
 	"time"
 
+	"fyne.io/fyne/v2/app"
 	"github.com/nelsonmarro/accountable-holo/config"
 	"github.com/nelsonmarro/accountable-holo/internal/application/service"
 	"github.com/nelsonmarro/accountable-holo/internal/infrastructure/database"
@@ -33,7 +34,15 @@ func main() {
 	accService := service.NewAccountService(accRepo)
 
 	// ---- UI (Fyne) ----
+	// 1. Create the Fyne App first.
+	a := app.NewWithID("51af2ee4-c61c-4608-a3f1-d8576343af14")
+
+	// 2. Create UI struct.
 	gui := ui.NewUI(accService)
 
+	// 3. Initialize the UI with the app object.
+	gui.Init(a)
+
+	// 4. Run the application.
 	gui.Run()
 }

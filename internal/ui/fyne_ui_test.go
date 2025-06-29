@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"fyne.io/fyne/v2/container"
+	"fyne.io/fyne/v2/test"
 	"github.com/nelsonmarro/accountable-holo/internal/domain"
 	"github.com/nelsonmarro/accountable-holo/internal/ui/mocks"
 	"github.com/stretchr/testify/assert"
@@ -13,6 +14,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// TestNewUI now tests the simple constructor.
 func TestNewUI(t *testing.T) {
 	// Arrange
 	mockService := new(mocks.MockAccountService)
@@ -22,12 +24,29 @@ func TestNewUI(t *testing.T) {
 
 	// Assert
 	assert.NotNil(t, ui, "UI object should not be nil")
-	assert.NotNil(t, ui.app, "Fyne app should be initialized")
+	assert.Nil(t, ui.app, "Fyne app should be nil before Init is called")
+	assert.Nil(t, ui.mainWindow, "Main window should be nil before Init is called")
+	assert.Equal(t, mockService, ui.accService, "Account service dependency should be set")
+	assert.NotNil(t, ui.infoLogger)
+	assert.NotNil(t, ui.errorLogger)
+}
+
+// TestUI_Init tests the Fyne-specific initialization.
+func TestUI_Init(t *testing.T) {
+	// Arrange
+	testApp := test.NewApp()
+	mockService := new(mocks.MockAccountService)
+	ui := NewUI(mockService)
+
+	// Act
+	ui.Init(testApp)
+
+	// Assert
+	assert.Equal(t, testApp, ui.app, "Fyne app should be set")
 	assert.NotNil(t, ui.mainWindow, "Main window should be initialized")
 	assert.Equal(t, "Accountable Holo", ui.mainWindow.Title())
-	assert.Equal(t, mockService, ui.accService, "Account service dependency should be set")
 
-	// Check if our custom theme was applied
+	// Check if our custom theme was applied correctly
 	_, ok := ui.app.Settings().Theme().(*AppTheme)
 	assert.True(t, ok, "Expected custom AppTheme to be set")
 }

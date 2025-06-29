@@ -6,7 +6,6 @@ import (
 	"os"
 
 	"fyne.io/fyne/v2"
-	"fyne.io/fyne/v2/app"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/widget"
 	"github.com/nelsonmarro/accountable-holo/internal/domain"
@@ -32,18 +31,18 @@ type UI struct {
 
 // NewUI is the constructor for the UI struct.
 func NewUI(accService AccountService) *UI {
-	a := app.NewWithID("51af2ee4-c61c-4608-a3f1-d8576343af14")
-	a.Settings().SetTheme(NewAppTheme())
-
-	w := a.NewWindow("Accountable Holo")
-
 	return &UI{
 		accService:  accService,
-		app:         a,
-		mainWindow:  w,
 		infoLogger:  log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime),
 		errorLogger: log.New(os.Stderr, "ERROR\t", log.Ldate|log.Ltime|log.Lshortfile),
 	}
+}
+
+// Init creates the Fyne app and window objects. This is where the Fyne-specific
+func (ui *UI) Init(a fyne.App) {
+	ui.app = a
+	ui.app.Settings().SetTheme(NewAppTheme())
+	ui.mainWindow = ui.app.NewWindow("Accountable Holo")
 }
 
 // buildMainUI creates all the main UI components and sets them on the window.

@@ -42,10 +42,12 @@ func setupUITestForTabs() (*UI, *mocks.MockAccountService) {
 }
 
 func setupUITest() (*UI, *mocks.MockAccountService) {
-	// We use test.NewApp() which creates an in-memory app for testing.
 	mockService := new(mocks.MockAccountService)
-	// We pass the mock service to the real NewUI constructor.
+
 	ui := NewUI(mockService)
+
+	a := test.NewApp()
+	ui.Init(a)
 
 	// Replace the real loggers with silent ones for clean test output
 	ui.infoLogger = log.New(io.Discard, "", 0)
