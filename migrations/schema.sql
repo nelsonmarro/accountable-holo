@@ -68,7 +68,8 @@ CREATE TABLE public.categories (
     id integer NOT NULL,
     name character varying(100) DEFAULT ''::character varying NOT NULL,
     created_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL
+    updated_at timestamp without time zone NOT NULL,
+    type character varying(50) DEFAULT 'outcome'::character varying NOT NULL
 );
 
 
@@ -114,7 +115,6 @@ ALTER TABLE public.schema_migration OWNER TO nelson;
 CREATE TABLE public.transactions (
     id integer NOT NULL,
     amount real NOT NULL,
-    type character varying(100) DEFAULT ''::character varying NOT NULL,
     description character varying(300) DEFAULT ''::character varying NOT NULL,
     account_id integer NOT NULL,
     category_id integer NOT NULL,

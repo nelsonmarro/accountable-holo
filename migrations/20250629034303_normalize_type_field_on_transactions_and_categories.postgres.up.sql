@@ -1,0 +1,5 @@
+ALTER TABLE categories
+ADD COLUMN type VARCHAR(50) NOT NULL DEFAULT 'outcome';
+
+ALTER TABLE transactions
+DROP COLUMN type;
