@@ -68,3 +68,16 @@ func (s *CategoryServiceImpl) UpdateCategory(ctx context.Context, category *doma
 	}
 	return nil
 }
+
+func (s *CategoryServiceImpl) DeleteCategory(ctx context.Context, id int) error {
+	if id < 0 {
+		return fmt.Errorf("invalid category ID: %d", id)
+	}
+
+	err := s.repo.DeleteCategory(ctx, id)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}

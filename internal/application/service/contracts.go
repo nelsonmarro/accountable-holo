@@ -27,5 +27,4 @@ type CategoryRepository interface {
 type TransactionRepository interface {
 	CreateTransaction(ctx context.Context, transaction *domain.Transaction) error
 	GetAllTransactions(ctx context.Context) ([]domain.Transaction, error)
-	// We will add more methods like GetByDateRange later for reports.
 }
