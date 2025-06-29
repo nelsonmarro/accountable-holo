@@ -30,11 +30,15 @@ func (ui *UI) makeCategoryUI() fyne.CanvasObject {
 			return len(data), len(data[0])
 		},
 		func() fyne.CanvasObject {
-			return container.NewHBox(widget.NewButton("Eliminar", func() {}))
+			return container.NewGridWithColumns(3)
 		},
 		func(i widget.TableCellID, o fyne.CanvasObject) {
-			// conta := o.(*fyne.Container)
-			// conta.Objects[0].(*widget.Label).SetText(data[i.Row][i.Col])
+			conta := o.(*fyne.Container)
+			if i.Row == 0 {
+				// Header row
+				conta.Add(data[i.Row][i.Col])
+				return
+			}
 		})
 
 	// containers
