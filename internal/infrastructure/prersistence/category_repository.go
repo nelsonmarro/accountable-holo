@@ -59,6 +59,54 @@ func (r *CategoryRepositoryImpl) GetPaginatedCategory(ctx context.Context, page,
 	if err != nil {
 		return nil, fmt.Errorf("failed to get total category count: %w", err)
 	}
+
+	// there are no records, return empty result
+	if totalCount == 0 {
+		return &domain.PaginatedResult[domain.Category]{
+			Data:       []domain.Category{},
+			TotalCount: 0,
+			Page:       1,
+			PageSize:   0,
+		}, nil
+	}
+
+	// calculate offset
+	offset := (page - 1) * pageSize
+	dataQuery := `
+	   select id, name, type 
+	   from categories 
+		 order by name asc 
+		 limit $1 offset $2
+	`
+
+	rows, err := r.db.Query(ctx, dataQuery, pageSize, offset)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get paginated categories: %w", err)
+	}
+	defer rows.Close()
+
+	var categories []domain.Category
+	for rows.Next() {
+		var cat domain.Category
+		err := rows.Scan(&cat.ID, &cat.Name, &cat.Type)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan category row: %w", err)
+		}
+		categories = append(categories, cat)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("error iterating category rows: %w", err)
+	}
+
+	result := &domain.PaginatedResult[domain.Category]{
+		Data:       categories,
+		TotalCount: totalCount,
+		Page:       page,
+		PageSize:   pageSize,
+	}
+
+	return result, nil
 }
 
 func (r *CategoryRepositoryImpl) GetCategoryByID(ctx context.Context, id int) (*domain.Category, error) {
