@@ -46,7 +46,8 @@ func NewUI(accService AccountService) *UI {
 	}
 }
 
-func (ui *UI) Run() {
+// buildMainUI creates all the main UI components and sets them on the window.
+func (ui *UI) buildMainUI() {
 	accountIcon := NewThemeAwareResource(resourceAccountstabiconlightPng, resourceAccountstabicondarkPng)
 	transactionIcon := NewThemeAwareResource(resourceTransactionstabiconlightPng, resourceTransactiontabicondarkPng)
 	reportIcon := NewThemeAwareResource(resourceReportstabiconlightPng, resourceReportstabicondarkPng)
@@ -58,9 +59,13 @@ func (ui *UI) Run() {
 	)
 
 	ui.mainWindow.SetContent(tabs)
-	// set 720p size for the main window
 	ui.mainWindow.Resize(fyne.NewSize(1280, 720))
 	ui.mainWindow.CenterOnScreen()
 	ui.mainWindow.SetMaster()
+}
+
+// Run now simply builds and then runs the application.
+func (ui *UI) Run() {
+	ui.buildMainUI()
 	ui.mainWindow.ShowAndRun()
 }
