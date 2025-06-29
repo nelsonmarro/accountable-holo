@@ -30,15 +30,15 @@ func TestRefreshAccountList(t *testing.T) {
 
 		// Create a placeholder list widget for the UI struct
 		ui.accountList = widget.NewList(
-			func() int { return 0 },
-			func() fyne.CanvasObject { return nil },
+			func() int { return 2 },
+			func() fyne.CanvasObject { return widget.NewLabel("") },
 			func(i widget.ListItemID, o fyne.CanvasObject) {},
 		)
 
 		// Act
 		ui.refreshAccountList()
 
-		waitTimeout(t, &wg, 1*time.Second)
+		time.Sleep(100 * time.Millisecond)
 
 		mockService.AssertExpectations(t)
 		assert.Equal(t, sampleAccounts, ui.accounts)
