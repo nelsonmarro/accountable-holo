@@ -2,6 +2,8 @@ package ui
 
 import (
 	"fyne.io/fyne/v2"
+	"fyne.io/fyne/v2/container"
+	"fyne.io/fyne/v2/layout"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 )
@@ -18,6 +20,28 @@ func (ui *UI) makeCategoryUI() fyne.CanvasObject {
 
 	catAddBtn := widget.NewButtonWithIcon("Agregar Categoría", theme.ContentAddIcon(), func() {})
 	catAddBtn.Importance = widget.HighImportance
+	data := [][]string{
+		{"top left", "top right"},
+		{"bottom left", "bottom right"},
+	}
+
+	ui.categoryTable = widget.NewTable(
+		func() (int, int) {
+			return len(data), len(data[0])
+		},
+		func() fyne.CanvasObject {
+			return widget.NewLabel("wide content")
+		},
+		func(i widget.TableCellID, o fyne.CanvasObject) {
+			o.(*widget.Label).SetText(data[i.Row][i.Col])
+		})
 
 	// containers
+	headerArea := container.NewVBox(
+		container.NewCenter(title),
+		container.NewHBox(layout.NewSpacer(), catAddBtn),
+	)
+	mainContent := container.NewBorder(container.NewPadded(headerArea), nil, nil, nil, ui.categoryTable)
+
+	return container.NewScroll(mainContent)
 }
