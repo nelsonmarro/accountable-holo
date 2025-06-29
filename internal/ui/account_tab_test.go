@@ -20,7 +20,7 @@ func TestRefreshAccountList(t *testing.T) {
 		var wg sync.WaitGroup
 		wg.Add(1)
 
-		ui, mockService := setupUITest()
+		ui, mockService := setupUITestForTabs()
 
 		// This is the data we expect the service to return
 		sampleAccounts := []domain.Account{
@@ -54,7 +54,7 @@ func TestRefreshAccountList(t *testing.T) {
 		var wg sync.WaitGroup
 		wg.Add(1)
 
-		ui, mockService := setupUITest()
+		ui, mockService := setupUITestForTabs()
 
 		// Pre-populate with some initial data
 		ui.accounts = []domain.Account{
@@ -89,7 +89,7 @@ func TestRefreshAccountList(t *testing.T) {
 
 func TestFillListData(t *testing.T) {
 	// Arrange
-	ui, _ := setupUITest()
+	ui, _ := setupUITestForTabs()
 
 	// Manually populate the ui.accounts slice with data for the test.
 	ui.accounts = []domain.Account{

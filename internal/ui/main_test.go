@@ -20,8 +20,8 @@ func TestMain(m *testing.M) {
 	os.Exit(code)
 }
 
-// setupUITest creates a test app and our UI struct with a mock service.
-func setupUITest() (*UI, *mocks.MockAccountService) {
+// setupUITestForTabs creates a test app and our UI struct with a mock service.
+func setupUITestForTabs() (*UI, *mocks.MockAccountService) {
 	// Create a test app and window (runs in memory)
 	a := test.NewApp()
 	w := test.NewWindow(nil)
@@ -37,6 +37,19 @@ func setupUITest() (*UI, *mocks.MockAccountService) {
 		accService:  mockService,
 		accounts:    make([]domain.Account, 0), // Start with an empty slice
 	}
+
+	return ui, mockService
+}
+
+func setupUITest() (*UI, *mocks.MockAccountService) {
+	// We use test.NewApp() which creates an in-memory app for testing.
+	mockService := new(mocks.MockAccountService)
+	// We pass the mock service to the real NewUI constructor.
+	ui := NewUI(mockService)
+
+	// Replace the real loggers with silent ones for clean test output
+	ui.infoLogger = log.New(io.Discard, "", 0)
+	ui.errorLogger = log.New(io.Discard, "", 0)
 
 	return ui, mockService
 }
