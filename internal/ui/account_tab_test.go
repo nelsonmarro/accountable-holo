@@ -1,15 +1,23 @@
 package ui
 
 import (
+	"sync"
 	"testing"
+	"time"
 
+	"fyne.io/fyne/v2"
+	"fyne.io/fyne/v2/widget"
 	"github.com/nelsonmarro/accountable-holo/internal/domain"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
 
 func TestRefreshAccountList(t *testing.T) {
 	t.Run("should populate accounts slice on successful service call", func(t *testing.T) {
 		// Arrange
+		var wg sync.WaitGroup
+		wg.Add(1)
+
 		ui, mockService := setupUITest()
 
 		// This is the data we expect the service to return
@@ -19,5 +27,20 @@ func TestRefreshAccountList(t *testing.T) {
 		}
 
 		mockService.On("GetAllAccounts", mock.Anything).Return(sampleAccounts, nil)
+
+		// Create a placeholder list widget for the UI struct
+		ui.accountList = widget.NewList(
+			func() int { return 0 },
+			func() fyne.CanvasObject { return nil },
+			func(i widget.ListItemID, o fyne.CanvasObject) {},
+		)
+
+		// Act
+		ui.refreshAccountList()
+
+		waitTimeout(t, &wg, 1*time.Second)
+
+		mockService.AssertExpectations(t)
+		assert.Equal(t, sampleAccounts, ui.accounts)
 	})
 }

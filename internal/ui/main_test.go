@@ -4,7 +4,9 @@ import (
 	"io"
 	"log"
 	"os"
+	"sync"
 	"testing"
+	"time"
 
 	"fyne.io/fyne/v2/test"
 	"github.com/nelsonmarro/accountable-holo/internal/domain"
@@ -37,4 +39,19 @@ func setupUITest() (*UI, *mocks.MockAccountService) {
 	}
 
 	return ui, mockService
+}
+
+func waitTimeout(t *testing.T, wg *sync.WaitGroup, timeout time.Duration) {
+	c := make(chan struct{})
+	go func() {
+		defer close(c)
+		wg.Wait()
+	}()
+	select {
+	case <-c:
+		// Completed normally.
+	case <-time.After(timeout):
+		// Timed out.
+		t.Fatal("Test timed out waiting for goroutine to finish")
+	}
 }
