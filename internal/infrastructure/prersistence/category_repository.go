@@ -39,6 +39,28 @@ func (r *CategoryRepositoryImpl) GetAllCategories(ctx context.Context) ([]domain
 	return categories, rows.Err()
 }
 
+func (r *CategoryRepositoryImpl) GetPaginatedCategory(ctx context.Context, page, pageSize int) (
+	*domain.PaginatedResult[domain.Category],
+	error,
+) {
+	if page < 1 {
+		page = 1
+	}
+	if pageSize < 1 {
+		pageSize = 10
+	}
+	if page > 100 {
+		page = 100
+	}
+
+	var totalCount int64
+	countQuery := `select count(*) from categories`
+	err := r.db.QueryRow(ctx, countQuery).Scan(&totalCount)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get total category count: %w", err)
+	}
+}
+
 func (r *CategoryRepositoryImpl) GetCategoryByID(ctx context.Context, id int) (*domain.Category, error) {
 	query := `select id, name, type, created_at, updated_at 
 	          from categories 
