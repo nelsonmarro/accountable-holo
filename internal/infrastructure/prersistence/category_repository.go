@@ -17,20 +17,6 @@ func NewCategoryRepository(db *pgxpool.Pool) *CategoryRepositoryImpl {
 	return &CategoryRepositoryImpl{db: db}
 }
 
-func (r *CategoryRepositoryImpl) CreateCategory(ctx context.Context, category *domain.Category) error {
-	query := `insert into categories (name, type, created_at, updated_at) 
-	                          values ($1, $2, $3, $4) 
-	                          returning id, created_at, updated_at`
-
-	now := time.Now()
-	err := r.db.QueryRow(ctx, query, category.Name, category.Type, now, now).
-		Scan(&category.ID, &category.CreatedAt, &category.UpdatedAt)
-	if err != nil {
-		return fmt.Errorf("failed to create category: %w", err)
-	}
-	return nil
-}
-
 func (r *CategoryRepositoryImpl) GetAllCategories(ctx context.Context) ([]domain.Category, error) {
 	query := `select id, name, type 
 	          from categories 
@@ -51,4 +37,58 @@ func (r *CategoryRepositoryImpl) GetAllCategories(ctx context.Context) ([]domain
 		categories = append(categories, cat)
 	}
 	return categories, rows.Err()
+}
+
+func (r *CategoryRepositoryImpl) GetCategoryByID(ctx context.Context, id int) (*domain.Category, error) {
+	query := `select id, name, type, created_at, updated_at 
+	          from categories 
+	          where id = $1`
+
+	var cat domain.Category
+	row := r.db.QueryRow(ctx, query, id)
+	if err := row.Scan(&cat.ID, &cat.Name, &cat.Type, &cat.CreatedAt, &cat.UpdatedAt); err != nil {
+		return nil, fmt.Errorf("failed to get category by ID: %w", err)
+	}
+	return &cat, nil
+}
+
+func (r *CategoryRepositoryImpl) CreateCategory(ctx context.Context, category *domain.Category) error {
+	query := `insert into categories (name, type, created_at, updated_at) 
+	                          values ($1, $2, $3, $4) 
+	                          returning id, created_at, updated_at`
+
+	now := time.Now()
+	err := r.db.QueryRow(ctx, query, category.Name, category.Type, now, now).
+		Scan(&category.ID, &category.CreatedAt, &category.UpdatedAt)
+	if err != nil {
+		return fmt.Errorf("failed to create category: %w", err)
+	}
+
+	return nil
+}
+
+func (r *CategoryRepositoryImpl) UpdateCategory(ctx context.Context, category *domain.Category) error {
+	query := `update categories 
+	          set name = $1, type = $2, updated_at = $3 
+	          where id = $4`
+	now := time.Now()
+
+	_, err := r.db.Exec(ctx, query, category.Name, category.Type, now, category.ID)
+	if err != nil {
+		return fmt.Errorf("failed to update category: %w", err)
+	}
+	category.UpdatedAt = now
+
+	return nil
+}
+
+func (r *CategoryRepositoryImpl) DeleteCategory(ctx context.Context, id int) error {
+	query := `delete from categories where id = $1`
+
+	_, err := r.db.Exec(ctx, query, id)
+	if err != nil {
+		return fmt.Errorf("failed to delete category: %w", err)
+	}
+
+	return nil
 }
