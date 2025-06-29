@@ -20,9 +20,13 @@ func (ui *UI) makeCategoryUI() fyne.CanvasObject {
 
 	catAddBtn := widget.NewButtonWithIcon("Agregar Categoría", theme.ContentAddIcon(), func() {})
 	catAddBtn.Importance = widget.HighImportance
-	data := [][]fyne.CanvasObject{
-		{widget.NewLabel("Nombre"), widget.NewLabel("Tipo"), widget.NewLabel("Acciones")},
-		{widget.NewLabel("Pago de Agua"), widget.NewLabel("Egreso"), container.NewHBox(widget.NewButton("Editar", func() {}), widget.NewButton("Eliminar", func() {}))},
+	data := [][]string{
+		{"Nombre", "Typo"},
+		{"bottom left", "bottom right"},
+		{"bottom left", "bottom right"},
+		{"bottom left", "bottom right"},
+		{"bottom left", "bottom right"},
+		{"bottom left", "bottom right"},
 	}
 
 	ui.categoryTable = widget.NewTable(
@@ -30,16 +34,16 @@ func (ui *UI) makeCategoryUI() fyne.CanvasObject {
 			return len(data), len(data[0])
 		},
 		func() fyne.CanvasObject {
-			return container.NewGridWithColumns(3)
+			return widget.NewLabel("wide content")
 		},
 		func(i widget.TableCellID, o fyne.CanvasObject) {
-			conta := o.(*fyne.Container)
-			if i.Row == 0 {
-				// Header row
-				conta.Add(data[i.Row][i.Col])
-				return
-			}
+			o.(*widget.Label).SetText(data[i.Row][i.Col])
 		})
+
+	ui.categoryTable.ShowHeaderRow = true
+	ui.categoryTable.CreateHeader = func() fyne.CanvasObject {
+		return widget.NewLabel("Categorías")
+	}
 
 	// containers
 	headerArea := container.NewVBox(
