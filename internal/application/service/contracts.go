@@ -14,3 +14,17 @@ type AccountRepository interface {
 	UpdateAccount(ctx context.Context, acc *domain.Account) error
 	DeleteAccount(ctx context.Context, id int) error
 }
+
+type CategoryRepository interface {
+	CreateCategory(ctx context.Context, category *domain.Category) error
+	GetAllCategories(ctx context.Context) ([]domain.Category, error)
+	GetCategoryByID(ctx context.Context, id int) (*domain.Category, error)
+	UpdateCategory(ctx context.Context, category *domain.Category) error
+	DeleteCategory(ctx context.Context, id int) error
+}
+
+type TransactionRepository interface {
+	CreateTransaction(ctx context.Context, transaction *domain.Transaction) error
+	GetAllTransactions(ctx context.Context) ([]domain.Transaction, error)
+	// We will add more methods like GetByDateRange later for reports.
+}
