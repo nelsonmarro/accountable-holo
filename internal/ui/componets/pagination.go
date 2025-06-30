@@ -51,11 +51,11 @@ func (p *Pagination) CreateRenderer() fyne.WidgetRenderer {
 	r.lastBtn = widget.NewButtonWithIcon("", theme.MediaSkipNextIcon(), r.onLast)
 
 	// Create the 5 buttons for the page numbers. We'll set their text later.
-	for i := 0; i < 5; i++ {
+	for i := range 5 {
 		// The tap handler is set here. It captures the index `i` to know which button was pressed.
 		// We use this to calculate the page number later.
 		idx := i
-		btn := widget.NewButton(fmt.Sprintf("%s", idx+1), func() {
+		btn := widget.NewButton(fmt.Sprintf("%d", idx+1), func() {
 			r.onPageTapped(idx + 1)
 		})
 		r.pageBtns = append(r.pageBtns, btn)
@@ -148,7 +148,7 @@ func (r *paginationRenderer) Refresh() {
 
 	// Update the page number buttons.
 	pageNumber := startPage
-	for i := 0; i < 5; i++ {
+	for i := range 5 {
 		btn := r.pageBtns[i]
 		if pageNumber <= endPage {
 			btn.SetText(fmt.Sprintf("%d", pageNumber))
@@ -187,4 +187,26 @@ func (r *paginationRenderer) totalPages() int {
 	}
 
 	return int(math.Ceil(float64(r.widget.TotalItems) / float64(r.widget.PageSize)))
+}
+
+func (r *paginationRenderer) calculatePageRange(totalPages int) (int, int) {
+	start := r.widget.CurrentPage - 2
+	end := r.widget.CurrentPage + 2
+
+	if start < 1 {
+		diff := 1 - start
+		start += diff
+		end += diff
+	}
+
+	if end > totalPages {
+		start -= (end - totalPages)
+		end = totalPages
+	}
+
+	if start < 1 {
+		start = 1
+	}
+
+	return start, end
 }
