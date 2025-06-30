@@ -72,7 +72,6 @@ func (p *Pagination) CreateRenderer() fyne.WidgetRenderer {
 
 	// Initial refresh to set the correct state.
 	r.Refresh()
-
 	return r
 }
 
@@ -129,7 +128,10 @@ func (r *paginationRenderer) onPageTapped(btnIndex int) {
 }
 
 func (r *paginationRenderer) navigateTo(page int) {
-	_, pageSize := r.widget.PagerInfo() // Get the current page and page size
+	_, pageSize := r.widget.PagerInfo()
+	if pageSize <= 0 {
+		pageSize = 5
+	}
 	if r.widget.OnPageChanged != nil {
 		r.widget.CurrentPage = page
 		r.widget.OnPageChanged(page, pageSize) // Notify the main app
@@ -183,11 +185,15 @@ func (r *paginationRenderer) Refresh() {
 }
 
 func (r *paginationRenderer) totalPages() int {
-	if r.widget.TotalItems == 0 || r.widget.PageSize == 0 {
+	_, pageSize := r.widget.PagerInfo()
+	if pageSize <= 0 {
+		pageSize = 5
+	}
+	if r.widget.TotalItems == 0 || pageSize == 0 {
 		return 1
 	}
 
-	return int(math.Ceil(float64(r.widget.TotalItems) / float64(r.widget.PageSize)))
+	return int(math.Ceil(float64(r.widget.TotalItems) / float64(pageSize)))
 }
 
 func (r *paginationRenderer) calculatePageRange(totalPages int) (int, int) {
