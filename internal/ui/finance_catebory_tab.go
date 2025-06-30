@@ -1,7 +1,6 @@
 package ui
 
 import (
-	"fmt"
 	"log"
 
 	"fyne.io/fyne/v2"
@@ -25,7 +24,7 @@ func (ui *UI) makeCategoryUI() fyne.CanvasObject {
 	catAddBtn := widget.NewButtonWithIcon("Agregar Categoría", theme.ContentAddIcon(), func() {})
 	catAddBtn.Importance = widget.HighImportance
 
-	categories := []domain.Category{
+	ui.categories = []domain.Category{
 		{BaseEntity: domain.BaseEntity{ID: 1}, Name: "Sales Revenue", Type: "income"},
 		{BaseEntity: domain.BaseEntity{ID: 2}, Name: "Office Supplies", Type: "outcome"},
 		{BaseEntity: domain.BaseEntity{ID: 3}, Name: "Consulting Services", Type: "income"},
@@ -33,52 +32,15 @@ func (ui *UI) makeCategoryUI() fyne.CanvasObject {
 	}
 
 	header := container.NewGridWithColumns(4,
-		widget.NewLabel("ID"),
 		widget.NewLabel("Name"),
 		widget.NewLabel("Type"),
 		widget.NewLabel("Actions"),
 	)
 
-	list := widget.NewList(
+	ui.categoryList = widget.NewList(
 		func() int {
-			return len(categories)
-		},
-		func() fyne.CanvasObject {
-			return container.NewGridWithColumns(4,
-				widget.NewLabel("template id"),
-				widget.NewLabel("template name"),
-				widget.NewLabel("template type"),
-				container.NewHBox( // A container for our action buttons
-					widget.NewButtonWithIcon("", theme.DocumentCreateIcon(), nil),
-					widget.NewButtonWithIcon("", theme.DeleteIcon(), nil),
-				),
-			)
-		},
-		func(i widget.ListItemID, o fyne.CanvasObject) {
-			category := categories[i]
-
-			rowContainer := o.(*fyne.Container)
-
-			idLabel := rowContainer.Objects[0].(*widget.Label)
-			idLabel.SetText(fmt.Sprintf("%d", category.ID))
-
-			nameLabel := rowContainer.Objects[1].(*widget.Label)
-			nameLabel.SetText(category.Name)
-
-			typeLabel := rowContainer.Objects[2].(*widget.Label)
-			typeLabel.SetText(string(category.Type))
-
-			actionsContainer := rowContainer.Objects[3].(*fyne.Container)
-			editBtn := actionsContainer.Objects[0].(*widget.Button)
-			deleteBtn := actionsContainer.Objects[1].(*widget.Button)
-
-			editBtn.OnTapped = func() {
-				log.Printf("Edit button tapped for category ID: %d, Name: %s", category.ID, category.Name)
-			}
-			deleteBtn.OnTapped = func() {
-				log.Printf("Delete button tapped for category ID: %d, Name: %s", category.ID, category.Name)
-			}
-		},
+			return len(ui.categories)
+		}, ui.makeCategoryListUI, ui.fillCategoryListData,
 	)
 
 	// containers
@@ -90,4 +52,38 @@ func (ui *UI) makeCategoryUI() fyne.CanvasObject {
 	mainContent := container.NewBorder(container.NewPadded(headerArea), nil, nil, nil, tableContainer)
 
 	return container.NewScroll(mainContent)
+}
+
+func (ui *UI) makeCategoryListUI() fyne.CanvasObject {
+	return container.NewGridWithColumns(4,
+		widget.NewLabel("template name"),
+		widget.NewLabel("template type"),
+		container.NewHBox( // A container for our action buttons
+			widget.NewButtonWithIcon("", theme.DocumentCreateIcon(), nil),
+			widget.NewButtonWithIcon("", theme.DeleteIcon(), nil),
+		),
+	)
+}
+
+func (ui *UI) fillCategoryListData(i widget.ListItemID, o fyne.CanvasObject) {
+	category := ui.categories[i]
+
+	rowContainer := o.(*fyne.Container)
+
+	nameLabel := rowContainer.Objects[0].(*widget.Label)
+	nameLabel.SetText(category.Name)
+
+	typeLabel := rowContainer.Objects[1].(*widget.Label)
+	typeLabel.SetText(string(category.Type))
+
+	actionsContainer := rowContainer.Objects[2].(*fyne.Container)
+	editBtn := actionsContainer.Objects[0].(*widget.Button)
+	deleteBtn := actionsContainer.Objects[1].(*widget.Button)
+
+	editBtn.OnTapped = func() {
+		log.Printf("Edit button tapped for category ID: %d, Name: %s", category.ID, category.Name)
+	}
+	deleteBtn.OnTapped = func() {
+		log.Printf("Delete button tapped for category ID: %d, Name: %s", category.ID, category.Name)
+	}
 }
