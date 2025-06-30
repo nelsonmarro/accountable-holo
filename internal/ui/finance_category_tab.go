@@ -40,7 +40,7 @@ func (ui *UI) makeCategoryUI() fyne.CanvasObject {
 	)
 	go ui.loadCategories(1, 2)
 
-	paginator := componets.NewPagination(
+	ui.categoryPaginator = componets.NewPagination(
 		int(ui.categories.TotalCount),
 		ui.categories.PageSize,
 		ui.loadCategories,
@@ -55,7 +55,7 @@ func (ui *UI) makeCategoryUI() fyne.CanvasObject {
 	tableContainer := container.NewVBox(header,
 		ui.categoryList,
 	)
-	dataContainer := container.NewBorder(tableContainer, nil, nil, nil, paginator)
+	dataContainer := container.NewBorder(tableContainer, nil, nil, nil, ui.categoryPaginator)
 	mainContent := container.NewBorder(container.NewPadded(headerContainer), nil, nil, nil, dataContainer)
 
 	return container.NewScroll(mainContent)

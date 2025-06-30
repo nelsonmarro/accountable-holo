@@ -9,6 +9,7 @@ import (
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/widget"
 	"github.com/nelsonmarro/accountable-holo/internal/domain"
+	"github.com/nelsonmarro/accountable-holo/internal/ui/componets"
 )
 
 // The UI struct holds the dependencies and state for the Fyne UI.
@@ -25,8 +26,9 @@ type UI struct {
 	accountList *widget.List
 	accounts    []domain.Account
 
-	categoryList *widget.List
-	categories   *domain.PaginatedResult[domain.Category]
+	categoryList      *widget.List
+	categories        *domain.PaginatedResult[domain.Category]
+	categoryPaginator *componets.Pagination
 
 	// ---- Debug ----
 	infoLogger  *log.Logger
