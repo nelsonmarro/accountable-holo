@@ -21,7 +21,7 @@ func (ui *UI) makeCategoryUI() fyne.CanvasObject {
 	catAddBtn := widget.NewButtonWithIcon("Agregar Categoría", theme.ContentAddIcon(), func() {})
 	catAddBtn.Importance = widget.HighImportance
 	data := [][]string{
-		{"Nombre", "Typo"},
+		{"Nombre", "Tipo"},
 		{"bottom left", "bottom right"},
 		{"bottom left", "bottom right"},
 		{"bottom left", "bottom right"},
@@ -40,11 +40,7 @@ func (ui *UI) makeCategoryUI() fyne.CanvasObject {
 			o.(*widget.Label).SetText(data[i.Row][i.Col])
 		})
 
-	ui.categoryTable.CreateHeader = func() fyne.CanvasObject {
-		return widget.NewLabel("Categorías")
-	}
-	ui.categoryTable.UpdateHeader(widget.TableCellID{Row: 2, Col: 2}, ui.categoryTable.CreateHeader())
-	ui.categoryTable.ShowHeaderRow = true
+	ui.categoryTable.UpdateCell(widget.TableCellID{Row: 1, Col: 1}, widget.NewLabel("Hola"))
 
 	// containers
 	headerArea := container.NewVBox(
