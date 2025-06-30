@@ -201,9 +201,5 @@ func (r *paginationRenderer) calculatePageRange(totalPages int) (int, int) {
 		end = totalPages
 	}
 
-	if start < 1 {
-		start = 1
-	}
-
 	return start, end
 }
