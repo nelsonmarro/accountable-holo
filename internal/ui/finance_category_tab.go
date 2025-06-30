@@ -57,7 +57,7 @@ func (ui *UI) makeCategoryUI() fyne.CanvasObject {
 		nil, nil, nil,
 		ui.categoryList,
 	)
-	dataContainer := container.NewBorder(tableContainer, nil, nil, nil, ui.categoryPaginator)
+	dataContainer := container.NewVBox(tableContainer, ui.categoryPaginator)
 	mainContent := container.NewBorder(container.NewPadded(headerContainer), nil, nil, nil, dataContainer)
 
 	return container.NewScroll(mainContent)

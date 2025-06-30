@@ -123,7 +123,6 @@ func (r *paginationRenderer) onPageTapped(page int) {
 }
 
 func (r *paginationRenderer) navigateTo(page int) {
-	fmt.Println("Navigating to page:", page)
 	_, pageSize := r.widget.PagerInfo()
 	if r.widget.OnPageChanged != nil {
 		r.widget.CurrentPage = page
