@@ -7,6 +7,7 @@ import (
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
+	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/layout"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
@@ -44,6 +45,7 @@ func (ui *UI) makeCategoryUI() fyne.CanvasObject {
 			return len(ui.categories)
 		}, ui.makeCategoryListUI, ui.fillCategoryListData,
 	)
+	go ui.loadCategories()
 
 	// containers
 	headerContainer := container.NewVBox(
@@ -99,4 +101,16 @@ func (ui *UI) fillCategoryListData(i widget.ListItemID, o fyne.CanvasObject) {
 func (ui *UI) loadCategories() {
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
+
+	result, err := ui.catService.GetPaginatedCategories(ctx, 1, 5)
+	if err != nil {
+		dialog.ShowError(err, ui.mainWindow)
+		return
+	}
+
+	ui.categories = result.Data
+
+	fyne.Do(func() {
+		ui.categoryList.Refresh()
+	})
 }
