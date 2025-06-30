@@ -22,7 +22,7 @@ func (ui *UI) makeCategoryUI() fyne.CanvasObject {
 	catAddBtn.Importance = widget.HighImportance
 	data := [][]string{
 		{"Nombre", "Tipo"},
-		{"bottom left", "bottom right", ""},
+		{"bottom left", "bottom right"},
 	}
 
 	ui.categoryTable = widget.NewTable(
@@ -30,7 +30,7 @@ func (ui *UI) makeCategoryUI() fyne.CanvasObject {
 			return len(data), len(data[0])
 		},
 		func() fyne.CanvasObject {
-			return container.NewHBox(widget.NewLabel(""), widget.NewButton("sd", func() {}))
+			return widget.NewLabel("wide content")
 		},
 		func(i widget.TableCellID, o fyne.CanvasObject) {
 			label, ok := o.(*widget.Label)
