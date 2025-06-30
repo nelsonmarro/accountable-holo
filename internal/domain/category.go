@@ -4,8 +4,8 @@ package domain
 type TransactionType string
 
 const (
-	Income  TransactionType = "income"
-	Outcome TransactionType = "outcome"
+	Income  TransactionType = "Ingreso"
+	Outcome TransactionType = "Egreso"
 )
 
 type Category struct {

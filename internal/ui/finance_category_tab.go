@@ -11,7 +11,6 @@ import (
 	"fyne.io/fyne/v2/layout"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
-	"github.com/nelsonmarro/accountable-holo/internal/domain"
 )
 
 func (ui *UI) makeCategoryUI() fyne.CanvasObject {
@@ -26,13 +25,6 @@ func (ui *UI) makeCategoryUI() fyne.CanvasObject {
 
 	catAddBtn := widget.NewButtonWithIcon("Agregar Categoría", theme.ContentAddIcon(), func() {})
 	catAddBtn.Importance = widget.HighImportance
-
-	ui.categories = []domain.Category{
-		{BaseEntity: domain.BaseEntity{ID: 1}, Name: "Sales Revenue", Type: "income"},
-		{BaseEntity: domain.BaseEntity{ID: 2}, Name: "Office Supplies", Type: "outcome"},
-		{BaseEntity: domain.BaseEntity{ID: 3}, Name: "Consulting Services", Type: "income"},
-		{BaseEntity: domain.BaseEntity{ID: 4}, Name: "Software Subscriptions", Type: "outcome"},
-	}
 
 	header := container.NewGridWithColumns(3,
 		widget.NewLabel("Name"),
