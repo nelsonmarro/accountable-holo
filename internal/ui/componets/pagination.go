@@ -27,7 +27,7 @@ type Pagination struct {
 
 // NewPagination creates a new pagination widget.
 // onPageChanged will be called with the new page number when the user navigates.
-func NewPagination(pagerInfo func() (page, pageSize int), onPageChanged func(page, pageSize int)) *Pagination {
+func NewPagination(pagerInfo func() (totalCount, pageSize int), onPageChanged func(page, pageSize int)) *Pagination {
 	p := &Pagination{
 		PagerInfo:     pagerInfo,
 		CurrentPage:   1,
@@ -145,9 +145,11 @@ func (r *paginationRenderer) navigateTo(page int) {
 // based on the widget's current state.
 func (r *paginationRenderer) Refresh() {
 	totalPages := r.totalPages()
+	fmt.Println("total pages:", totalPages)
 
 	// Determine the 'sliding window' of page numbers to show.
 	startPage, endPage := r.calculatePageRange(totalPages)
+	fmt.Println("start page:", startPage, "end page:", endPage)
 
 	// Update the page number buttons.
 	pageNumber := startPage
