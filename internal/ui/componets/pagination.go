@@ -2,8 +2,12 @@
 package componets
 
 import (
-	"fyne.io/fyne/theme"
+	"fmt"
+
 	"fyne.io/fyne/v2"
+	"fyne.io/fyne/v2/container"
+	"fyne.io/fyne/v2/layout"
+	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 )
 
@@ -48,5 +52,40 @@ func (p *Pagination) CreateRenderer() fyne.WidgetRenderer {
 	for i := 0; i < 5; i++ {
 		// The tap handler is set here. It captures the index `i` to know which button was pressed.
 		// We use this to calculate the page number later.
+		idx := i
+		btn := widget.NewButton(fmt.Sprintf("%s", idx+1), func() {
+			r.onPageTapped(idx + 1)
+		})
+		r.pageBtns = append(r.pageBtns, btn)
 	}
+
+	// Create the main layout container.
+	r.layout = container.NewHBox(
+		r.firstBtn, r.prevBtn,
+		layout.NewSpacer(),
+		r.pageBtns[0], r.pageBtns[1], r.pageBtns[2], r.pageBtns[3], r.pageBtns[4],
+		layout.NewSpacer(),
+		r.nextBtn, r.lastBtn,
+	)
+
+	// Initial refresh to set the correct state.
+	r.Refresh()
+
+	return r
+}
+
+// paginationRenderer is the renderer for the Pagination widget.
+type paginationRenderer struct {
+	widget   *Pagination
+	firstBtn *widget.Button
+	prevBtn  *widget.Button
+	nextBtn  *widget.Button
+	lastBtn  *widget.Button
+	pageBtns []*widget.Button
+	layout   *fyne.Container
+}
+
+// Layout Tells Fyne how to size and position the objetcs in a widget.
+func (r *paginationRenderer) Layout(size fyne.Size) {
+	r.layout.Resize(size)
 }
