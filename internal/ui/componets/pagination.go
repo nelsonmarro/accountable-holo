@@ -4,7 +4,6 @@ package componets
 import (
 	"fmt"
 	"math"
-	"strconv"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
@@ -51,10 +50,9 @@ func (p *Pagination) CreateRenderer() fyne.WidgetRenderer {
 
 	// Create the 5 buttons for the page numbers. We'll set their text later.
 	for i := range 5 {
-		fmt.Print(i)
 		idx := i
-		btn := widget.NewButton(fmt.Sprintf("%d", idx), func() {
-			r.onPageTapped(idx)
+		btn := widget.NewButton(fmt.Sprintf("%d", idx+1), func() {
+			r.onPageTapped(idx + 1)
 		})
 		r.pageBtns = append(r.pageBtns, btn)
 	}
@@ -120,8 +118,7 @@ func (r *paginationRenderer) onLast() {
 	r.navigateTo(r.totalPages())
 }
 
-func (r *paginationRenderer) onPageTapped(btnIndex int) {
-	page, _ := strconv.Atoi(r.pageBtns[btnIndex].Text)
+func (r *paginationRenderer) onPageTapped(page int) {
 	r.navigateTo(page)
 }
 
@@ -140,11 +137,9 @@ func (r *paginationRenderer) navigateTo(page int) {
 // based on the widget's current state.
 func (r *paginationRenderer) Refresh() {
 	totalPages := r.totalPages()
-	fmt.Println("total pages:", totalPages)
 
 	// Determine the 'sliding window' of page numbers to show.
 	startPage, endPage := r.calculatePageRange(totalPages)
-	fmt.Println("start page:", startPage, "end page:", endPage)
 
 	// Update the page number buttons.
 	pageNumber := startPage
