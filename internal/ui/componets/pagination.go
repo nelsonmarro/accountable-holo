@@ -3,6 +3,7 @@ package componets
 
 import (
 	"fmt"
+	"strconv"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
@@ -88,4 +89,48 @@ type paginationRenderer struct {
 // Layout Tells Fyne how to size and position the objetcs in a widget.
 func (r *paginationRenderer) Layout(size fyne.Size) {
 	r.layout.Resize(size)
+}
+
+// MinSize calculates the minimun size required for the widget.
+func (r *paginationRenderer) MinSize() fyne.Size {
+	return r.layout.MinSize()
+}
+
+// Objects returns all the canvas objects that make up the widget.
+func (r *paginationRenderer) Objects() []fyne.CanvasObject {
+	return []fyne.CanvasObject{r.layout}
+}
+
+// Destroy is called when the widget is no longer needed.
+func (r *paginationRenderer) Destroy() {}
+
+// -- Navigation Handlers --
+
+func (r *paginationRenderer) onFirst() {
+	r.navigateTo(1)
+}
+
+func (r *paginationRenderer) onPrev() {
+	r.navigateTo(r.widget.CurrentPage - 1)
+}
+
+func (r *paginationRenderer) onNext() {
+	r.navigateTo(r.widget.CurrentPage + 1)
+}
+
+func (r *paginationRenderer) onLast() {
+	r.navigateTo(r.totalPages())
+}
+
+func (r *paginationRenderer) onPageTapped(btnIndex int) {
+	page, _ := strconv.Atoi(r.pageBtns[btnIndex].Text)
+	r.navigateTo(page)
+}
+
+func (r *paginationRenderer) navigateTo(page int) {
+	if r.widget.OnPageChanged != nil {
+		r.widget.CurrentPage = page
+		r.widget.OnPageChanged(page) // Notify the main app
+		r.Refresh()                  // Update the pagination widget itself
+	}
 }
