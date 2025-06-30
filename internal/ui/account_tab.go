@@ -53,7 +53,7 @@ func (ui *UI) makeAccountTab() fyne.CanvasObject {
 	)
 	mainContent := container.NewBorder(container.NewPadded(headerArea), nil, nil, nil, ui.accountList)
 
-	return container.NewScroll(mainContent)
+	return mainContent
 }
 
 func (ui *UI) loadAccounts() {

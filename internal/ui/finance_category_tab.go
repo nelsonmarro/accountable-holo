@@ -53,14 +53,14 @@ func (ui *UI) makeCategoryUI() fyne.CanvasObject {
 		container.NewHBox(layout.NewSpacer(), catAddBtn),
 	)
 
-	tableContainer := container.NewBorder(header,
-		nil, nil, nil,
+	tableContainer := container.NewVBox(
+		header,
 		ui.categoryList,
+		ui.categoryPaginator,
 	)
-	dataContainer := container.NewVBox(tableContainer, ui.categoryPaginator)
-	mainContent := container.NewBorder(container.NewPadded(headerContainer), nil, nil, nil, dataContainer)
+	mainContent := container.NewBorder(container.NewPadded(headerContainer), nil, nil, nil, tableContainer)
 
-	return container.NewScroll(mainContent)
+	return mainContent
 }
 
 func (ui *UI) makeCategoryListUI() fyne.CanvasObject {
