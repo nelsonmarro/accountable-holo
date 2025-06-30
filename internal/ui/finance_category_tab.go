@@ -44,6 +44,7 @@ func (ui *UI) makeCategoryUI() fyne.CanvasObject {
 		container.NewCenter(title),
 		container.NewHBox(layout.NewSpacer(), catAddBtn),
 	)
+
 	tableContainer := container.NewBorder(header, nil, nil, nil, ui.categoryList)
 	mainContent := container.NewBorder(container.NewPadded(headerContainer), nil, nil, nil, tableContainer)
 
