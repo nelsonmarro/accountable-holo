@@ -16,7 +16,7 @@ func (ui *UI) makeCategoryUI() fyne.CanvasObject {
 	title := widget.NewRichText(&widget.TextSegment{
 		Text: "Categorias",
 		Style: widget.RichTextStyle{
-			SizeName:  theme.SizeNameHeadingText, // Use the heading size from our custom theme
+			SizeName:  theme.SizeNameHeadingText,
 			Alignment: fyne.TextAlignCenter,
 		},
 	})
@@ -31,7 +31,7 @@ func (ui *UI) makeCategoryUI() fyne.CanvasObject {
 		{BaseEntity: domain.BaseEntity{ID: 4}, Name: "Software Subscriptions", Type: "outcome"},
 	}
 
-	header := container.NewGridWithColumns(4,
+	header := container.NewGridWithColumns(3,
 		widget.NewLabel("Name"),
 		widget.NewLabel("Type"),
 		widget.NewLabel("Actions"),
@@ -44,23 +44,29 @@ func (ui *UI) makeCategoryUI() fyne.CanvasObject {
 	)
 
 	// containers
-	headerArea := container.NewVBox(
+	headerContainer := container.NewVBox(
 		container.NewCenter(title),
 		container.NewHBox(layout.NewSpacer(), catAddBtn),
 	)
 	tableContainer := container.NewBorder(header, nil, nil, nil, ui.categoryList)
-	mainContent := container.NewBorder(container.NewPadded(headerArea), nil, nil, nil, tableContainer)
+	mainContent := container.NewBorder(container.NewPadded(headerContainer), nil, nil, nil, tableContainer)
 
 	return container.NewScroll(mainContent)
 }
 
 func (ui *UI) makeCategoryListUI() fyne.CanvasObject {
-	return container.NewGridWithColumns(4,
+	editBtn := widget.NewButtonWithIcon("", theme.DocumentCreateIcon(), nil)
+	editBtn.Importance = widget.HighImportance
+
+	delBtn := widget.NewButtonWithIcon("", theme.DeleteIcon(), nil)
+	delBtn.Importance = widget.DangerImportance
+
+	return container.NewGridWithColumns(3,
 		widget.NewLabel("template name"),
 		widget.NewLabel("template type"),
 		container.NewHBox( // A container for our action buttons
-			widget.NewButtonWithIcon("", theme.DocumentCreateIcon(), nil),
-			widget.NewButtonWithIcon("", theme.DeleteIcon(), nil),
+			editBtn,
+			delBtn,
 		),
 	)
 }
