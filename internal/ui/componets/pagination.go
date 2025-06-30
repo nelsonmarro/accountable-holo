@@ -18,19 +18,18 @@ type Pagination struct {
 	widget.BaseWidget
 
 	TotalItems  int
-	PageSize    int
 	CurrentPage int
 
 	// OnPageChanged is a callback function that is triggered when the page changes.
 	OnPageChanged func(page, pageSize int)
+	PagerInfo     func() (page, pageSize int)
 }
 
 // NewPagination creates a new pagination widget.
 // onPageChanged will be called with the new page number when the user navigates.
-func NewPagination(totalItems, pageSize int, onPageChanged func(page, pageSize int)) *Pagination {
+func NewPagination(pagerInfo func() (page, pageSize int), onPageChanged func(page, pageSize int)) *Pagination {
 	p := &Pagination{
-		TotalItems:    totalItems,
-		PageSize:      pageSize,
+		PagerInfo:     pagerInfo,
 		CurrentPage:   1,
 		OnPageChanged: onPageChanged,
 	}
@@ -109,27 +108,28 @@ func (r *paginationRenderer) Destroy() {}
 // -- Navigation Handlers --
 
 func (r *paginationRenderer) onFirst() {
-	r.navigateTo(1, r.widget.PageSize)
+	r.navigateTo(1)
 }
 
 func (r *paginationRenderer) onPrev() {
-	r.navigateTo(r.widget.CurrentPage-1, r.widget.PageSize)
+	r.navigateTo(r.widget.CurrentPage - 1)
 }
 
 func (r *paginationRenderer) onNext() {
-	r.navigateTo(r.widget.CurrentPage+1, r.widget.PageSize)
+	r.navigateTo(r.widget.CurrentPage + 1)
 }
 
 func (r *paginationRenderer) onLast() {
-	r.navigateTo(r.totalPages(), r.widget.PageSize)
+	r.navigateTo(r.totalPages())
 }
 
 func (r *paginationRenderer) onPageTapped(btnIndex int) {
 	page, _ := strconv.Atoi(r.pageBtns[btnIndex].Text)
-	r.navigateTo(page, r.widget.PageSize)
+	r.navigateTo(page)
 }
 
-func (r *paginationRenderer) navigateTo(page, pageSize int) {
+func (r *paginationRenderer) navigateTo(page int) {
+	_, pageSize := r.widget.PagerInfo() // Get the current page and page size
 	if r.widget.OnPageChanged != nil {
 		r.widget.CurrentPage = page
 		r.widget.OnPageChanged(page, pageSize) // Notify the main app
