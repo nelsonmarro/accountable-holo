@@ -22,12 +22,12 @@ type Pagination struct {
 	CurrentPage int
 
 	// OnPageChanged is a callback function that is triggered when the page changes.
-	OnPageChanged func(page int)
+	OnPageChanged func(page, pageSize int)
 }
 
 // NewPagination creates a new pagination widget.
 // onPageChanged will be called with the new page number when the user navigates.
-func NewPagination(totalItems, pageSize int, onPageChanged func(page int)) *Pagination {
+func NewPagination(totalItems, pageSize int, onPageChanged func(page, pageSize int)) *Pagination {
 	p := &Pagination{
 		TotalItems:    totalItems,
 		PageSize:      pageSize,

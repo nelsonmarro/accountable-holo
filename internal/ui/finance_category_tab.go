@@ -37,7 +37,7 @@ func (ui *UI) makeCategoryUI() fyne.CanvasObject {
 			return len(ui.categories)
 		}, ui.makeCategoryListUI, ui.fillCategoryListData,
 	)
-	go ui.loadCategories()
+	go ui.loadCategories(1, 2)
 
 	// containers
 	headerContainer := container.NewVBox(
@@ -91,11 +91,11 @@ func (ui *UI) fillCategoryListData(i widget.ListItemID, o fyne.CanvasObject) {
 	}
 }
 
-func (ui *UI) loadCategories() {
+func (ui *UI) loadCategories(page int, pageSize int) {
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
 
-	result, err := ui.catService.GetPaginatedCategories(ctx, 1, 2)
+	result, err := ui.catService.GetPaginatedCategories(ctx, page, pageSize)
 	if err != nil {
 		dialog.ShowError(err, ui.mainWindow)
 		return
