@@ -43,6 +43,7 @@ func NewUI(
 		catService:  catService,
 		infoLogger:  log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime),
 		errorLogger: log.New(os.Stderr, "ERROR\t", log.Ldate|log.Ltime|log.Lshortfile),
+		categories:  &domain.PaginatedResult[domain.Category]{},
 	}
 }
 

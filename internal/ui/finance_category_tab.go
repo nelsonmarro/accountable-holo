@@ -35,13 +35,16 @@ func (ui *UI) makeCategoryUI() fyne.CanvasObject {
 
 	ui.categoryList = widget.NewList(
 		func() int {
-			return len(ui.categories)
+			return len(ui.categories.Data)
 		}, ui.makeCategoryListUI, ui.fillCategoryListData,
 	)
 	go ui.loadCategories(1, 2)
 
-	var paginator *componets.Pagination
-	paginator = componets.NewPagination()
+	paginator := componets.NewPagination(
+		int(ui.categories.TotalCount),
+		ui.categories.PageSize,
+		ui.loadCategories,
+	)
 
 	// containers
 	headerContainer := container.NewVBox(
@@ -53,7 +56,7 @@ func (ui *UI) makeCategoryUI() fyne.CanvasObject {
 		nil,
 		nil,
 		nil,
-		container.NewVBox(ui.categoryList, container.NewHBox(layout.NewSpacer())),
+		container.NewVBox(ui.categoryList, container.NewHBox(layout.NewSpacer(), paginator)),
 	)
 	mainContent := container.NewBorder(container.NewPadded(headerContainer), nil, nil, nil, tableContainer)
 
@@ -78,7 +81,7 @@ func (ui *UI) makeCategoryListUI() fyne.CanvasObject {
 }
 
 func (ui *UI) fillCategoryListData(i widget.ListItemID, o fyne.CanvasObject) {
-	category := ui.categories[i]
+	category := ui.categories.Data[i]
 
 	rowContainer := o.(*fyne.Container)
 
