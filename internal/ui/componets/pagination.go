@@ -21,17 +21,17 @@ type Pagination struct {
 	CurrentPage int
 
 	// OnPageChanged is a callback function that is triggered when the page changes.
-	OnPageChange func(page int)
+	OnPageChanged func(page int)
 }
 
 // NewPagination creates a new pagination widget.
 // onPageChanged will be called with the new page number when the user navigates.
 func NewPagination(totalItems, pageSize int, onPageChanged func(page int)) *Pagination {
 	p := &Pagination{
-		TotalItems:   totalItems,
-		PageSize:     pageSize,
-		CurrentPage:  1,
-		OnPageChange: onPageChanged,
+		TotalItems:    totalItems,
+		PageSize:      pageSize,
+		CurrentPage:   1,
+		OnPageChanged: onPageChanged,
 	}
 
 	p.ExtendBaseWidget(p)
@@ -132,5 +132,35 @@ func (r *paginationRenderer) navigateTo(page int) {
 		r.widget.CurrentPage = page
 		r.widget.OnPageChanged(page) // Notify the main app
 		r.Refresh()                  // Update the pagination widget itself
+	}
+}
+
+// -- Refresh Logic --
+
+// Refresh is the most important method. It's called to update the UI
+// based on the widget's current state.
+func (r *paginationRenderer) Refresh() {
+	totalPages := r.totalPages()
+
+	// Determine the 'sliding window' of page numbers to show.
+	startPage, endPage := r.calculatePageRange(totalPages)
+
+	// 2. Update the page number buttons.
+	pageNumber := startPage
+	for i := 0; i < 5; i++ {
+		btn := r.pageBtns[i]
+		if pageNumber <= endPage {
+			btn.SetText(fmt.Sprintf("%d", pageNumber))
+			if pageNumber == r.widget.CurrentPage {
+				btn.Importance = widget.HighImportance // Highlight the current page
+			} else {
+				btn.Importance = widget.MediumImportance
+			}
+			btn.Show()
+			pageNumber++
+		} else {
+			// Hide buttons if there are fewer than 5 pages to show
+			btn.Hide()
+		}
 	}
 }
