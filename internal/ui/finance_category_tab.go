@@ -8,7 +8,6 @@ import (
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/dialog"
-	"fyne.io/fyne/v2/layout"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 	"github.com/nelsonmarro/accountable-holo/internal/ui/componets"
@@ -48,9 +47,9 @@ func (ui *UI) makeCategoryUI() fyne.CanvasObject {
 	)
 
 	// containers
-	headerContainer := container.NewVBox(
-		container.NewCenter(title),
-		container.NewHBox(layout.NewSpacer(), catAddBtn),
+	topHeaderContainer := container.NewBorder(
+		nil, nil, nil, container.NewPadded(catAddBtn), // Padded Add button on the right
+		container.NewCenter(title), // Centered title
 	)
 
 	tableContainer := container.NewVBox(
@@ -58,6 +57,7 @@ func (ui *UI) makeCategoryUI() fyne.CanvasObject {
 		ui.categoryList,
 		ui.categoryPaginator,
 	)
+
 	mainContent := container.NewBorder(container.NewPadded(headerContainer), nil, nil, nil, tableContainer)
 
 	return mainContent
