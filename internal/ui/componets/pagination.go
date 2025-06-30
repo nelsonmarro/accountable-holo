@@ -146,8 +146,13 @@ func (r *paginationRenderer) Refresh() {
 	pageNumber := startPage
 	for i := range 5 {
 		btn := r.pageBtns[i]
+		fmt.Println("btn text:", btn.Text, "pageNumber:", pageNumber)
 		if pageNumber <= endPage {
+			page := pageNumber // Capture the current page number for closure
 			btn.SetText(fmt.Sprintf("%d", pageNumber))
+			btn.OnTapped = func() {
+				r.onPageTapped(page)
+			}
 			if pageNumber == r.widget.CurrentPage {
 				btn.Importance = widget.HighImportance // Highlight the current page
 			} else {
