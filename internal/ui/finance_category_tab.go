@@ -41,8 +41,8 @@ func (ui *UI) makeCategoryUI() fyne.CanvasObject {
 	go ui.loadCategories(1, 2)
 
 	ui.categoryPaginator = componets.NewPagination(
-		func() (page int, pageSize int) {
-			return ui.categories.Page, ui.categories.PageSize
+		func() (totalCount int, pageSize int) {
+			return int(ui.categories.TotalCount), ui.categories.PageSize
 		},
 		ui.loadCategories,
 	)

@@ -17,7 +17,6 @@ import (
 type Pagination struct {
 	widget.BaseWidget
 
-	TotalItems  int
 	CurrentPage int
 
 	// OnPageChanged is a callback function that is triggered when the page changes.
@@ -52,11 +51,10 @@ func (p *Pagination) CreateRenderer() fyne.WidgetRenderer {
 
 	// Create the 5 buttons for the page numbers. We'll set their text later.
 	for i := range 5 {
-		// The tap handler is set here. It captures the index `i` to know which button was pressed.
-		// We use this to calculate the page number later.
+		fmt.Print(i)
 		idx := i
-		btn := widget.NewButton(fmt.Sprintf("%d", idx+1), func() {
-			r.onPageTapped(idx + 1)
+		btn := widget.NewButton(fmt.Sprintf("%d", idx), func() {
+			r.onPageTapped(idx)
 		})
 		r.pageBtns = append(r.pageBtns, btn)
 	}
@@ -129,9 +127,6 @@ func (r *paginationRenderer) onPageTapped(btnIndex int) {
 
 func (r *paginationRenderer) navigateTo(page int) {
 	_, pageSize := r.widget.PagerInfo()
-	if pageSize <= 0 {
-		pageSize = 5
-	}
 	if r.widget.OnPageChanged != nil {
 		r.widget.CurrentPage = page
 		r.widget.OnPageChanged(page, pageSize) // Notify the main app
@@ -187,15 +182,12 @@ func (r *paginationRenderer) Refresh() {
 }
 
 func (r *paginationRenderer) totalPages() int {
-	_, pageSize := r.widget.PagerInfo()
-	if pageSize <= 0 {
-		pageSize = 5
-	}
-	if r.widget.TotalItems == 0 || pageSize == 0 {
+	totalCount, pageSize := r.widget.PagerInfo()
+	if totalCount == 0 || pageSize == 0 {
 		return 1
 	}
 
-	return int(math.Ceil(float64(r.widget.TotalItems) / float64(pageSize)))
+	return int(math.Ceil(float64(totalCount) / float64(pageSize)))
 }
 
 func (r *paginationRenderer) calculatePageRange(totalPages int) (int, int) {
