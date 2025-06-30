@@ -6,6 +6,7 @@ import (
 	"fyne.io/fyne/v2/layout"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
+	"github.com/nelsonmarro/accountable-holo/internal/domain"
 )
 
 func (ui *UI) makeCategoryUI() fyne.CanvasObject {
@@ -20,32 +21,20 @@ func (ui *UI) makeCategoryUI() fyne.CanvasObject {
 
 	catAddBtn := widget.NewButtonWithIcon("Agregar Categoría", theme.ContentAddIcon(), func() {})
 	catAddBtn.Importance = widget.HighImportance
-	data := [][]string{
-		{"Nombre", "Tipo"},
-		{"bottom left", "bottom right"},
-	}
 
-	ui.categoryTable = widget.NewTable(
-		func() (int, int) {
-			return len(data), len(data[0])
-		},
-		func() fyne.CanvasObject {
-			return widget.NewLabel("wide content")
-		},
-		func(i widget.TableCellID, o fyne.CanvasObject) {
-			label, ok := o.(*widget.Label)
-			if !ok {
-				return
-			}
-			label.SetText(data[i.Row][i.Col])
-		})
+	categories := []domain.Category{
+		{BaseEntity: domain.BaseEntity{ID: 1}, Name: "Sales Revenue", Type: "income"},
+		{BaseEntity: domain.BaseEntity{ID: 2}, Name: "Office Supplies", Type: "outcome"},
+		{BaseEntity: domain.BaseEntity{ID: 3}, Name: "Consulting Services", Type: "income"},
+		{BaseEntity: domain.BaseEntity{ID: 4}, Name: "Software Subscriptions", Type: "outcome"},
+	}
 
 	// containers
 	headerArea := container.NewVBox(
 		container.NewCenter(title),
 		container.NewHBox(layout.NewSpacer(), catAddBtn),
 	)
-	mainContent := container.NewBorder(container.NewPadded(headerArea), nil, nil, nil, ui.categoryTable)
+	mainContent := container.NewBorder(container.NewPadded(headerArea), nil, nil, nil, ui.categoryList)
 
 	return container.NewScroll(mainContent)
 }
