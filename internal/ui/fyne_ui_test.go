@@ -81,7 +81,7 @@ func TestBuildMainUI(t *testing.T) {
 	// 3. Verify the tabs were created correctly.
 	assert.Len(t, tabs.Items, 3, "Should be exactly 3 tabs")
 	assert.Equal(t, "Cuentas", tabs.Items[0].Text)
-	assert.Equal(t, "Transacciones", tabs.Items[1].Text)
+	assert.Equal(t, "Finanzas", tabs.Items[1].Text)
 	assert.Equal(t, "Reportes", tabs.Items[2].Text)
 
 	// 4. Verify the service method was called.

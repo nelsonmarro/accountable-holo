@@ -15,6 +15,7 @@ import (
 type UI struct {
 	// ---- Dependencies ----
 	accService AccountService
+	catService CategoryService
 
 	// ---- Fyne App Objects ----
 	app        fyne.App

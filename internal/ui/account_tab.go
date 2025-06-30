@@ -31,7 +31,7 @@ func (ui *UI) makeAccountTab() fyne.CanvasObject {
 			ui.mainWindow,
 			ui.errorLogger,
 			ui.accService,
-			ui.refreshAccountList, // This is the callback function
+			ui.loadAccounts, // This is the callback function
 		)
 
 		// 2. Tell the dialog instance to show itself
@@ -44,7 +44,7 @@ func (ui *UI) makeAccountTab() fyne.CanvasObject {
 			return len(ui.accounts)
 		}, ui.makeListUI, ui.fillListData,
 	)
-	go ui.refreshAccountList()
+	go ui.loadAccounts()
 
 	// Containers
 	headerArea := container.NewVBox(
@@ -56,7 +56,7 @@ func (ui *UI) makeAccountTab() fyne.CanvasObject {
 	return container.NewScroll(mainContent)
 }
 
-func (ui *UI) refreshAccountList() {
+func (ui *UI) loadAccounts() {
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
 
@@ -130,7 +130,7 @@ func (ui *UI) fillListData(i widget.ListItemID, o fyne.CanvasObject) {
 			ui.mainWindow,
 			ui.errorLogger,
 			ui.accService,
-			ui.refreshAccountList,
+			ui.loadAccounts,
 			ui.accounts[i].ID, // Pass the specific ID for this row
 		)
 		dialogHandler.Show()
@@ -142,7 +142,7 @@ func (ui *UI) fillListData(i widget.ListItemID, o fyne.CanvasObject) {
 			ui.mainWindow,
 			ui.errorLogger,
 			ui.accService,
-			ui.refreshAccountList,
+			ui.loadAccounts,
 			ui.accounts[i].ID, // Pass the specific ID for this row
 		)
 		dialogHandler.Show()

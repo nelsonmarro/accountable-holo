@@ -13,3 +13,10 @@ type AccountService interface {
 	UpdateAccount(ctx context.Context, acc *domain.Account) error
 	DeleteAccount(ctx context.Context, id int) error
 }
+
+type CategoryService interface {
+	GetAllCategories(ctx context.Context) ([]domain.Category, error)
+	GetPaginatedCategories(ctx context.Context, page, pageSize int)
+	GetCategoryByID(ctx context.Context, id int) (*domain.Category, error)
+	CreateCategory(ctx context.Context, category *domain.Category) error
+}

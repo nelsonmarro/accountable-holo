@@ -41,7 +41,7 @@ func TestRefreshAccountList(t *testing.T) {
 		)
 
 		// Act
-		ui.refreshAccountList()
+		ui.loadAccounts()
 
 		waitTimeout(t, &wg, 1*time.Second)
 
@@ -75,7 +75,7 @@ func TestRefreshAccountList(t *testing.T) {
 		)
 
 		// Act
-		ui.refreshAccountList()
+		ui.loadAccounts()
 
 		// Assert
 		waitTimeout(t, &wg, 1*time.Second)

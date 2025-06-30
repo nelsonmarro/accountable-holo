@@ -1,7 +1,9 @@
 package ui
 
 import (
+	"context"
 	"log"
+	"time"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
@@ -92,4 +94,9 @@ func (ui *UI) fillCategoryListData(i widget.ListItemID, o fyne.CanvasObject) {
 	deleteBtn.OnTapped = func() {
 		log.Printf("Delete button tapped for category ID: %d, Name: %s", category.ID, category.Name)
 	}
+}
+
+func (ui *UI) loadCategories() {
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cancel()
 }
