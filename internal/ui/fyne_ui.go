@@ -34,9 +34,13 @@ type UI struct {
 }
 
 // NewUI is the constructor for the UI struct.
-func NewUI(accService AccountService) *UI {
+func NewUI(
+	accService AccountService,
+	catService CategoryService,
+) *UI {
 	return &UI{
 		accService:  accService,
+		catService:  catService,
 		infoLogger:  log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime),
 		errorLogger: log.New(os.Stderr, "ERROR\t", log.Ldate|log.Ltime|log.Lshortfile),
 	}

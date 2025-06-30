@@ -39,7 +39,7 @@ func (r *CategoryRepositoryImpl) GetAllCategories(ctx context.Context) ([]domain
 	return categories, rows.Err()
 }
 
-func (r *CategoryRepositoryImpl) GetPaginatedCategory(ctx context.Context, page, pageSize int) (
+func (r *CategoryRepositoryImpl) GetPaginatedCategories(ctx context.Context, page, pageSize int) (
 	*domain.PaginatedResult[domain.Category],
 	error,
 ) {

@@ -102,7 +102,7 @@ func (ui *UI) loadCategories() {
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
 
-	result, err := ui.catService.GetPaginatedCategories(ctx, 1, 5)
+	result, err := ui.catService.GetPaginatedCategories(ctx, 1, 2)
 	if err != nil {
 		dialog.ShowError(err, ui.mainWindow)
 		return

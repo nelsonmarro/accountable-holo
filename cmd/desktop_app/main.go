@@ -29,16 +29,18 @@ func main() {
 
 	// ---- Infrastructure (Repositories) ----
 	accRepo := persistence.NewAccountRepository(pool)
+	catRepo := persistence.NewCategoryRepository(pool)
 
 	// ---- Application (Services) ----
 	accService := service.NewAccountService(accRepo)
+	catService := service.NewCategoryService(catRepo)
 
 	// ---- UI (Fyne) ----
 	// 1. Create the Fyne App first.
 	a := app.NewWithID("51af2ee4-c61c-4608-a3f1-d8576343af14")
 
 	// 2. Create UI struct.
-	gui := ui.NewUI(accService)
+	gui := ui.NewUI(accService, catService)
 
 	// 3. Initialize the UI with the app object.
 	gui.Init(a)
