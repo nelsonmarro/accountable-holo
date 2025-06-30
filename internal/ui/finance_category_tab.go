@@ -27,12 +27,6 @@ func (ui *UI) makeCategoryUI() fyne.CanvasObject {
 	catAddBtn := widget.NewButtonWithIcon("Agregar Categoría", theme.ContentAddIcon(), func() {})
 	catAddBtn.Importance = widget.HighImportance
 
-	header := container.NewGridWithColumns(3,
-		widget.NewLabel("Name"),
-		widget.NewLabel("Type"),
-		widget.NewLabel("Actions"),
-	)
-
 	ui.categoryList = widget.NewList(
 		func() int {
 			return len(ui.categories.Data)
@@ -48,24 +42,30 @@ func (ui *UI) makeCategoryUI() fyne.CanvasObject {
 	)
 
 	// containers
-	headerContainer := container.NewVBox(
+	tableHeader := container.NewBorder(
+		ui.categoryPaginator,
+		nil, nil, nil,
+		container.NewGridWithColumns(3,
+			widget.NewLabel("Name"),
+			widget.NewLabel("Type"),
+			widget.NewLabel("Actions"),
+		),
+	)
+
+	titleContainer := container.NewVBox(
 		container.NewCenter(title),
 		container.NewHBox(layout.NewSpacer(), catAddBtn),
 	)
 
 	tableContainer := container.NewBorder(
-		header,
-		nil,
-		nil,
-		nil,
+		tableHeader,
+		nil, nil, nil,
 		ui.categoryList,
 	)
 
 	mainContent := container.NewBorder(
-		container.NewPadded(headerContainer),
-		ui.categoryPaginator,
-		nil,
-		nil,
+		container.NewPadded(titleContainer),
+		nil, nil, nil,
 		tableContainer,
 	)
 
