@@ -3,6 +3,7 @@ package componets
 
 import (
 	"fmt"
+	"math"
 	"strconv"
 
 	"fyne.io/fyne/v2"
@@ -145,7 +146,7 @@ func (r *paginationRenderer) Refresh() {
 	// Determine the 'sliding window' of page numbers to show.
 	startPage, endPage := r.calculatePageRange(totalPages)
 
-	// 2. Update the page number buttons.
+	// Update the page number buttons.
 	pageNumber := startPage
 	for i := 0; i < 5; i++ {
 		btn := r.pageBtns[i]
@@ -163,4 +164,27 @@ func (r *paginationRenderer) Refresh() {
 			btn.Hide()
 		}
 	}
+
+	// Update the state of navigation buttons (first, prev, next, last).
+	r.firstBtn.Disable()
+	r.prevBtn.Disable()
+	if r.widget.CurrentPage > 1 {
+		r.firstBtn.Enable()
+		r.prevBtn.Enable()
+	}
+
+	r.lastBtn.Disable()
+	r.nextBtn.Disable()
+	if r.widget.CurrentPage < totalPages {
+		r.lastBtn.Enable()
+		r.nextBtn.Enable()
+	}
+}
+
+func (r *paginationRenderer) totalPages() int {
+	if r.widget.TotalItems == 0 || r.widget.PageSize == 0 {
+		return 1
+	}
+
+	return int(math.Ceil(float64(r.widget.TotalItems) / float64(r.widget.PageSize)))
 }
