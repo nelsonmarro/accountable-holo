@@ -146,7 +146,7 @@ func (r *paginationRenderer) Refresh() {
 	for i := range 5 {
 		btn := r.pageBtns[i]
 		fmt.Println("btn text:", btn.Text, "pageNumber:", pageNumber)
-		if pageNumber <= endPage {
+		if pageNumber <= endPage && pageNumber > 0 {
 			page := pageNumber // Capture the current page number for closure
 			btn.SetText(fmt.Sprintf("%d", pageNumber))
 			btn.OnTapped = func() {
