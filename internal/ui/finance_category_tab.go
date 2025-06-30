@@ -52,15 +52,10 @@ func (ui *UI) makeCategoryUI() fyne.CanvasObject {
 		container.NewHBox(layout.NewSpacer(), catAddBtn),
 	)
 
-	tableContainer := container.NewBorder(header,
-		nil,
-		nil,
-		nil,
+	tableContainer := container.NewVBox(header,
 		ui.categoryList,
 	)
-	paginatorContainer := container.NewHBox(layout.NewSpacer(), paginator)
-	dataContainer := container.NewHBox(tableContainer, paginatorContainer)
-
+	dataContainer := container.NewBorder(tableContainer, nil, nil, nil, paginator)
 	mainContent := container.NewBorder(container.NewPadded(headerContainer), nil, nil, nil, dataContainer)
 
 	return container.NewScroll(mainContent)
