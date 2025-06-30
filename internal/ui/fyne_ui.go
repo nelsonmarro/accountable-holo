@@ -26,7 +26,7 @@ type UI struct {
 	accounts    []domain.Account
 
 	categoryList *widget.List
-	categories   []domain.Category
+	categories   *domain.PaginatedResult[domain.Category]
 
 	// ---- Debug ----
 	infoLogger  *log.Logger

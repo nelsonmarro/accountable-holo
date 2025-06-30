@@ -11,6 +11,7 @@ import (
 	"fyne.io/fyne/v2/layout"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
+	"github.com/nelsonmarro/accountable-holo/internal/ui/componets"
 )
 
 func (ui *UI) makeCategoryUI() fyne.CanvasObject {
@@ -39,13 +40,21 @@ func (ui *UI) makeCategoryUI() fyne.CanvasObject {
 	)
 	go ui.loadCategories(1, 2)
 
+	var paginator *componets.Pagination
+	paginator = componets.NewPagination()
+
 	// containers
 	headerContainer := container.NewVBox(
 		container.NewCenter(title),
 		container.NewHBox(layout.NewSpacer(), catAddBtn),
 	)
 
-	tableContainer := container.NewBorder(header, nil, nil, nil, ui.categoryList)
+	tableContainer := container.NewBorder(header,
+		nil,
+		nil,
+		nil,
+		container.NewVBox(ui.categoryList, container.NewHBox(layout.NewSpacer())),
+	)
 	mainContent := container.NewBorder(container.NewPadded(headerContainer), nil, nil, nil, tableContainer)
 
 	return container.NewScroll(mainContent)
@@ -101,7 +110,7 @@ func (ui *UI) loadCategories(page int, pageSize int) {
 		return
 	}
 
-	ui.categories = result.Data
+	ui.categories = result
 
 	fyne.Do(func() {
 		ui.categoryList.Refresh()

@@ -108,31 +108,31 @@ func (r *paginationRenderer) Destroy() {}
 // -- Navigation Handlers --
 
 func (r *paginationRenderer) onFirst() {
-	r.navigateTo(1)
+	r.navigateTo(1, r.widget.PageSize)
 }
 
 func (r *paginationRenderer) onPrev() {
-	r.navigateTo(r.widget.CurrentPage - 1)
+	r.navigateTo(r.widget.CurrentPage-1, r.widget.PageSize)
 }
 
 func (r *paginationRenderer) onNext() {
-	r.navigateTo(r.widget.CurrentPage + 1)
+	r.navigateTo(r.widget.CurrentPage+1, r.widget.PageSize)
 }
 
 func (r *paginationRenderer) onLast() {
-	r.navigateTo(r.totalPages())
+	r.navigateTo(r.totalPages(), r.widget.PageSize)
 }
 
 func (r *paginationRenderer) onPageTapped(btnIndex int) {
 	page, _ := strconv.Atoi(r.pageBtns[btnIndex].Text)
-	r.navigateTo(page)
+	r.navigateTo(page, r.widget.PageSize)
 }
 
-func (r *paginationRenderer) navigateTo(page int) {
+func (r *paginationRenderer) navigateTo(page, pageSize int) {
 	if r.widget.OnPageChanged != nil {
 		r.widget.CurrentPage = page
-		r.widget.OnPageChanged(page) // Notify the main app
-		r.Refresh()                  // Update the pagination widget itself
+		r.widget.OnPageChanged(page, pageSize) // Notify the main app
+		r.Refresh()                            // Update the pagination widget itself
 	}
 }
 
