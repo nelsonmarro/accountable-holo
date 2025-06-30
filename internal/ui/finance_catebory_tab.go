@@ -30,7 +30,7 @@ func (ui *UI) makeCategoryUI() fyne.CanvasObject {
 			return len(data), len(data[0])
 		},
 		func() fyne.CanvasObject {
-			return widget.NewLabel("wide content")
+			return container.NewHBox(widget.NewLabel(""), widget.NewButton("sd", func() {}))
 		},
 		func(i widget.TableCellID, o fyne.CanvasObject) {
 			label, ok := o.(*widget.Label)
