@@ -12,7 +12,6 @@ import (
 	"fyne.io/fyne/v2/layout"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
-	"github.com/nelsonmarro/accountable-holo/internal/application/helpers"
 	"github.com/nelsonmarro/accountable-holo/internal/ui/componets/account"
 )
 
@@ -117,7 +116,7 @@ func (ui *UI) fillListData(i widget.ListItemID, o fyne.CanvasObject) {
 	nameLbl.SetText(fmt.Sprintf("%s - %s", ui.accounts[i].Name, ui.accounts[i].Number))
 
 	typeLbl := cuentaInfoContainer.Objects[1].(*widget.Label)
-	typeLbl.SetText(fmt.Sprintf("Tipo de Cuenta: %s", helpers.GetDisplayAccountTypeName(ui.accounts[i].Type)))
+	typeLbl.SetText(fmt.Sprintf("Tipo de Cuenta: %s", string(ui.accounts[i].Type)))
 
 	cuentaBalanceContainer := infoContainer.Objects[1].(*fyne.Container)
 	balanceLbl := cuentaBalanceContainer.Objects[1].(*widget.Label)

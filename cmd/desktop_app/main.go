@@ -40,7 +40,10 @@ func main() {
 	a := app.NewWithID("51af2ee4-c61c-4608-a3f1-d8576343af14")
 
 	// 2. Create UI struct.
-	gui := ui.NewUI(accService, catService)
+	gui := ui.NewUI(&ui.Services{
+		AccService: accService,
+		CatService: catService,
+	})
 
 	// 3. Initialize the UI with the app object.
 	gui.Init(a)

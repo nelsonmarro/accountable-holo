@@ -12,11 +12,15 @@ import (
 	"github.com/nelsonmarro/accountable-holo/internal/ui/componets"
 )
 
+type Services struct {
+	AccService AccountService
+	CatService CategoryService
+}
+
 // The UI struct holds the dependencies and state for the Fyne UI.
 type UI struct {
 	// ---- Dependencies ----
-	accService AccountService
-	catService CategoryService
+	Services *Services
 
 	// ---- Fyne App Objects ----
 	app        fyne.App
@@ -36,13 +40,9 @@ type UI struct {
 }
 
 // NewUI is the constructor for the UI struct.
-func NewUI(
-	accService AccountService,
-	catService CategoryService,
-) *UI {
+func NewUI(services *Services) *UI {
 	return &UI{
-		accService:  accService,
-		catService:  catService,
+		Services:    services,
 		infoLogger:  log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime),
 		errorLogger: log.New(os.Stderr, "ERROR\t", log.Ldate|log.Ltime|log.Lshortfile),
 		categories:  &domain.PaginatedResult[domain.Category]{},

@@ -7,49 +7,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestGetDisplayAccountTypeName(t *testing.T) {
-	// Define the test cases in a "table" (a slice of structs).
-	// Each struct represents one test case.
-	testCases := []struct {
-		name     string             // A descriptive name for the test case
-		input    domain.AccountType // The input to the function
-		expected string             // The expected output
-	}{
-		{
-			name:     "Should return 'Ahorros' for SavingAcount",
-			input:    domain.SavingAccount,
-			expected: "Ahorros",
-		},
-		{
-			name:     "Should return 'Corriente' for OrdinaryAccount",
-			input:    domain.OrdinaryAccount,
-			expected: "Corriente",
-		},
-		{
-			name:     "Should return 'Cuenta Desconocida' for an unknown type",
-			input:    domain.AccountType("some_other_type"), // Test the default case
-			expected: "Cuenta Desconocida",
-		},
-		{
-			name:     "Should return 'Cuenta Desconocida' for an empty type",
-			input:    "",
-			expected: "Cuenta Desconocida",
-		},
-	}
-
-	// Loop through all the test cases.
-	for _, tc := range testCases {
-		// t.Run() creates a sub-test for each case, which gives clearer test output.
-		t.Run(tc.name, func(t *testing.T) {
-			// Act: Call the function we are testing.
-			actual := GetDisplayAccountTypeName(tc.input)
-
-			// Assert: Check if the actual output matches the expected output.
-			assert.Equal(t, tc.expected, actual)
-		})
-	}
-}
-
 func TestGetAccountTypeFromString(t *testing.T) {
 	// Define the table for the second function.
 	testCases := []struct {
