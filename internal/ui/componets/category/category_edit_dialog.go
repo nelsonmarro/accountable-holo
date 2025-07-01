@@ -1,4 +1,4 @@
-package account
+package category
 
 import (
 	"context"
@@ -14,41 +14,43 @@ import (
 	"github.com/nelsonmarro/accountable-holo/internal/domain"
 )
 
-// EditAccountDialog holds the state and logic for the 'Edit Account' dialog.
-type EditAccountDialog struct {
+// EditCategoryDialog holds the state and logic for the 'Edit Account' dialog.
+type EditCategoryDialog struct {
 	mainWin        fyne.Window
 	logger         *log.Logger
-	service        AccountService
+	service        CategoryService
 	callbackAction func()
-	accountID      int
+	catID          int
 
 	// UI Components for the form
-	nameEntry   *widget.Entry
-	tipoSelect  *widget.SelectEntry
-	amountEntry *widget.Entry
-	numberEntry *widget.Entry
+	nameEntry  *widget.Entry
+	tipoSelect *widget.SelectEntry
 }
 
-// NewEditAccountDialog creates a new dialog handler for the edit action.
-func NewEditAccountDialog(win fyne.Window, l *log.Logger, service AccountService, callback func(), accID int) *EditAccountDialog {
-	return &EditAccountDialog{
+// NewEditCategoryDialog creates a new dialog handler for the edit action.
+func NewEditCategoryDialog(
+	win fyne.Window,
+	l *log.Logger,
+	service CategoryService,
+	callback func(),
+	catID int,
+) *EditCategoryDialog {
+	return &EditCategoryDialog{
 		mainWin:        win,
 		logger:         l,
 		service:        service,
 		callbackAction: callback,
-		accountID:      accID,
+		catID:          catID,
 		// Initialize components
-		nameEntry:   widget.NewEntry(),
-		tipoSelect:  widget.NewSelectEntry([]string{string(domain.SavingAccount), string(domain.OrdinaryAccount)}),
-		amountEntry: widget.NewEntry(),
-		numberEntry: widget.NewEntry(),
+		nameEntry:  widget.NewEntry(),
+		tipoSelect: widget.NewSelectEntry([]string{string(domain.Income), string(domain.Outcome)}),
 	}
 }
 
 // Show begins the entire "edit" process.
-func (d *EditAccountDialog) Show() {
+func (d *EditCategoryDialog) Show() {
 	// Define the function to run on successful data fetch.
-	onSuccess := func(account *domain.Account) {
+	onSuccess := func(account *domain.Category) {
 		fyne.Do(func() {
 			d.showEditForm(account)
 		})
@@ -56,27 +58,27 @@ func (d *EditAccountDialog) Show() {
 
 	// Define the function to run on failure.
 	onFailure := func(err error) {
-		d.logger.Println("Error getting account by ID:", err)
+		d.logger.Println("Error getting category by ID:", err)
 		fyne.Do(func() {
-			errorDialog := dialog.NewError(fmt.Errorf("%s\n%s", "error al editar la cuenta\n", err.Error()), d.mainWin)
+			errorDialog := dialog.NewError(fmt.Errorf("%s\n%s", "error al editar la categoria\n", err.Error()), d.mainWin)
 			errorDialog.Show()
 		})
 	}
 
 	// Start the asynchronous fetch process, passing our callbacks.
-	d.fetchAccount(onSuccess, onFailure)
+	d.fetchCategory(onSuccess, onFailure)
 }
 
 // Show begins the process by fetching the account data first.
-func (d *EditAccountDialog) fetchAccount(onSuccess func(acc *domain.Account), onFailure func(err error)) {
-	progress := dialog.NewCustomWithoutButtons("Cargando Cuenta...", widget.NewProgressBarInfinite(), d.mainWin)
+func (d *EditCategoryDialog) fetchCategory(onSuccess func(acc *domain.Category), onFailure func(err error)) {
+	progress := dialog.NewCustomWithoutButtons("Cargando Categoria...", widget.NewProgressBarInfinite(), d.mainWin)
 	progress.Show()
 
 	go func() {
 		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 		defer cancel()
 
-		account, err := d.service.GetAccountByID(ctx, d.accountID)
+		account, err := d.service.GetCategoryByID(ctx, d.catID)
 		if err != nil {
 			// If there's an error, call the failure callback.
 			fyne.Do(func() {
@@ -95,7 +97,7 @@ func (d *EditAccountDialog) fetchAccount(onSuccess func(acc *domain.Account), on
 }
 
 // showEditForm displays the actual form, pre-populated with account data.
-func (d *EditAccountDialog) showEditForm(acc *domain.Account) {
+func (d *EditCategoryDialog) showEditForm(acc *domain.Category) {
 	// Populate the widgets with the fetched data
 	d.nameEntry.SetText(acc.Name)
 	d.tipoSelect.SetText(string(acc.Type))
@@ -104,7 +106,7 @@ func (d *EditAccountDialog) showEditForm(acc *domain.Account) {
 	d.numberEntry.SetText(acc.Number)
 
 	formDialog := dialog.NewForm("Editar Cuenta", "Guardar", "Cancelar",
-		AccountForm(
+		CategoryForm(
 			d.nameEntry,
 			d.tipoSelect,
 			d.amountEntry,
@@ -118,7 +120,7 @@ func (d *EditAccountDialog) showEditForm(acc *domain.Account) {
 }
 
 // handleSubmit contains the logic for the UPDATE operation.
-func (d *EditAccountDialog) handleSubmit(valid bool) {
+func (d *EditCategoryDialog) handleSubmit(valid bool) {
 	if !valid {
 		return
 	}
@@ -127,25 +129,25 @@ func (d *EditAccountDialog) handleSubmit(valid bool) {
 	progress.Show()
 
 	go func() {
-		updatedAccount := &domain.Account{
+		updatedCategory := &domain.Category{
 			BaseEntity: domain.BaseEntity{
-				ID: d.accountID, // Use the original ID for updates
+				ID: d.catID, // Use the original ID for updates
 			},
 			Name:   d.nameEntry.Text,
-			Type:   helpers.GetAccountTypeFromString(d.tipoSelect.Text),
+			Type:   helpers.GetCategoryTypeFromString(d.tipoSelect.Text),
 			Number: d.numberEntry.Text,
 		}
 
 		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 		defer cancel()
 
-		err := d.service.UpdateAccount(ctx, updatedAccount)
+		err := d.service.UpdateCategory(ctx, updatedCategory)
 		if err != nil {
 			fyne.Do(func() {
 				progress.Hide()
 				dialog.ShowError(errors.New("error al actualizar la cuenta. Intente otra vez"), d.mainWin)
 			})
-			d.logger.Printf("Error updating account %d: %v", d.accountID, err)
+			d.logger.Printf("Error updating account %d: %v", d.catID, err)
 			return
 		}
 
@@ -157,3 +159,4 @@ func (d *EditAccountDialog) handleSubmit(valid bool) {
 		go d.callbackAction()
 	}()
 }
+
