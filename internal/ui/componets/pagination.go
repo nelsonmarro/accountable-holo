@@ -49,7 +49,7 @@ func NewPagination(
 	return p
 }
 
-func (p *Pagination) getPageSize() int {
+func (p *Pagination) GetPageSize() int {
 	if p.pageSize <= 0 {
 		return 5 // Default page size if not set
 	}
@@ -86,9 +86,8 @@ func (p *Pagination) CreateRenderer() fyne.WidgetRenderer {
 		r.pageBtns[0], r.pageBtns[1], r.pageBtns[2], r.pageBtns[3], r.pageBtns[4],
 		layout.NewSpacer(),
 		r.nextBtn, r.lastBtn,
-		layout.NewSpacer(),
 		r.pageSizeSelect,
-		widget.NewLabel("Items por por página"),
+		widget.NewLabel("Items por página"),
 	)
 
 	// Initial refresh to set the correct state.

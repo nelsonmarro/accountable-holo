@@ -27,19 +27,19 @@ func (ui *UI) makeCategoryUI() fyne.CanvasObject {
 	catAddBtn := widget.NewButtonWithIcon("Agregar Categoría", theme.ContentAddIcon(), func() {})
 	catAddBtn.Importance = widget.HighImportance
 
-	ui.categoryList = widget.NewList(
-		func() int {
-			return len(ui.categories.Data)
-		}, ui.makeCategoryListUI, ui.fillCategoryListData,
-	)
-	go ui.loadCategories(1)
-
 	ui.categoryPaginator = componets.NewPagination(
 		func() (totalCount int) {
 			return int(ui.categories.TotalCount)
 		},
 		ui.loadCategories,
 	)
+
+	ui.categoryList = widget.NewList(
+		func() int {
+			return len(ui.categories.Data)
+		}, ui.makeCategoryListUI, ui.fillCategoryListData,
+	)
+	go ui.loadCategories(1, ui.categoryPaginator.GetPageSize())
 
 	// containers
 	tableHeader := container.NewBorder(
@@ -112,7 +112,7 @@ func (ui *UI) fillCategoryListData(i widget.ListItemID, o fyne.CanvasObject) {
 	}
 }
 
-func (ui *UI) loadCategories(page int) {
+func (ui *UI) loadCategories(page int, pageSize int) {
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
 
