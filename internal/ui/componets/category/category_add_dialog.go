@@ -5,12 +5,12 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"strconv"
 	"time"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/widget"
+	"github.com/nelsonmarro/accountable-holo/internal/application/helpers"
 	"github.com/nelsonmarro/accountable-holo/internal/domain"
 )
 
@@ -39,13 +39,13 @@ func NewAddCategoryDialog(win fyne.Window, l *log.Logger, service CategoryServic
 
 		// Initialize components
 		nameEntry:  widget.NewEntry(),
-		tipoSelect: widget.NewSelectEntry([]string{"Ahorros", "Corriente"}),
+		tipoSelect: widget.NewSelectEntry([]string{string(domain.Income), string(domain.Outcome)}),
 	}
 }
 
 // Show creates and displays the Fyne form dialog.
 func (d *AddCategoryDialog) Show() {
-	formDialog := dialog.NewForm("Crear Cuenta", "Guardar", "Cancelar",
+	formDialog := dialog.NewForm("Crear Categoria", "Guardar", "Cancelar",
 		CategoryForm(
 			d.nameEntry,
 			d.tipoSelect,
@@ -65,36 +65,34 @@ func (d *AddCategoryDialog) handleSubmit(valid bool) {
 
 	name := d.nameEntry.Text
 	tipo := d.tipoSelect.Text
-	amount, _ := strconv.ParseFloat(d.amountEntry.Text, 64)
-	number := d.numberEntry.Text
 
 	progressDialog := dialog.NewCustomWithoutButtons("Espere", widget.NewProgressBarInfinite(), d.mainWin)
 	progressDialog.Show()
 
 	go func() {
-		acc := &domain.Category{
+		cat := &domain.Category{
 			Name: name,
-			Type: tipo,
+			Type: helpers.GetCategoryTypeFromString(tipo),
 		}
 
 		cxt, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 		defer cancel()
 
-		err := d.service.CreateNewCategory(cxt, acc)
+		err := d.service.CreateCategory(cxt, cat)
 		if err != nil {
 			fyne.Do(func() {
 				progressDialog.Hide()
-				errorDialog := dialog.NewError(fmt.Errorf("%s\n%s", "error al crear la cuenta\n", err.Error()), d.mainWin)
+				errorDialog := dialog.NewError(fmt.Errorf("%s\n%s", "error al crear la categoria\n", err.Error()), d.mainWin)
 				errorDialog.Show()
 			})
-			d.logger.Println("Error creating account:", err)
+			d.logger.Println("Error creating category:", err)
 			return
 		}
 
 		fyne.Do(func() {
 			progressDialog.Hide()
-			infoDialog := dialog.NewInformation("Cuenta Creada",
-				fmt.Sprintf("Cuenta: %s - %s\nTipo: %s\nSaldo inicial: %.2f\nCreada!", name, number, tipo, amount), d.mainWin)
+			infoDialog := dialog.NewInformation("Categoria Creada",
+				fmt.Sprintf("Categoria: %s \nTipo: %s\nCreada!", name, tipo), d.mainWin)
 			infoDialog.Show()
 		})
 

@@ -12,6 +12,7 @@ import (
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 	"github.com/nelsonmarro/accountable-holo/internal/ui/componets"
+	"github.com/nelsonmarro/accountable-holo/internal/ui/componets/category"
 )
 
 func (ui *UI) makeCategoryUI() fyne.CanvasObject {
@@ -24,7 +25,14 @@ func (ui *UI) makeCategoryUI() fyne.CanvasObject {
 		},
 	})
 
-	catAddBtn := widget.NewButtonWithIcon("Agregar Categoría", theme.ContentAddIcon(), func() {})
+	catAddBtn := widget.NewButtonWithIcon("Agregar Categoría", theme.ContentAddIcon(), func() {
+		dialogHandler := category.NewAddCategoryDialog(
+			ui.mainWindow,
+			ui.errorLogger,
+			ui.catService,
+			ui.loadCategories,
+		)
+	})
 	catAddBtn.Importance = widget.HighImportance
 
 	// Pagination and List

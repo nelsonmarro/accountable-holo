@@ -26,3 +26,14 @@ func GetAccountTypeFromString(accType string) domain.AccountType {
 		return domain.SavingAcount // Default to SavingAcount if unknown
 	}
 }
+
+func GetCategoryTypeFromString(catType string) domain.CategoryType {
+	switch catType {
+	case "Ingreso":
+		return domain.Income
+	case "Egreso":
+		return domain.Outcome
+	default:
+		return domain.Income
+	}
+}
