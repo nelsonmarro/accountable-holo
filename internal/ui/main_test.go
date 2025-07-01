@@ -27,14 +27,17 @@ func setupUITestForTabs() (*UI, *mocks.MockAccountService) {
 	w := test.NewWindow(nil)
 
 	mockService := new(mocks.MockAccountService)
+	services := &Services{
+		AccService: mockService,
+	}
 	silentLogger := log.New(io.Discard, "", 0)
 
 	// Create the UI instance to be tested
 	ui := &UI{
+		Services:    services,
 		mainWindow:  w,
 		app:         a,
 		errorLogger: silentLogger,
-		accService:  mockService,
 		accounts:    make([]domain.Account, 0), // Start with an empty slice
 	}
 
@@ -43,8 +46,11 @@ func setupUITestForTabs() (*UI, *mocks.MockAccountService) {
 
 func setupUITest() (*UI, *mocks.MockAccountService) {
 	mockService := new(mocks.MockAccountService)
+	services := &Services{
+		AccService: mockService,
+	}
 
-	ui := NewUI(mockService)
+	ui := NewUI(services)
 
 	a := test.NewApp()
 	ui.Init(a)

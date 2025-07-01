@@ -45,7 +45,7 @@ func (ui *UI) makeCategoryUI() fyne.CanvasObject {
 		dialogHandler := category.NewAddCategoryDialog(
 			ui.mainWindow,
 			ui.errorLogger,
-			ui.catService,
+			ui.Services.CatService,
 			func() {
 				ui.loadCategories(1, ui.categoryPaginator.GetPageSize())
 			},
@@ -130,7 +130,7 @@ func (ui *UI) loadCategories(page int, pageSize int) {
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
 
-	result, err := ui.catService.GetPaginatedCategories(ctx, page, pageSize)
+	result, err := ui.Services.CatService.GetPaginatedCategories(ctx, page, pageSize)
 	if err != nil {
 		dialog.ShowError(err, ui.mainWindow)
 		return

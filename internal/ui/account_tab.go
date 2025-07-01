@@ -38,7 +38,7 @@ func (ui *UI) makeAccountTab() fyne.CanvasObject {
 		dialogHandler := account.NewAddAccountDialog(
 			ui.mainWindow,
 			ui.errorLogger,
-			ui.accService,
+			ui.Services.AccService,
 			ui.loadAccounts,
 		)
 
@@ -60,7 +60,7 @@ func (ui *UI) loadAccounts() {
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
 
-	accounts, err := ui.accService.GetAllAccounts(ctx)
+	accounts, err := ui.Services.AccService.GetAllAccounts(ctx)
 	if err != nil {
 		dialog.ShowError(err, ui.mainWindow)
 		return
@@ -129,7 +129,7 @@ func (ui *UI) fillListData(i widget.ListItemID, o fyne.CanvasObject) {
 		dialogHandler := account.NewDeleteAccountDialog(
 			ui.mainWindow,
 			ui.errorLogger,
-			ui.accService,
+			ui.Services.AccService,
 			ui.loadAccounts,
 			ui.accounts[i].ID, // Pass the specific ID for this row
 		)
@@ -141,7 +141,7 @@ func (ui *UI) fillListData(i widget.ListItemID, o fyne.CanvasObject) {
 		dialogHandler := account.NewEditAccountDialog(
 			ui.mainWindow,
 			ui.errorLogger,
-			ui.accService,
+			ui.Services.AccService,
 			ui.loadAccounts,
 			ui.accounts[i].ID, // Pass the specific ID for this row
 		)
