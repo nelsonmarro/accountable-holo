@@ -32,7 +32,7 @@ func (ui *UI) makeCategoryUI() fyne.CanvasObject {
 			return len(ui.categories.Data)
 		}, ui.makeCategoryListUI, ui.fillCategoryListData,
 	)
-	go ui.loadCategories(1, 5)
+	go ui.loadCategories(1)
 
 	ui.categoryPaginator = componets.NewPagination(
 		func() (totalCount int) {
@@ -112,7 +112,7 @@ func (ui *UI) fillCategoryListData(i widget.ListItemID, o fyne.CanvasObject) {
 	}
 }
 
-func (ui *UI) loadCategories(page int, pageSize int) {
+func (ui *UI) loadCategories(page int) {
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
 

@@ -34,17 +34,26 @@ func NewPagination(
 	pageSizeOptions ...string,
 ) *Pagination {
 	if pageSizeOptions == nil {
-		pageSizeOptions = []string{"10", "20", "50", "100"}
+		pageSizeOptions = []string{"5", "10", "20", "50", "100"}
 	}
+	initPageSize, _ := strconv.Atoi(pageSizeOptions[0])
 	p := &Pagination{
 		getTotalCount:   getTotalCount,
 		currentPage:     1,
 		onPageChanged:   onPageChanged,
 		pageSizeOptions: pageSizeOptions,
+		pageSize:        initPageSize,
 	}
 
 	p.ExtendBaseWidget(p)
 	return p
+}
+
+func (p *Pagination) getPageSize() int {
+	if p.pageSize <= 0 {
+		return 5 // Default page size if not set
+	}
+	return p.pageSize
 }
 
 // CreateRenderer is the entry point for Fyne to create the visual component.
@@ -77,6 +86,9 @@ func (p *Pagination) CreateRenderer() fyne.WidgetRenderer {
 		r.pageBtns[0], r.pageBtns[1], r.pageBtns[2], r.pageBtns[3], r.pageBtns[4],
 		layout.NewSpacer(),
 		r.nextBtn, r.lastBtn,
+		layout.NewSpacer(),
+		r.pageSizeSelect,
+		widget.NewLabel("Items por por página"),
 	)
 
 	// Initial refresh to set the correct state.
