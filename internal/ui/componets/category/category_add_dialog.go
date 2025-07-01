@@ -54,7 +54,7 @@ func (d *AddCategoryDialog) Show() {
 		d.mainWin,
 	)
 
-	formDialog.Resize(fyne.NewSize(480, 300))
+	formDialog.Resize(fyne.NewSize(380, 200))
 	formDialog.Show()
 }
 

@@ -16,7 +16,7 @@ import (
 )
 
 func (ui *UI) makeCategoryUI() fyne.CanvasObject {
-	// UI widgets
+	// Title
 	title := widget.NewRichText(&widget.TextSegment{
 		Text: "Categorias",
 		Style: widget.RichTextStyle{
@@ -24,16 +24,6 @@ func (ui *UI) makeCategoryUI() fyne.CanvasObject {
 			Alignment: fyne.TextAlignCenter,
 		},
 	})
-
-	catAddBtn := widget.NewButtonWithIcon("Agregar Categoría", theme.ContentAddIcon(), func() {
-		dialogHandler := category.NewAddCategoryDialog(
-			ui.mainWindow,
-			ui.errorLogger,
-			ui.catService,
-			ui.loadCategories,
-		)
-	})
-	catAddBtn.Importance = widget.HighImportance
 
 	// Pagination and List
 	ui.categoryPaginator = componets.NewPagination(
@@ -50,7 +40,22 @@ func (ui *UI) makeCategoryUI() fyne.CanvasObject {
 	)
 	go ui.loadCategories(1, ui.categoryPaginator.GetPageSize())
 
-	// containers
+	// Add Category Button
+	catAddBtn := widget.NewButtonWithIcon("Agregar Categoría", theme.ContentAddIcon(), func() {
+		dialogHandler := category.NewAddCategoryDialog(
+			ui.mainWindow,
+			ui.errorLogger,
+			ui.catService,
+			func() {
+				ui.loadCategories(1, ui.categoryPaginator.GetPageSize())
+			},
+		)
+
+		dialogHandler.Show()
+	})
+	catAddBtn.Importance = widget.HighImportance
+
+	// Containers
 	tableHeader := container.NewBorder(
 		ui.categoryPaginator,
 		nil, nil, nil,
