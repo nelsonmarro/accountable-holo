@@ -4,8 +4,8 @@ package domain
 type AccountType string
 
 const (
-	SavingAcount    AccountType = "bank_saving"
-	OrdinaryAccount AccountType = "bank_ordinary"
+	SavingAccount   AccountType = "Ahorros"
+	OrdinaryAccount AccountType = "Corriente"
 )
 
 type Account struct {

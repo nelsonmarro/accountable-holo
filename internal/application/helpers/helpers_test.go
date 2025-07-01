@@ -17,7 +17,7 @@ func TestGetDisplayAccountTypeName(t *testing.T) {
 	}{
 		{
 			name:     "Should return 'Ahorros' for SavingAcount",
-			input:    domain.SavingAcount,
+			input:    domain.SavingAccount,
 			expected: "Ahorros",
 		},
 		{
@@ -60,7 +60,7 @@ func TestGetAccountTypeFromString(t *testing.T) {
 		{
 			name:     "Should return SavingAcount for 'Ahorros'",
 			input:    "Ahorros",
-			expected: domain.SavingAcount,
+			expected: domain.SavingAccount,
 		},
 		{
 			name:     "Should return OrdinaryAccount for 'Corriente'",
@@ -70,12 +70,12 @@ func TestGetAccountTypeFromString(t *testing.T) {
 		{
 			name:     "Should default to SavingAcount for an unknown string",
 			input:    "some_random_string",
-			expected: domain.SavingAcount, // Verify the default case
+			expected: domain.SavingAccount, // Verify the default case
 		},
 		{
 			name:     "Should default to SavingAcount for an empty string",
 			input:    "",
-			expected: domain.SavingAcount, // Verify the default case
+			expected: domain.SavingAccount, // Verify the default case
 		},
 	}
 
@@ -89,4 +89,3 @@ func TestGetAccountTypeFromString(t *testing.T) {
 		})
 	}
 }
-

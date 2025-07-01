@@ -17,7 +17,7 @@ import (
 )
 
 func (ui *UI) makeAccountTab() fyne.CanvasObject {
-	// UI widgets
+	// Title
 	title := widget.NewRichText(&widget.TextSegment{
 		Text: "Cuentas",
 		Style: widget.RichTextStyle{
@@ -26,25 +26,26 @@ func (ui *UI) makeAccountTab() fyne.CanvasObject {
 		},
 	})
 
-	accountAddBtn := widget.NewButtonWithIcon("Agregar Cuenta", theme.ContentAddIcon(), func() {
-		dialogHandler := account.NewAddAccountDialog(
-			ui.mainWindow,
-			ui.errorLogger,
-			ui.accService,
-			ui.loadAccounts, // This is the callback function
-		)
-
-		// 2. Tell the dialog instance to show itself
-		dialogHandler.Show()
-	})
-	accountAddBtn.Importance = widget.HighImportance
-
+	// Pagination and List
 	ui.accountList = widget.NewList(
 		func() int {
 			return len(ui.accounts)
 		}, ui.makeListUI, ui.fillListData,
 	)
 	go ui.loadAccounts()
+
+	// Add Account Button
+	accountAddBtn := widget.NewButtonWithIcon("Agregar Cuenta", theme.ContentAddIcon(), func() {
+		dialogHandler := account.NewAddAccountDialog(
+			ui.mainWindow,
+			ui.errorLogger,
+			ui.accService,
+			ui.loadAccounts,
+		)
+
+		dialogHandler.Show()
+	})
+	accountAddBtn.Importance = widget.HighImportance
 
 	// Containers
 	headerArea := container.NewVBox(

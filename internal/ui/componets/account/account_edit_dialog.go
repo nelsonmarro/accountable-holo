@@ -39,7 +39,7 @@ func NewEditAccountDialog(win fyne.Window, l *log.Logger, service AccountService
 		accountID:      accID,
 		// Initialize components
 		nameEntry:   widget.NewEntry(),
-		tipoSelect:  widget.NewSelectEntry([]string{"Ahorros", "Corriente"}),
+		tipoSelect:  widget.NewSelectEntry([]string{string(domain.SavingAccount), string(domain.OrdinaryAccount)}),
 		amountEntry: widget.NewEntry(),
 		numberEntry: widget.NewEntry(),
 	}
@@ -98,7 +98,7 @@ func (d *EditAccountDialog) fetchAccount(onSuccess func(acc *domain.Account), on
 func (d *EditAccountDialog) showEditForm(acc *domain.Account) {
 	// Populate the widgets with the fetched data
 	d.nameEntry.SetText(acc.Name)
-	d.tipoSelect.SetText(helpers.GetDisplayAccountTypeName(acc.Type))
+	d.tipoSelect.SetText(string(acc.Type))
 	d.amountEntry.SetText(fmt.Sprintf("%.2f", acc.InitialBalance))
 	d.amountEntry.Disable() // Initial balance should not be editable
 	d.numberEntry.SetText(acc.Number)

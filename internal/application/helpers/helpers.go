@@ -5,7 +5,7 @@ import "github.com/nelsonmarro/accountable-holo/internal/domain"
 
 func GetDisplayAccountTypeName(accType domain.AccountType) string {
 	switch accType {
-	case domain.SavingAcount:
+	case domain.SavingAccount:
 		return "Ahorros"
 
 	case domain.OrdinaryAccount:
@@ -19,11 +19,11 @@ func GetDisplayAccountTypeName(accType domain.AccountType) string {
 func GetAccountTypeFromString(accType string) domain.AccountType {
 	switch accType {
 	case "Ahorros":
-		return domain.SavingAcount
+		return domain.SavingAccount
 	case "Corriente":
 		return domain.OrdinaryAccount
 	default:
-		return domain.SavingAcount // Default to SavingAcount if unknown
+		return domain.SavingAccount // Default to SavingAcount if unknown
 	}
 }
 

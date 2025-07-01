@@ -104,7 +104,7 @@ func TestFillListData(t *testing.T) {
 			BaseEntity:     domain.BaseEntity{ID: 102},
 			Number:         "23",
 			Name:           "Test Savings",
-			Type:           domain.SavingAcount,
+			Type:           domain.SavingAccount,
 			InitialBalance: 789.00,
 		},
 	}

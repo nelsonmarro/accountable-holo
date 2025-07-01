@@ -40,7 +40,7 @@ func NewAddAccountDialog(win fyne.Window, l *log.Logger, service AccountService,
 
 		// Initialize components
 		nameEntry:   widget.NewEntry(),
-		tipoSelect:  widget.NewSelectEntry([]string{"Ahorros", "Corriente"}),
+		tipoSelect:  widget.NewSelectEntry([]string{string(domain.SavingAccount), string(domain.OrdinaryAccount)}),
 		amountEntry: widget.NewEntry(), // We can use your NumericEntry here later
 		numberEntry: widget.NewEntry(),
 	}

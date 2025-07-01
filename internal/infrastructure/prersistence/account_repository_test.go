@@ -17,7 +17,7 @@ func createTestAccount(t *testing.T, repo *AccountRepositoryImpl) *domain.Accoun
 	acc := &domain.Account{
 		Name:           "Test Bank Account",
 		Number:         "12345",
-		Type:           domain.SavingAcount,
+		Type:           domain.SavingAccount,
 		InitialBalance: 1000.50,
 	}
 	err := repo.CreateAccount(context.Background(), acc)

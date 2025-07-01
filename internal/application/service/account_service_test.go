@@ -19,7 +19,7 @@ func TestCreateNewAccount(t *testing.T) {
 		// Arrange
 		mockRepo := new(mocks.MockAccountRepository)
 		accService := NewAccountService(mockRepo)
-		acc := &domain.Account{Name: "Test Account", InitialBalance: 100, Number: "2222", Type: domain.SavingAcount}
+		acc := &domain.Account{Name: "Test Account", InitialBalance: 100, Number: "2222", Type: domain.SavingAccount}
 
 		// Tell the mock what to expect.
 		// When CreateAccount is called with any context and our acc object,
@@ -59,7 +59,7 @@ func TestCreateNewAccount(t *testing.T) {
 		// Arrange
 		mockRepo := new(mocks.MockAccountRepository)
 		accountService := NewAccountService(mockRepo)
-		acc := &domain.Account{Name: "Test Account", InitialBalance: 100, Number: "2222", Type: domain.SavingAcount}
+		acc := &domain.Account{Name: "Test Account", InitialBalance: 100, Number: "2222", Type: domain.SavingAccount}
 		repoError := errors.New("database connection failed")
 
 		// Tell the mock to return an error when CreateAccount is called.
