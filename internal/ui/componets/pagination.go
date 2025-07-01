@@ -33,7 +33,7 @@ func NewPagination(
 	onPageChanged func(page, pageSize int),
 	pageSizeOptions ...string,
 ) *Pagination {
-	if pageSizeOptions == nil || len(pageSizeOptions) == 0 {
+	if pageSizeOptions == nil {
 		pageSizeOptions = []string{"10", "20", "50", "100"}
 	}
 	p := &Pagination{
@@ -133,11 +133,13 @@ func (r *paginationRenderer) onLast() {
 }
 
 func (r *paginationRenderer) onSelectPageSize(size string) {
-	r.widget.pageSize, err = strconv.Atoi(size)
+	sizeInt, err := strconv.Atoi(size)
 	if err != nil {
 		fmt.Println("Error parsing page size:", err)
 		return
 	}
+	r.widget.pageSize = sizeInt
+	r.navigateTo(1)
 }
 
 func (r *paginationRenderer) onPageTapped(page int) {
@@ -145,11 +147,10 @@ func (r *paginationRenderer) onPageTapped(page int) {
 }
 
 func (r *paginationRenderer) navigateTo(page int) {
-	_, pageSize := r.widget.getTotalCount()
 	if r.widget.onPageChanged != nil {
 		r.widget.currentPage = page
-		r.widget.onPageChanged(page, pageSize) // Notify the main app
-		r.Refresh()                            // Update the pagination widget itself
+		r.widget.onPageChanged(page, r.widget.pageSize) // Notify the main app
+		r.Refresh()                                     // Update the pagination widget itself
 	}
 }
 
@@ -201,12 +202,12 @@ func (r *paginationRenderer) Refresh() {
 }
 
 func (r *paginationRenderer) totalPages() int {
-	totalCount, pageSize := r.widget.getTotalCount()
-	if totalCount == 0 || pageSize == 0 {
+	totalCount := r.widget.getTotalCount()
+	if totalCount == 0 || r.widget.pageSize == 0 {
 		return 1
 	}
 
-	return int(math.Ceil(float64(totalCount) / float64(pageSize)))
+	return int(math.Ceil(float64(totalCount) / float64(r.widget.pageSize)))
 }
 
 func (r *paginationRenderer) calculatePageRange(totalPages int) (int, int) {
