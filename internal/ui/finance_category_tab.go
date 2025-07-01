@@ -15,6 +15,8 @@ import (
 	"github.com/nelsonmarro/accountable-holo/internal/ui/componets/category"
 )
 
+var pageSizeOpts = []string{"5", "10", "20", "50", "100"}
+
 func (ui *UI) makeCategoryUI() fyne.CanvasObject {
 	// Title
 	title := widget.NewRichText(&widget.TextSegment{
@@ -31,6 +33,7 @@ func (ui *UI) makeCategoryUI() fyne.CanvasObject {
 			return int(ui.categories.TotalCount)
 		},
 		ui.loadCategories,
+		pageSizeOpts...,
 	)
 
 	ui.categoryList = widget.NewList(
@@ -119,6 +122,17 @@ func (ui *UI) fillCategoryListData(i widget.ListItemID, o fyne.CanvasObject) {
 	deleteBtn := actionsContainer.Objects[1].(*widget.Button)
 
 	editBtn.OnTapped = func() {
+		dialogHandler := category.NewEditCategoryDialog(
+			ui.mainWindow,
+			ui.errorLogger,
+			ui.Services.CatService,
+			func() {
+				ui.loadCategories(1, ui.categoryPaginator.GetPageSize())
+			},
+			cat.ID,
+		)
+
+		dialogHandler.Show()
 	}
 	deleteBtn.OnTapped = func() {
 		log.Printf("Delete button tapped for category ID: %d, Name: %s", cat.ID, cat.Name)
