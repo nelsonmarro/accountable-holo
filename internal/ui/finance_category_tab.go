@@ -104,25 +104,24 @@ func (ui *UI) makeCategoryListUI() fyne.CanvasObject {
 }
 
 func (ui *UI) fillCategoryListData(i widget.ListItemID, o fyne.CanvasObject) {
-	category := ui.categories.Data[i]
+	cat := ui.categories.Data[i]
 
 	rowContainer := o.(*fyne.Container)
 
 	nameLabel := rowContainer.Objects[0].(*widget.Label)
-	nameLabel.SetText(category.Name)
+	nameLabel.SetText(cat.Name)
 
 	typeLabel := rowContainer.Objects[1].(*widget.Label)
-	typeLabel.SetText(string(category.Type))
+	typeLabel.SetText(string(cat.Type))
 
 	actionsContainer := rowContainer.Objects[2].(*fyne.Container)
 	editBtn := actionsContainer.Objects[0].(*widget.Button)
 	deleteBtn := actionsContainer.Objects[1].(*widget.Button)
 
 	editBtn.OnTapped = func() {
-		log.Printf("Edit button tapped for category ID: %d, Name: %s", category.ID, category.Name)
 	}
 	deleteBtn.OnTapped = func() {
-		log.Printf("Delete button tapped for category ID: %d, Name: %s", category.ID, category.Name)
+		log.Printf("Delete button tapped for category ID: %d, Name: %s", cat.ID, cat.Name)
 	}
 }
 

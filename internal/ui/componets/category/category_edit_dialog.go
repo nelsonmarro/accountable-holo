@@ -101,16 +101,11 @@ func (d *EditCategoryDialog) showEditForm(acc *domain.Category) {
 	// Populate the widgets with the fetched data
 	d.nameEntry.SetText(acc.Name)
 	d.tipoSelect.SetText(string(acc.Type))
-	d.amountEntry.SetText(fmt.Sprintf("%.2f", acc.InitialBalance))
-	d.amountEntry.Disable() // Initial balance should not be editable
-	d.numberEntry.SetText(acc.Number)
 
 	formDialog := dialog.NewForm("Editar Cuenta", "Guardar", "Cancelar",
 		CategoryForm(
 			d.nameEntry,
 			d.tipoSelect,
-			d.amountEntry,
-			d.numberEntry,
 		),
 		d.handleSubmit, // The submit callback
 		d.mainWin,
@@ -133,9 +128,8 @@ func (d *EditCategoryDialog) handleSubmit(valid bool) {
 			BaseEntity: domain.BaseEntity{
 				ID: d.catID, // Use the original ID for updates
 			},
-			Name:   d.nameEntry.Text,
-			Type:   helpers.GetCategoryTypeFromString(d.tipoSelect.Text),
-			Number: d.numberEntry.Text,
+			Name: d.nameEntry.Text,
+			Type: helpers.GetCategoryTypeFromString(d.tipoSelect.Text),
 		}
 
 		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
@@ -145,9 +139,9 @@ func (d *EditCategoryDialog) handleSubmit(valid bool) {
 		if err != nil {
 			fyne.Do(func() {
 				progress.Hide()
-				dialog.ShowError(errors.New("error al actualizar la cuenta. Intente otra vez"), d.mainWin)
+				dialog.ShowError(errors.New("error al actualizar la categoria. Intente otra vez"), d.mainWin)
 			})
-			d.logger.Printf("Error updating account %d: %v", d.catID, err)
+			d.logger.Printf("Error updating category %d: %v", d.catID, err)
 			return
 		}
 
