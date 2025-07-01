@@ -2,7 +2,6 @@ package ui
 
 import (
 	"context"
-	"log"
 	"time"
 
 	"fyne.io/fyne/v2"
@@ -135,7 +134,17 @@ func (ui *UI) fillCategoryListData(i widget.ListItemID, o fyne.CanvasObject) {
 		dialogHandler.Show()
 	}
 	deleteBtn.OnTapped = func() {
-		log.Printf("Delete button tapped for category ID: %d, Name: %s", cat.ID, cat.Name)
+		dialogHandler := category.NewDeleteCategoryDialog(
+			ui.mainWindow,
+			ui.errorLogger,
+			ui.Services.CatService,
+			func() {
+				ui.loadCategories(1, ui.categoryPaginator.GetPageSize())
+			},
+			cat.ID,
+		)
+
+		dialogHandler.Show()
 	}
 }
 
