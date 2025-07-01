@@ -158,11 +158,11 @@ func (r *paginationRenderer) Refresh() {
 				btn.Importance = widget.MediumImportance
 			}
 			btn.Show()
-			pageNumber++
 		} else {
 			// Hide buttons if there are fewer than 5 pages to show
 			btn.Hide()
 		}
+		pageNumber++
 	}
 
 	// Update the state of navigation buttons (first, prev, next, last).
