@@ -27,6 +27,7 @@ func (ui *UI) makeCategoryUI() fyne.CanvasObject {
 	catAddBtn := widget.NewButtonWithIcon("Agregar Categoría", theme.ContentAddIcon(), func() {})
 	catAddBtn.Importance = widget.HighImportance
 
+	// Pagination and List
 	ui.categoryPaginator = componets.NewPagination(
 		func() (totalCount int) {
 			return int(ui.categories.TotalCount)
