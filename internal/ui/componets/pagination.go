@@ -4,6 +4,7 @@ package componets
 import (
 	"fmt"
 	"math"
+	"strconv"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
@@ -16,26 +17,30 @@ import (
 type Pagination struct {
 	widget.BaseWidget
 
-	CurrentPage     int
-	PageSizeOptions []int
+	currentPage     int
+	pageSizeOptions []string
+	pageSize        int
 
-	// OnPageChanged is a callback function that is triggered when the page changes.
-	OnPageChanged func(page, pageSize int)
-	PagerInfo     func() (page, pageSize int)
+	// onPageChanged is a callback function that is triggered when the page changes.
+	onPageChanged func(page, pageSize int)
+	getTotalCount func() (totalCount int)
 }
 
 // NewPagination creates a new pagination widget.
 // onPageChanged will be called with the new page number when the user navigates.
 func NewPagination(
-	pagerInfo func() (totalCount, pageSize int),
+	getTotalCount func() (totalCount int),
 	onPageChanged func(page, pageSize int),
-	pageSizeOptions []int,
+	pageSizeOptions ...string,
 ) *Pagination {
+	if pageSizeOptions == nil || len(pageSizeOptions) == 0 {
+		pageSizeOptions = []string{"10", "20", "50", "100"}
+	}
 	p := &Pagination{
-		PagerInfo:       pagerInfo,
-		CurrentPage:     1,
-		OnPageChanged:   onPageChanged,
-		PageSizeOptions: pageSizeOptions,
+		getTotalCount:   getTotalCount,
+		currentPage:     1,
+		onPageChanged:   onPageChanged,
+		pageSizeOptions: pageSizeOptions,
 	}
 
 	p.ExtendBaseWidget(p)
@@ -53,6 +58,8 @@ func (p *Pagination) CreateRenderer() fyne.WidgetRenderer {
 	r.prevBtn = widget.NewButtonWithIcon("", theme.MediaFastRewindIcon(), r.onPrev)
 	r.nextBtn = widget.NewButtonWithIcon("", theme.MediaFastForwardIcon(), r.onNext)
 	r.lastBtn = widget.NewButtonWithIcon("", theme.MediaSkipNextIcon(), r.onLast)
+	r.pageSizeSelect = widget.NewSelect(p.pageSizeOptions, r.onSelectPageSize)
+	r.pageSizeSelect.Selected = p.pageSizeOptions[0] // Default to the first option
 
 	// Create the 5 buttons for the page numbers. We'll set their text later.
 	for i := range 5 {
@@ -114,15 +121,23 @@ func (r *paginationRenderer) onFirst() {
 }
 
 func (r *paginationRenderer) onPrev() {
-	r.navigateTo(r.widget.CurrentPage - 1)
+	r.navigateTo(r.widget.currentPage - 1)
 }
 
 func (r *paginationRenderer) onNext() {
-	r.navigateTo(r.widget.CurrentPage + 1)
+	r.navigateTo(r.widget.currentPage + 1)
 }
 
 func (r *paginationRenderer) onLast() {
 	r.navigateTo(r.totalPages())
+}
+
+func (r *paginationRenderer) onSelectPageSize(size string) {
+	r.widget.pageSize, err = strconv.Atoi(size)
+	if err != nil {
+		fmt.Println("Error parsing page size:", err)
+		return
+	}
 }
 
 func (r *paginationRenderer) onPageTapped(page int) {
@@ -130,10 +145,10 @@ func (r *paginationRenderer) onPageTapped(page int) {
 }
 
 func (r *paginationRenderer) navigateTo(page int) {
-	_, pageSize := r.widget.PagerInfo()
-	if r.widget.OnPageChanged != nil {
-		r.widget.CurrentPage = page
-		r.widget.OnPageChanged(page, pageSize) // Notify the main app
+	_, pageSize := r.widget.getTotalCount()
+	if r.widget.onPageChanged != nil {
+		r.widget.currentPage = page
+		r.widget.onPageChanged(page, pageSize) // Notify the main app
 		r.Refresh()                            // Update the pagination widget itself
 	}
 }
@@ -156,7 +171,7 @@ func (r *paginationRenderer) Refresh() {
 			btn.OnTapped = func() {
 				r.onPageTapped(page)
 			}
-			if pageNumber == r.widget.CurrentPage {
+			if pageNumber == r.widget.currentPage {
 				btn.Importance = widget.HighImportance // Highlight the current page
 			} else {
 				btn.Importance = widget.MediumImportance
@@ -172,21 +187,21 @@ func (r *paginationRenderer) Refresh() {
 	// Update the state of navigation buttons (first, prev, next, last).
 	r.firstBtn.Disable()
 	r.prevBtn.Disable()
-	if r.widget.CurrentPage > 1 {
+	if r.widget.currentPage > 1 {
 		r.firstBtn.Enable()
 		r.prevBtn.Enable()
 	}
 
 	r.lastBtn.Disable()
 	r.nextBtn.Disable()
-	if r.widget.CurrentPage < totalPages {
+	if r.widget.currentPage < totalPages {
 		r.lastBtn.Enable()
 		r.nextBtn.Enable()
 	}
 }
 
 func (r *paginationRenderer) totalPages() int {
-	totalCount, pageSize := r.widget.PagerInfo()
+	totalCount, pageSize := r.widget.getTotalCount()
 	if totalCount == 0 || pageSize == 0 {
 		return 1
 	}
@@ -195,8 +210,8 @@ func (r *paginationRenderer) totalPages() int {
 }
 
 func (r *paginationRenderer) calculatePageRange(totalPages int) (int, int) {
-	start := r.widget.CurrentPage - 2
-	end := r.widget.CurrentPage + 2
+	start := r.widget.currentPage - 2
+	end := r.widget.currentPage + 2
 
 	if start < 1 {
 		diff := 1 - start
