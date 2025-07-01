@@ -16,7 +16,8 @@ import (
 type Pagination struct {
 	widget.BaseWidget
 
-	CurrentPage int
+	CurrentPage     int
+	PageSizeOptions []int
 
 	// OnPageChanged is a callback function that is triggered when the page changes.
 	OnPageChanged func(page, pageSize int)
@@ -25,11 +26,16 @@ type Pagination struct {
 
 // NewPagination creates a new pagination widget.
 // onPageChanged will be called with the new page number when the user navigates.
-func NewPagination(pagerInfo func() (totalCount, pageSize int), onPageChanged func(page, pageSize int)) *Pagination {
+func NewPagination(
+	pagerInfo func() (totalCount, pageSize int),
+	onPageChanged func(page, pageSize int),
+	pageSizeOptions []int,
+) *Pagination {
 	p := &Pagination{
-		PagerInfo:     pagerInfo,
-		CurrentPage:   1,
-		OnPageChanged: onPageChanged,
+		PagerInfo:       pagerInfo,
+		CurrentPage:     1,
+		OnPageChanged:   onPageChanged,
+		PageSizeOptions: pageSizeOptions,
 	}
 
 	p.ExtendBaseWidget(p)
@@ -73,13 +79,14 @@ func (p *Pagination) CreateRenderer() fyne.WidgetRenderer {
 
 // paginationRenderer is the renderer for the Pagination widget.
 type paginationRenderer struct {
-	widget   *Pagination
-	firstBtn *widget.Button
-	prevBtn  *widget.Button
-	nextBtn  *widget.Button
-	lastBtn  *widget.Button
-	pageBtns []*widget.Button
-	layout   *fyne.Container
+	widget         *Pagination
+	firstBtn       *widget.Button
+	prevBtn        *widget.Button
+	nextBtn        *widget.Button
+	lastBtn        *widget.Button
+	pageSizeSelect *widget.Select
+	pageBtns       []*widget.Button
+	layout         *fyne.Container
 }
 
 // Layout Tells Fyne how to size and position the objetcs in a widget.
@@ -132,9 +139,6 @@ func (r *paginationRenderer) navigateTo(page int) {
 }
 
 // -- Refresh Logic --
-
-// Refresh is the most important method. It's called to update the UI
-// based on the widget's current state.
 func (r *paginationRenderer) Refresh() {
 	totalPages := r.totalPages()
 

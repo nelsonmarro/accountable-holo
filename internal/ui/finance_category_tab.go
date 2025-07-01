@@ -46,9 +46,9 @@ func (ui *UI) makeCategoryUI() fyne.CanvasObject {
 		ui.categoryPaginator,
 		nil, nil, nil,
 		container.NewGridWithColumns(3,
-			widget.NewLabel("Name"),
-			widget.NewLabel("Type"),
-			widget.NewLabel("Actions"),
+			widget.NewLabel("Nombre"),
+			widget.NewLabel("Tipo"),
+			widget.NewLabel("Acciones"),
 		),
 	)
 
