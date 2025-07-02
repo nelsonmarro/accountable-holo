@@ -75,7 +75,7 @@ func (r *AccountRepositoryImpl) AccountExists(ctx context.Context, name, number 
 	query := `select exists(select 1 from accounts where (name = $1 or number = $2) and id != $3)`
 	var exists bool
 
-	err := r.db.QueryRow(ctx, query, name).Scan(&exists)
+	err := r.db.QueryRow(ctx, query, name, number, id).Scan(&exists)
 	if err != nil {
 		return false, fmt.Errorf("failed to check if account exists: %w", err)
 	}
