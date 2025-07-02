@@ -157,15 +157,21 @@ func TestUpdateAccount(t *testing.T) {
 func TestAccountExistsForCreate(t *testing.T) {
 	truncateTables(t)
 	ctx := context.Background()
-	createdAcc := createTestAccount(t, testRepo)
+	_ = createTestAccount(t, testRepo)
 
-	t.Run("should return true for existing account", func(t *testing.T) {
-		exists, err := testRepo.AccountExists(ctx, createdAcc.Name, createdAcc.Number, 0)
+	t.Run("should return true for when creating and name exists on other account", func(t *testing.T) {
+		exists, err := testRepo.AccountExists(ctx, "Test Bank Account", "943345", 0)
 		require.NoError(t, err)
 		assert.True(t, exists)
 	})
 
-	t.Run("should return false for non-existent account", func(t *testing.T) {
+	t.Run("should return true for when updating and number exists on other account", func(t *testing.T) {
+		exists, err := testRepo.AccountExists(ctx, "Other Account", "12345", 0)
+		require.NoError(t, err)
+		assert.True(t, exists)
+	})
+
+	t.Run("should return false when updating and no other accounts has the same name or number", func(t *testing.T) {
 		exists, err := testRepo.AccountExists(ctx, "Non-Existent Account", "00000", 0)
 		// Since we expect a false, an error here would be a problem
 		require.NoError(t, err)
@@ -185,8 +191,15 @@ func TestAccountExistsForUpdate(t *testing.T) {
 	})
 
 	t.Run("should return true for when updating and number exists on other account", func(t *testing.T) {
-		exists, err := testRepo.AccountExists(ctx, "67890", accounts[0].Number, accounts[0].ID)
+		exists, err := testRepo.AccountExists(ctx, "Test Banck Account 3", "67890", accounts[0].ID)
 		require.NoError(t, err)
 		assert.True(t, exists)
+	})
+
+	t.Run("should return false when updating and no other accounts has the same name or number", func(t *testing.T) {
+		exists, err := testRepo.AccountExists(ctx, "Non-Existent Account", "00000", accounts[0].ID)
+		// Since we expect a false, an error here would be a problem
+		require.NoError(t, err)
+		assert.False(t, exists)
 	})
 }
