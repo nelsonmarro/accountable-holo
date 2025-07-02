@@ -32,8 +32,8 @@ func (s *AccountServiceImpl) CreateNewAccount(ctx context.Context, acc *domain.A
 	if err != nil {
 		return fmt.Errorf("error al verificar si la cuenta existe: %w", err)
 	}
-	if !exists {
-		return errors.New("ya existe una cuenta con el mismo nombre o numero que la que trata de crear/nIntente otra vez")
+	if exists {
+		return errors.New("ya existe una cuenta con el mismo nombre o número que la que trata de crear")
 	}
 
 	err = s.repo.CreateAccount(ctx, acc)
@@ -62,12 +62,11 @@ func (s *AccountServiceImpl) UpdateAccount(ctx context.Context, acc *domain.Acco
 	}
 
 	exists, err := s.repo.AccountExists(ctx, acc.Name, acc.Number, acc.ID)
-	fmt.Println("existe la cuenta?", exists)
 	if err != nil {
 		return fmt.Errorf("error al verificar si la cuenta existe: %w", err)
 	}
 	if exists {
-		return errors.New("ya existe una cuenta con el mismo nombre o numero que la que trata de crear/nIntente otra vez")
+		return errors.New("ya existe una cuenta con el mismo nombre o número que la que trata de crear")
 	}
 
 	return s.repo.UpdateAccount(ctx, acc)
