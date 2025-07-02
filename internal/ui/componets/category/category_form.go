@@ -3,7 +3,6 @@ package category
 import (
 	"fyne.io/fyne/v2/widget"
 	"github.com/nelsonmarro/accountable-holo/internal/application/uivalidators"
-	"github.com/nelsonmarro/accountable-holo/internal/domain"
 )
 
 func CategoryForm(
@@ -11,7 +10,6 @@ func CategoryForm(
 	tipoSelect *widget.SelectEntry,
 ) []*widget.FormItem {
 	addFormValidation(nameEntry, tipoSelect)
-	tipoSelect.SetText(string(domain.Income))
 
 	return []*widget.FormItem{
 		{Text: "Nombre", Widget: nameEntry},

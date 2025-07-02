@@ -2,7 +2,6 @@ package account
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"log"
 	"time"
@@ -58,7 +57,7 @@ func (d *EditAccountDialog) Show() {
 	onFailure := func(err error) {
 		d.logger.Println("Error getting account by ID:", err)
 		fyne.Do(func() {
-			errorDialog := dialog.NewError(fmt.Errorf("%s\n%s", "error al editar la cuenta\n", err.Error()), d.mainWin)
+			errorDialog := dialog.NewError(fmt.Errorf("%s\n%s", "error al editar la cuenta", err.Error()), d.mainWin)
 			errorDialog.Show()
 		})
 	}
@@ -143,7 +142,7 @@ func (d *EditAccountDialog) handleSubmit(valid bool) {
 		if err != nil {
 			fyne.Do(func() {
 				progress.Hide()
-				dialog.ShowError(errors.New("error al actualizar la cuenta. Intente otra vez"), d.mainWin)
+				dialog.ShowError(err, d.mainWin)
 			})
 			d.logger.Printf("Error updating account %d: %v", d.accountID, err)
 			return

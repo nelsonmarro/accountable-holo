@@ -48,6 +48,7 @@ func NewAddAccountDialog(win fyne.Window, l *log.Logger, service AccountService,
 
 // Show creates and displays the Fyne form dialog.
 func (d *AddAccountDialog) Show() {
+	d.tipoSelect.SetText(string(domain.SavingAccount))
 	formDialog := dialog.NewForm("Crear Cuenta", "Guardar", "Cancelar",
 		AccountForm(
 			d.nameEntry,

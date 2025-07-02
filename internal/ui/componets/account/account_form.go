@@ -3,7 +3,6 @@ package account
 import (
 	"fyne.io/fyne/v2/widget"
 	"github.com/nelsonmarro/accountable-holo/internal/application/uivalidators"
-	"github.com/nelsonmarro/accountable-holo/internal/domain"
 )
 
 func AccountForm(
@@ -12,7 +11,6 @@ func AccountForm(
 	amountEntry *widget.Entry,
 	numberEntry *widget.Entry,
 ) []*widget.FormItem {
-	tipoSelect.SetText(string(domain.SavingAccount))
 	addFormValidation(nameEntry, amountEntry, tipoSelect, numberEntry)
 
 	return []*widget.FormItem{
