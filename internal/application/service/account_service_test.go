@@ -134,7 +134,7 @@ func TestGetAccountByID(t *testing.T) {
 
 		// Assert
 		require.Error(t, err)
-		assert.Equal(t, "ID de cuenta inválido ", err.Error())
+		assert.Equal(t, "ID de cuenta inválido", err.Error())
 	})
 
 	t.Run("should call repository for valid ID", func(t *testing.T) {
@@ -190,7 +190,7 @@ func TestUpdateAccount(t *testing.T) {
 
 		// Assert
 		require.Error(t, err)
-		assert.Equal(t, "ID de cuenta inválido ", err.Error())
+		assert.Equal(t, "ID de cuenta inválido", err.Error())
 		mockRepo.AssertNotCalled(t, "UpdateAccount")
 		mockRepo.AssertNotCalled(t, "AccountExists")
 	})
@@ -214,19 +214,19 @@ func TestUpdateAccount(t *testing.T) {
 		// Arrange
 		acc := &domain.Account{BaseEntity: domain.BaseEntity{ID: 1}, Name: "Found Account"}
 		expecteErrStr := "error al verificar si la cuenta existe"
-		expecteErr := errors.New("sql error")
+		expectedErr := errors.New("sql error")
 
 		// Setup the expectation
-		mockRepo.On("AccountExists", ctx, acc.Name, acc.Number, acc.ID).Return(false, expecteErr)
+		mockRepo.On("AccountExists", ctx, acc.Name, acc.Number, acc.ID).Return(false, expectedErr)
 
 		// Act
 		err := accountService.UpdateAccount(ctx, acc)
 
 		// Assert
 		require.Error(t, err)
-		assert.ErrorIs(t, err, expecteErr)
+		assert.ErrorIs(t, err, expectedErr)
 		require.Contains(t, err.Error(), expecteErrStr)
-		require.Contains(t, err.Error(), expecteErr.Error())
+		require.Contains(t, err.Error(), expectedErr.Error())
 		mockRepo.AssertExpectations(t)
 		mockRepo.AssertNotCalled(t, "UpdateAccount")
 	})
@@ -260,7 +260,7 @@ func TestDeleteAccount(t *testing.T) {
 		err := accountService.DeleteAccount(ctx, 0)
 
 		require.Error(t, err)
-		assert.Equal(t, "ID de cuenta inválido ", err.Error())
+		assert.Equal(t, "ID de cuenta inválido", err.Error())
 		mockRepo.AssertExpectations(t)
 		mockRepo.AssertNotCalled(t, "DeleteAccount")
 	})
@@ -268,17 +268,19 @@ func TestDeleteAccount(t *testing.T) {
 	t.Run("should return error if the repo fail to delete account", func(t *testing.T) {
 		mockRepo := new(mocks.MockAccountRepository)
 		accountService := NewAccountService(mockRepo)
+		expectedError := errors.New("sql error")
 
 		// Setup the expectation
-		mockRepo.On("DeleteAccount", ctx, 1).Return(errors.New("sql error"))
+		mockRepo.On("DeleteAccount", ctx, 1).Return(expectedError)
 
 		// Act
 		err := accountService.DeleteAccount(ctx, 1)
 
 		// Assert
 		require.Error(t, err)
+		require.ErrorIs(t, err, expectedError)
 		require.Contains(t, err.Error(), "error al eliminar la cuenta:")
-		require.Contains(t, err.Error(), "sql error")
+		require.Contains(t, err.Error(), expectedError.Error())
 		mockRepo.AssertExpectations(t)
 	})
 
