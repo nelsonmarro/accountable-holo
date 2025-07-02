@@ -131,19 +131,19 @@ func TestUpdateAccount(t *testing.T) {
 	assert.True(t, updatedAcc.UpdatedAt.After(originalUpdateTS), "UpdatedAt timestamp should have been updated")
 }
 
-func TestAccountExists(t *testing.T) {
+func TestAccountExistsForCreate(t *testing.T) {
 	truncateTables(t)
 	ctx := context.Background()
 	createdAcc := createTestAccount(t, testRepo)
 
 	t.Run("should return true for existing account", func(t *testing.T) {
-		exists, err := testRepo.AccountExists(ctx, createdAcc.ID)
+		exists, err := testRepo.AccountExists(ctx, createdAcc.Name, createdAcc.Number, 0)
 		require.NoError(t, err)
 		assert.True(t, exists)
 	})
 
 	t.Run("should return false for non-existent account", func(t *testing.T) {
-		exists, err := testRepo.AccountExists(ctx, 99999)
+		exists, err := testRepo.AccountExists(ctx, "Non-Existent Account", "00000", 0)
 		// Since we expect a false, an error here would be a problem
 		require.NoError(t, err)
 		assert.False(t, exists)

@@ -45,8 +45,8 @@ func (m *MockAccountRepository) DeleteAccount(ctx context.Context, id int) error
 	return args.Error(0)
 }
 
-func (m *MockAccountRepository) AccountExists(ctx context.Context, id int) (bool, error) {
-	args := m.Called(ctx, id)
+func (m *MockAccountRepository) AccountExists(ctx context.Context, name, number string, id int) (bool, error) {
+	args := m.Called(ctx, name, number, id)
 	return args.Bool(0), args.Error(1)
 }
 

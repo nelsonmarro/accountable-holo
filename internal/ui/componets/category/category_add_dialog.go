@@ -45,6 +45,7 @@ func NewAddCategoryDialog(win fyne.Window, l *log.Logger, service CategoryServic
 
 // Show creates and displays the Fyne form dialog.
 func (d *AddCategoryDialog) Show() {
+	d.tipoSelect.SetText(string(domain.Income))
 	formDialog := dialog.NewForm("Crear Categoria", "Guardar", "Cancelar",
 		CategoryForm(
 			d.nameEntry,
