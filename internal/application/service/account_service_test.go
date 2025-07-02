@@ -22,8 +22,7 @@ func TestCreateNewAccount(t *testing.T) {
 		acc := &domain.Account{Name: "Test Account", InitialBalance: 100, Number: "2222", Type: domain.SavingAccount}
 
 		// Tell the mock what to expect.
-		// When CreateAccount is called with any context and our acc object,
-		// it should return a nil error.
+		mockRepo.On("AccountExists", ctx, acc.Number, acc.Number, 0).Return(false, nil)
 		mockRepo.On("CreateAccount", ctx, acc).Return(nil)
 
 		// Act
@@ -55,14 +54,14 @@ func TestCreateNewAccount(t *testing.T) {
 		mockRepo.AssertNotCalled(t, "CreateAccount")
 	})
 
-	t.Run("should return error when repository fails", func(t *testing.T) {
+	t.Run("should return error when create account method in repo fails", func(t *testing.T) {
 		// Arrange
 		mockRepo := new(mocks.MockAccountRepository)
 		accountService := NewAccountService(mockRepo)
 		acc := &domain.Account{Name: "Test Account", InitialBalance: 100, Number: "2222", Type: domain.SavingAccount}
 		repoError := errors.New("database connection failed")
 
-		// Tell the mock to return an error when CreateAccount is called.
+		mockRepo.On("AccountExists", ctx, acc.Number, acc.Number, 0).Return(false, nil)
 		mockRepo.On("CreateAccount", ctx, acc).Return(repoError)
 
 		// Act
@@ -74,6 +73,26 @@ func TestCreateNewAccount(t *testing.T) {
 		assert.Contains(t, err.Error(), "failed to create account")
 		assert.ErrorIs(t, err, repoError)
 		mockRepo.AssertExpectations(t)
+	})
+
+	t.Run("should return error when account exists method in repo fails", func(t *testing.T) {
+		// Arrange
+		mockRepo := new(mocks.MockAccountRepository)
+		accountService := NewAccountService(mockRepo)
+		acc := &domain.Account{Name: "Test Account", InitialBalance: 100, Number: "2222", Type: domain.SavingAccount}
+		expecteErrorStr := "error al verificar si la cuenta existe"
+
+		mockRepo.On("AccountExists", ctx, acc.Number, acc.Number, 0).Return(false, nil)
+
+		// Act
+		err := accountService.CreateNewAccount(ctx, acc)
+
+		// Assert
+		require.Error(t, err)
+		// Check that our service wrapped the original error.
+		assert.Contains(t, err.Error(), expecteErrorStr)
+		mockRepo.AssertExpectations(t)
+		mockRepo.AssertNotCalled(t, "CreateNewAccount")
 	})
 }
 
