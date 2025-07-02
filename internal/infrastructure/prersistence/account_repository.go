@@ -71,8 +71,8 @@ func (r *AccountRepositoryImpl) GetAccountByID(ctx context.Context, id int) (*do
 	return &acc, nil
 }
 
-func (r *AccountRepositoryImpl) AccountExists(ctx context.Context, name string, id int) (bool, error) {
-	query := `select exists(select 1 from accounts where name = $1 and id != $2)`
+func (r *AccountRepositoryImpl) AccountExists(ctx context.Context, name, number string, id int) (bool, error) {
+	query := `select exists(select 1 from accounts where (name = $1 or number = $2) and id != $3)`
 	var exists bool
 
 	err := r.db.QueryRow(ctx, query, name).Scan(&exists)
