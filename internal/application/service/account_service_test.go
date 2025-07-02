@@ -181,11 +181,11 @@ func TestGetAllAccounts(t *testing.T) {
 
 func TestUpdateAccount(t *testing.T) {
 	ctx := context.Background()
-	mockRepo := new(mocks.MockAccountRepository)
-	accountService := NewAccountService(mockRepo)
 
 	t.Run("should return error for invalid ID", func(t *testing.T) {
 		// Act
+		mockRepo := new(mocks.MockAccountRepository)
+		accountService := NewAccountService(mockRepo)
 		err := accountService.UpdateAccount(ctx, &domain.Account{BaseEntity: domain.BaseEntity{ID: 0}})
 
 		// Assert
@@ -197,6 +197,8 @@ func TestUpdateAccount(t *testing.T) {
 
 	t.Run("should return nil error if accound has ID", func(t *testing.T) {
 		// Arrange
+		mockRepo := new(mocks.MockAccountRepository)
+		accountService := NewAccountService(mockRepo)
 		acc := &domain.Account{BaseEntity: domain.BaseEntity{ID: 1}, Name: "Found Account"}
 
 		// Setup the expectation
@@ -212,6 +214,8 @@ func TestUpdateAccount(t *testing.T) {
 	})
 	t.Run("should return error if account exists method in repo returns error", func(t *testing.T) {
 		// Arrange
+		mockRepo := new(mocks.MockAccountRepository)
+		accountService := NewAccountService(mockRepo)
 		acc := &domain.Account{BaseEntity: domain.BaseEntity{ID: 1}, Name: "Found Account"}
 		expecteErrStr := "error al verificar si la cuenta existe"
 		expectedErr := errors.New("sql error")
@@ -232,8 +236,10 @@ func TestUpdateAccount(t *testing.T) {
 	})
 	t.Run("should return error if account exists method in repo returns true", func(t *testing.T) {
 		// Arrange
+		mockRepo := new(mocks.MockAccountRepository)
+		accountService := NewAccountService(mockRepo)
 		acc := &domain.Account{BaseEntity: domain.BaseEntity{ID: 1}, Name: "Found Account"}
-		expecteErrStr := "ya existe otra cuenta con el mismo nombre o número ingresado "
+		expecteErrStr := "ya existe otra cuenta con el mismo nombre o número ingresado"
 
 		// Setup the expectation
 		mockRepo.On("AccountExists", ctx, acc.Name, acc.Number, acc.ID).Return(true, nil)
