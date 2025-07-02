@@ -13,9 +13,8 @@ import (
 
 // ---- Test Cases ----
 func TestCreateNewAccount(t *testing.T) {
-	ctx := context.Background()
-
 	t.Run("should create account succesfully", func(t *testing.T) {
+		ctx := context.Background()
 		// Arrange
 		mockRepo := new(mocks.MockAccountRepository)
 		accService := NewAccountService(mockRepo)
@@ -29,10 +28,12 @@ func TestCreateNewAccount(t *testing.T) {
 		err := accService.CreateNewAccount(ctx, acc)
 
 		// Assert
+		mockRepo.AssertExpectations(t)
 		require.NoError(t, err)
 	})
 
 	t.Run("should return error when fields are empty", func(t *testing.T) {
+		ctx := context.Background()
 		// Arrange
 		mockRepo := new(mocks.MockAccountRepository) // The repo is fresh for each sub-test
 		accountService := NewAccountService(mockRepo)
@@ -52,10 +53,12 @@ func TestCreateNewAccount(t *testing.T) {
 		assert.Contains(t, err.Error(), "el campo Number es requerido")
 		// Verify that the CreateAccount method was never called.
 		mockRepo.AssertNotCalled(t, "CreateAccount")
+		mockRepo.AssertNotCalled(t, "AccountExists")
 	})
 
 	t.Run("should return error when create account method in repo fails", func(t *testing.T) {
 		// Arrange
+		ctx := context.Background()
 		mockRepo := new(mocks.MockAccountRepository)
 		accountService := NewAccountService(mockRepo)
 		acc := &domain.Account{Name: "Test Account", InitialBalance: 100, Number: "2222", Type: domain.SavingAccount}
@@ -77,12 +80,14 @@ func TestCreateNewAccount(t *testing.T) {
 
 	t.Run("should return error when account exists method in repo fails", func(t *testing.T) {
 		// Arrange
+		ctx := context.Background()
 		mockRepo := new(mocks.MockAccountRepository)
 		accountService := NewAccountService(mockRepo)
 		acc := &domain.Account{Name: "Test Account", InitialBalance: 100, Number: "2222", Type: domain.SavingAccount}
-		expecteErrorStr := "error al verificar si la cuenta existe"
+		expecteErrStr := "error al verificar si la cuenta existe"
+		expecteErr := errors.New("sql error")
 
-		mockRepo.On("AccountExists", ctx, acc.Number, acc.Number, 0).Return(false, nil)
+		mockRepo.On("AccountExists", ctx, acc.Number, acc.Number, 0).Return(false, expecteErr)
 
 		// Act
 		err := accountService.CreateNewAccount(ctx, acc)
@@ -90,7 +95,28 @@ func TestCreateNewAccount(t *testing.T) {
 		// Assert
 		require.Error(t, err)
 		// Check that our service wrapped the original error.
-		assert.Contains(t, err.Error(), expecteErrorStr)
+		assert.Contains(t, err.Error(), expecteErrStr)
+		assert.Contains(t, err.Error(), expecteErr.Error())
+		mockRepo.AssertExpectations(t)
+		mockRepo.AssertNotCalled(t, "CreateNewAccount")
+	})
+	t.Run("should return error when account exists method in repo return true", func(t *testing.T) {
+		// Arrange
+		ctx := context.Background()
+		mockRepo := new(mocks.MockAccountRepository)
+		accountService := NewAccountService(mockRepo)
+		acc := &domain.Account{Name: "Test Account", InitialBalance: 100, Number: "2222", Type: domain.SavingAccount}
+		expecteErrStr := "ya existe una cuenta con el mismo nombre o número ingresado"
+
+		mockRepo.On("AccountExists", ctx, acc.Number, acc.Number, 0).Return(true, nil)
+
+		// Act
+		err := accountService.CreateNewAccount(ctx, acc)
+
+		// Assert
+		require.Error(t, err)
+		// Check that our service wrapped the original error.
+		assert.Contains(t, err.Error(), expecteErrStr)
 		mockRepo.AssertExpectations(t)
 		mockRepo.AssertNotCalled(t, "CreateNewAccount")
 	})
