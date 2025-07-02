@@ -191,6 +191,8 @@ func TestUpdateAccount(t *testing.T) {
 		// Assert
 		require.Error(t, err)
 		assert.Equal(t, "ID de cuenta inválido ", err.Error())
+		mockRepo.AssertNotCalled(t, "UpdateAccount")
+		mockRepo.AssertNotCalled(t, "AccountExists")
 	})
 
 	t.Run("should return nil error if accound has ID", func(t *testing.T) {
@@ -208,6 +210,43 @@ func TestUpdateAccount(t *testing.T) {
 		require.NoError(t, err)
 		mockRepo.AssertExpectations(t)
 	})
+	t.Run("should return error if account exists method in repo returns error", func(t *testing.T) {
+		// Arrange
+		acc := &domain.Account{BaseEntity: domain.BaseEntity{ID: 1}, Name: "Found Account"}
+		expecteErrStr := "error al verificar si la cuenta existe"
+		expecteErr := errors.New("sql error")
+
+		// Setup the expectation
+		mockRepo.On("AccountExists", ctx, acc.Name, acc.Number, acc.ID).Return(false, expecteErr)
+
+		// Act
+		err := accountService.UpdateAccount(ctx, acc)
+
+		// Assert
+		require.Error(t, err)
+		assert.ErrorIs(t, err, expecteErr)
+		require.Contains(t, err.Error(), expecteErrStr)
+		require.Contains(t, err.Error(), expecteErr.Error())
+		mockRepo.AssertExpectations(t)
+		mockRepo.AssertNotCalled(t, "UpdateAccount")
+	})
+	t.Run("should return error if account exists method in repo returns true", func(t *testing.T) {
+		// Arrange
+		acc := &domain.Account{BaseEntity: domain.BaseEntity{ID: 1}, Name: "Found Account"}
+		expecteErrStr := "ya existe otra cuenta con el mismo nombre o número ingresado "
+
+		// Setup the expectation
+		mockRepo.On("AccountExists", ctx, acc.Name, acc.Number, acc.ID).Return(true, nil)
+
+		// Act
+		err := accountService.UpdateAccount(ctx, acc)
+
+		// Assert
+		require.Error(t, err)
+		require.Contains(t, err.Error(), expecteErrStr)
+		mockRepo.AssertExpectations(t)
+		mockRepo.AssertNotCalled(t, "UpdateAccount")
+	})
 }
 
 func TestDeleteAccount(t *testing.T) {
@@ -221,8 +260,9 @@ func TestDeleteAccount(t *testing.T) {
 		err := accountService.DeleteAccount(ctx, 0)
 
 		require.Error(t, err)
-		assert.Equal(t, "invalid account ID", err.Error())
+		assert.Equal(t, "ID de cuenta inválido ", err.Error())
 		mockRepo.AssertExpectations(t)
+		mockRepo.AssertNotCalled(t, "DeleteAccount")
 	})
 
 	t.Run("should return error if the repo fail to delete account", func(t *testing.T) {
@@ -237,7 +277,7 @@ func TestDeleteAccount(t *testing.T) {
 
 		// Assert
 		require.Error(t, err)
-		require.Contains(t, err.Error(), "failed to delete account:")
+		require.Contains(t, err.Error(), "error al eliminar la cuenta:")
 		require.Contains(t, err.Error(), "sql error")
 		mockRepo.AssertExpectations(t)
 	})
