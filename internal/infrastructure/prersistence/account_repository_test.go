@@ -25,6 +25,29 @@ func createTestAccount(t *testing.T, repo *AccountRepositoryImpl) *domain.Accoun
 	return acc
 }
 
+func createTestAccounts(t *testing.T, repo *AccountRepositoryImpl) []*domain.Account {
+	acc1 := &domain.Account{
+		Name:           "Test Bank Account 1",
+		Number:         "12345",
+		Type:           domain.SavingAccount,
+		InitialBalance: 1000.50,
+	}
+
+	acc2 := &domain.Account{
+		Name:           "Test Bank Account 2",
+		Number:         "67890",
+		Type:           domain.OrdinaryAccount,
+		InitialBalance: 1000.50,
+	}
+
+	err := repo.CreateAccount(context.Background(), acc1)
+	require.NoError(t, err, "Failed to create test account")
+
+	err = repo.CreateAccount(context.Background(), acc2)
+	require.NoError(t, err, "Failed to create test account")
+	return []*domain.Account{acc1, acc2}
+}
+
 func TestCreateAccount(t *testing.T) {
 	// Arrange: Clean the DB before the test
 	truncateTables(t)
@@ -147,5 +170,23 @@ func TestAccountExistsForCreate(t *testing.T) {
 		// Since we expect a false, an error here would be a problem
 		require.NoError(t, err)
 		assert.False(t, exists)
+	})
+}
+
+func TestAccountExistsForUpdate(t *testing.T) {
+	truncateTables(t)
+	ctx := context.Background()
+	accounts := createTestAccounts(t, testRepo)
+
+	t.Run("should return true for when updating and name exists on other account", func(t *testing.T) {
+		exists, err := testRepo.AccountExists(ctx, "Test Bank Account 2", accounts[0].Number, accounts[0].ID)
+		require.NoError(t, err)
+		assert.True(t, exists)
+	})
+
+	t.Run("should return true for when updating and number exists on other account", func(t *testing.T) {
+		exists, err := testRepo.AccountExists(ctx, "67890", accounts[0].Number, accounts[0].ID)
+		require.NoError(t, err)
+		assert.True(t, exists)
 	})
 }
