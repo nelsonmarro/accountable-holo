@@ -16,7 +16,7 @@ type AccountRepository interface {
 }
 
 type CategoryRepository interface {
-	GetPaginatedCategories(ctx context.Context, page, pageSize int) (*domain.PaginatedResult[domain.Category], error)
+	GetPaginatedCategories(ctx context.Context, page, pageSize int, filter ...string) (*domain.PaginatedResult[domain.Category], error)
 	GetAllCategories(ctx context.Context) ([]domain.Category, error)
 	GetCategoryByID(ctx context.Context, id int) (*domain.Category, error)
 	CategoryExists(ctx context.Context, name string, id int) (bool, error)

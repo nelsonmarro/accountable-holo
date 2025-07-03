@@ -26,6 +26,9 @@ func (ui *UI) makeCategoryUI() fyne.CanvasObject {
 		},
 	})
 
+	// Search Bar
+	searchBar := componets.NewSearchBar(filterCategories)
+
 	// Pagination and List
 	ui.categoryPaginator = componets.NewPagination(
 		func() (totalCount int) {
@@ -160,6 +163,21 @@ func (ui *UI) loadCategories(page int, pageSize int) {
 
 	ui.categories = result
 
+	fyne.Do(func() {
+		ui.categoryList.Refresh()
+		ui.categoryPaginator.Refresh()
+	})
+}
+
+func (ui *UI) filterCategories(filter string) {
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cancel()
+	result, err := ui.Services.CatService.GetFilteredCategories(ctx, filter)
+	if err != nil {
+		dialog.ShowError(err, ui.mainWindow)
+		return
+	}
+	ui.categories = result
 	fyne.Do(func() {
 		ui.categoryList.Refresh()
 		ui.categoryPaginator.Refresh()

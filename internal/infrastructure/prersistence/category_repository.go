@@ -39,7 +39,7 @@ func (r *CategoryRepositoryImpl) GetAllCategories(ctx context.Context) ([]domain
 	return categories, rows.Err()
 }
 
-func (r *CategoryRepositoryImpl) GetPaginatedCategories(ctx context.Context, page, pageSize int) (
+func (r *CategoryRepositoryImpl) GetPaginatedCategories(ctx context.Context, page, pageSize int, filter ...string) (
 	*domain.PaginatedResult[domain.Category],
 	error,
 ) {
@@ -54,8 +54,20 @@ func (r *CategoryRepositoryImpl) GetPaginatedCategories(ctx context.Context, pag
 	}
 
 	var totalCount int64
-	countQuery := `select count(*) from categories`
-	err := r.db.QueryRow(ctx, countQuery).Scan(&totalCount)
+	var queryArgs []interface{}
+	var countQueryArgs []interface{}
+	whereClause := ""
+
+	if len(filter) > 0 && filter[0] != "" {
+		whereClause = " WHERE name ILIKE $1 OR type ILIKE $1"
+		filterArg := "%" + filter[0] + "%"
+		countQueryArgs = append(countQueryArgs, filterArg)
+		queryArgs = append(queryArgs, filterArg)
+	}
+
+	countQuery := `SELECT count(*) FROM categories` + whereClause
+
+	err := r.db.QueryRow(ctx, countQuery, countQueryArgs...).Scan(&totalCount)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get total category count: %w", err)
 	}
@@ -65,21 +77,28 @@ func (r *CategoryRepositoryImpl) GetPaginatedCategories(ctx context.Context, pag
 		return &domain.PaginatedResult[domain.Category]{
 			Data:       []domain.Category{},
 			TotalCount: 0,
-			Page:       1,
-			PageSize:   0,
+			Page:       page,
+			PageSize:   pageSize,
 		}, nil
 	}
 
 	// calculate offset
 	offset := (page - 1) * pageSize
-	dataQuery := `
-	   select id, name, type 
-	   from categories 
-		 order by name asc 
-		 limit $1 offset $2
-	`
 
-	rows, err := r.db.Query(ctx, dataQuery, pageSize, offset)
+	limitOffsetClause := ""
+	paramIndex := len(queryArgs) + 1
+	if len(queryArgs) > 0 {
+		limitOffsetClause = fmt.Sprintf(" ORDER BY name ASC LIMIT $%d OFFSET $%d", paramIndex, paramIndex+1)
+	} else {
+		limitOffsetClause = " ORDER BY name ASC LIMIT $1 OFFSET $2"
+	}
+	queryArgs = append(queryArgs, pageSize, offset)
+
+	dataQuery := `
+	   SELECT id, name, type 
+	   FROM categories` + whereClause + limitOffsetClause
+
+	rows, err := r.db.Query(ctx, dataQuery, queryArgs...)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get paginated categories: %w", err)
 	}
