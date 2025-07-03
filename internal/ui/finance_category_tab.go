@@ -60,6 +60,11 @@ func (ui *UI) makeCategoryUI() fyne.CanvasObject {
 	catAddBtn.Importance = widget.HighImportance
 
 	// Containers
+	titleContainer := container.NewVBox(
+		container.NewCenter(title),
+		container.NewBorder(nil, nil, catAddBtn, nil, searchBar),
+	)
+
 	tableHeader := container.NewBorder(
 		ui.categoryPaginator,
 		nil, nil, nil,
@@ -68,11 +73,6 @@ func (ui *UI) makeCategoryUI() fyne.CanvasObject {
 			widget.NewLabel("Tipo"),
 			widget.NewLabel("Acciones"),
 		),
-	)
-
-	titleContainer := container.NewVBox(
-		container.NewCenter(title),
-		container.NewBorder(nil, nil, searchBar, catAddBtn, nil),
 	)
 
 	tableContainer := container.NewBorder(
