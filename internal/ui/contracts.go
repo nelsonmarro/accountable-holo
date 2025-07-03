@@ -16,7 +16,7 @@ type AccountService interface {
 
 type CategoryService interface {
 	GetAllCategories(ctx context.Context) ([]domain.Category, error)
-	GetPaginatedCategories(ctx context.Context, page, pageSize int) (
+	GetPaginatedCategories(ctx context.Context, page, pageSize int, filter ...string) (
 		*domain.PaginatedResult[domain.Category],
 		error,
 	)

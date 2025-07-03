@@ -7,7 +7,6 @@ import (
 )
 
 type CategoryService interface {
-	GetAllCategories(ctx context.Context) ([]domain.Category, error)
 	GetCategoryByID(ctx context.Context, id int) (*domain.Category, error)
 	CreateCategory(ctx context.Context, category *domain.Category) error
 	UpdateCategory(ctx context.Context, category *domain.Category) error
