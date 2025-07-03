@@ -122,6 +122,16 @@ func (r *CategoryRepositoryImpl) GetCategoryByID(ctx context.Context, id int) (*
 	return &cat, nil
 }
 
+func (r *CategoryRepositoryImpl) CategoryExists(ctx context.Context, name string, id int) (bool, error) {
+	query := `select exists(select 1 from categories where name = $1 and id = $2)`
+	var exists bool
+	err := r.db.QueryRow(ctx, query, id).Scan(&exists)
+	if err != nil {
+		return false, fmt.Errorf("failed to check if category exists: %w", err)
+	}
+	return exists, nil
+}
+
 func (r *CategoryRepositoryImpl) CreateCategory(ctx context.Context, category *domain.Category) error {
 	query := `insert into categories (name, type, created_at, updated_at) 
 	                          values ($1, $2, $3, $4) 

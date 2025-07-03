@@ -2,7 +2,6 @@ package category
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"log"
 	"time"
@@ -139,7 +138,7 @@ func (d *EditCategoryDialog) handleSubmit(valid bool) {
 		if err != nil {
 			fyne.Do(func() {
 				progress.Hide()
-				dialog.ShowError(errors.New("error al actualizar la categoria. Intente otra vez"), d.mainWin)
+				dialog.ShowError(err, d.mainWin)
 			})
 			d.logger.Printf("Error updating category %d: %v", d.catID, err)
 			return
@@ -153,4 +152,3 @@ func (d *EditCategoryDialog) handleSubmit(valid bool) {
 		go d.callbackAction()
 	}()
 }
-

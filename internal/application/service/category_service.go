@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/nelsonmarro/accountable-holo/internal/application/validator"
@@ -43,6 +44,14 @@ func (s *CategoryServiceImpl) CreateCategory(ctx context.Context, category *doma
 		return err
 	}
 
+	exists, err := s.repo.CategoryExists(ctx, category.Name, 0)
+	if err != nil {
+		return fmt.Errorf("error al verificar si la categoria existe: %w", err)
+	}
+	if exists {
+		return errors.New("ya existe una categoria con el mismo nombre ingresado")
+	}
+
 	err = s.repo.CreateCategory(ctx, category)
 	if err != nil {
 		return err
@@ -62,6 +71,15 @@ func (s *CategoryServiceImpl) UpdateCategory(ctx context.Context, category *doma
 	if err != nil {
 		return err
 	}
+
+	exists, err := s.repo.CategoryExists(ctx, category.Name, category.ID)
+	if err != nil {
+		return fmt.Errorf("error al verificar si la categoria existe: %w", err)
+	}
+	if exists {
+		return errors.New("ya existe otra categoria con el mismo nombre ingresado")
+	}
+
 	err = s.repo.UpdateCategory(ctx, category)
 	if err != nil {
 		return err
