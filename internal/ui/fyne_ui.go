@@ -33,6 +33,7 @@ type UI struct {
 	categoryList      *widget.List
 	categoryPaginator *componets.Pagination
 	categories        *domain.PaginatedResult[domain.Category]
+	categoryFilter    string
 
 	// ---- Debug ----
 	infoLogger  *log.Logger

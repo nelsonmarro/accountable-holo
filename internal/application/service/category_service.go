@@ -21,11 +21,11 @@ func (s *CategoryServiceImpl) GetAllCategories(ctx context.Context) ([]domain.Ca
 	return s.repo.GetAllCategories(ctx)
 }
 
-func (s *CategoryServiceImpl) GetPaginatedCategories(ctx context.Context, page, pageSize int) (
+func (s *CategoryServiceImpl) GetPaginatedCategories(ctx context.Context, page, pageSize int, filter ...string) (
 	*domain.PaginatedResult[domain.Category],
 	error,
 ) {
-	return s.repo.GetPaginatedCategories(ctx, page, pageSize)
+	return s.repo.GetPaginatedCategories(ctx, page, pageSize, filter...)
 }
 
 func (s *CategoryServiceImpl) GetCategoryByID(ctx context.Context, id int) (*domain.Category, error) {
