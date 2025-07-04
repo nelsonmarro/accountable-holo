@@ -128,11 +128,11 @@ func (d *AddTransactionDialog) handleSubmit(valid bool) {
 		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 		defer cancel()
 
-		err := d.txService.CreateNewTransaction(ctx, tx)
+		err := d.txService.CreateTransaction(ctx, tx)
 		if err != nil {
 			fyne.Do(func() {
 				progressDialog.Hide()
-				dialog.ShowError(fmt.Errorf("Error creating transaction: %w", err), d.mainWin)
+				dialog.ShowError(fmt.Errorf("error creating transaction: %w", err), d.mainWin)
 			})
 			d.logger.Println("Error creating transaction:", err)
 			return

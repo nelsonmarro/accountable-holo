@@ -1,3 +1,4 @@
+// Package transaction provides the dialog for editing transactions.
 package transaction
 
 import (
@@ -61,7 +62,7 @@ func (d *EditTransactionDialog) Show() {
 	onFailure := func(err error) {
 		d.logger.Println("Error getting transaction by ID:", err)
 		fyne.Do(func() {
-			dialog.ShowError(fmt.Errorf("Error fetching transaction: %w", err), d.mainWin)
+			dialog.ShowError(fmt.Errorf("error fetching transaction: %w", err), d.mainWin)
 		})
 	}
 

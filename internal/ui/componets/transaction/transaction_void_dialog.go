@@ -62,7 +62,7 @@ func (d *DeleteTransactionDialog) executeDelete() {
 		if err != nil {
 			d.logger.Printf("Error voiding transaction %d: %v", d.txID, err)
 			fyne.Do(func() {
-				dialog.ShowError(errors.New("Error voiding transaction. Please try again."), d.mainWin)
+				dialog.ShowError(errors.New("error voiding transaction. Please try again"), d.mainWin)
 			})
 			return
 		}

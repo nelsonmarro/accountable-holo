@@ -27,7 +27,9 @@ type CategoryService interface {
 }
 
 type TransactionService interface {
-	CreateNewTransaction(ctx context.Context, tx *domain.Transaction) error
 	GetTransactionByAccountPaginated(ctx context.Context, accountID, page, pageSize int, filter ...string) (*domain.PaginatedResult[domain.Transaction], error)
+	GetTransactionByID(ctx context.Context, id int) (*domain.Transaction, error)
 	VoidTransaction(ctx context.Context, transactionID int) error
+	CreateTransaction(ctx context.Context, tx *domain.Transaction) error
+	UpdateTransaction(ctx context.Context, tx *domain.Transaction) error
 }

@@ -32,7 +32,7 @@ func (s *TransactionServiceImpl) GetTransactionByAccountPaginated(ctx context.Co
 	return s.repo.GetTransactionsByAccountPaginated(ctx, accountID, page, pageSize, filter...)
 }
 
-func (s *TransactionServiceImpl) CreateNewTransaction(ctx context.Context, tx *domain.Transaction) error {
+func (s *TransactionServiceImpl) CreateTransaction(ctx context.Context, tx *domain.Transaction) error {
 	if tx == nil {
 		return fmt.Errorf("transacción no puede ser nula")
 	}

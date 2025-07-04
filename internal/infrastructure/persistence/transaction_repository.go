@@ -265,3 +265,7 @@ func (r *TransactionRepositoryImpl) VoidTransaction(ctx context.Context, transac
 
 	return nil
 }
+
+func (r *TransactionRepositoryImpl) GetTransactionByID(ctx context.Context, transactionID int) (*domain.Transaction, error) {
+	return nil, nil
+}
