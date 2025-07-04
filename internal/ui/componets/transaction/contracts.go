@@ -14,11 +14,6 @@ type TransactionService interface {
 	VoidTransaction(ctx context.Context, id int) error
 }
 
-// AccountService defines the interface for account-related business logic.
-type AccountService interface {
-	GetAllAccounts(ctx context.Context) ([]domain.Account, error)
-}
-
 // CategoryService defines the interface for category-related business logic.
 type CategoryService interface {
 	GetAllCategories(ctx context.Context) ([]domain.Category, error)
