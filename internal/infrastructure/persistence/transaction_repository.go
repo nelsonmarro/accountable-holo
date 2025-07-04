@@ -232,7 +232,34 @@ func (r *TransactionRepositoryImpl) VoidTransaction(ctx context.Context, transac
 	}
 
 	newDescription := "Anulada por transaccion #" + strconv.Itoa(originalTransaction.ID) + ": " + originalTransaction.Description
-	TransactionDate := time.Now()
+	newTransactionDate := time.Now()
+
+	voidTransactionQuery := `
+	  insert into transactions (description, amount, transaction_date, account_id, category_id, created_at, updated_at)
+		                   values($1, $2, $3, $4, $5, $6, $7)
+	`
+
+	_, err = tx.Exec(
+		ctx,
+		voidTransactionQuery,
+		&newDescription,
+		&originalTransaction.Account,
+		&newTransactionDate,
+		&originalTransaction.AccountID,
+		&opposingCatID,
+		time.Now(),
+		time.Now(),
+	)
+	if err != nil {
+		return fmt.Errorf("error when voiding the transaction: %w", err)
+	}
+
+	// Mark the original transaction as voided 
+	marAsVoidedQuery := ` 
+	  update transactions set is_voided = TRUE
+		where 
+	`
+	_, err
 
 	return nil
 }
