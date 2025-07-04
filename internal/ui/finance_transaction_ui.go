@@ -232,6 +232,6 @@ func (ui *UI) loadAccountsForTx() {
 			ui.accountSelector.SetSelected(ui.accounts[0].Name)
 		}
 		ui.accountSelector.Refresh()
-		ui.loadTransactions(1, ui.transactionPaginator.GetPageSize())
 	})
+	go ui.loadTransactions(1, ui.transactionPaginator.GetPageSize())
 }
