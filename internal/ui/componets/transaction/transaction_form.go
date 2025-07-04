@@ -1,0 +1,54 @@
+package transaction
+
+import (
+	"fyne.io/fyne/v2/widget"
+	"github.com/nelsonmarro/accountable-holo/internal/application/uivalidators"
+)
+
+func TransactionForm(
+	descriptionEntry *widget.Entry,
+	amountEntry *widget.Entry,
+	dateEntry *widget.Entry,
+	accountSelect *widget.Select,
+	categorySelect *widget.Select,
+) []*widget.FormItem {
+	addFormValidation(descriptionEntry, amountEntry, dateEntry, accountSelect, categorySelect)
+
+	return []*widget.FormItem{
+		{Text: "Description", Widget: descriptionEntry},
+		{Text: "Amount", Widget: amountEntry},
+		{Text: "Date", Widget: dateEntry},
+		{Text: "Account", Widget: accountSelect},
+		{Text: "Category", Widget: categorySelect},
+	}
+}
+
+func addFormValidation(
+	descriptionEntry *widget.Entry,
+	amountEntry *widget.Entry,
+	dateEntry *widget.Entry,
+	accountSelect *widget.Select,
+	categorySelect *widget.Select,
+) {
+	descriptionValidator := uivalidators.NewValidator()
+	descriptionValidator.Required()
+	descriptionValidator.MinLength(3)
+	descriptionEntry.Validator = descriptionValidator.Validate
+
+	amountValidator := uivalidators.NewValidator()
+	amountValidator.Required()
+	amountValidator.IsFloat()
+	amountEntry.Validator = amountValidator.Validate
+
+	dateValidator := uivalidators.NewValidator()
+	dateValidator.Required()
+	dateEntry.Validator = dateValidator.Validate
+
+	accountValidator := uivalidators.NewValidator()
+	accountValidator.Required()
+	accountSelect.Validator = accountValidator.Validate()
+
+	categoryValidator := uivalidators.NewValidator()
+	categoryValidator.Required()
+	categorySelect.Validator = categoryValidator.Validate()
+}
