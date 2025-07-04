@@ -267,5 +267,30 @@ func (r *TransactionRepositoryImpl) VoidTransaction(ctx context.Context, transac
 }
 
 func (r *TransactionRepositoryImpl) GetTransactionByID(ctx context.Context, transactionID int) (*domain.Transaction, error) {
-	return nil, nil
+	query := `
+			select id, description, amount, transaction_date, account_id, category_id, created_at, updated_at,
+			from transactions t
+      where id = $1
+	`
+
+	var tx domain.Transaction
+
+	err := r.db.QueryRow(ctx, query, transactionID).Scan(
+		&tx.ID,
+		&tx.Description,
+		&tx.Amount,
+		&tx.TransactionDate,
+		&tx.AccountID,
+		&tx.CategoryID,
+		&tx.CreatedAt,
+		&tx.UpdatedAt,
+	)
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			return nil, fmt.Errorf("transaction with ID %d not found", transactionID)
+		}
+		return nil, fmt.Errorf("failed to get transaction by ID: %w", err)
+	}
+
+	return &tx, nil
 }
