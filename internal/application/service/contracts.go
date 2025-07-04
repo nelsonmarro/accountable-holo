@@ -27,5 +27,11 @@ type CategoryRepository interface {
 
 type TransactionRepository interface {
 	CreateTransaction(ctx context.Context, transaction *domain.Transaction) error
-	GetAllTransactions(ctx context.Context) ([]domain.Transaction, error)
+	GetTransactionsByAccountPaginated(
+		ctx context.Context,
+		accountID,
+		page,
+		pageSize int,
+		filter ...string,
+	) (*domain.PaginatedResult[domain.Transaction], error)
 }
