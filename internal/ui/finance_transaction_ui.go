@@ -80,7 +80,8 @@ func (ui *UI) makeTransactionUI() fyne.CanvasObject {
 
 	titleContainer := container.NewVBox(
 		container.NewCenter(title),
-		container.NewBorder(nil, nil, nil, filters, topBar),
+		filters,
+		topBar,
 	)
 
 	tableHeader := container.NewBorder(
