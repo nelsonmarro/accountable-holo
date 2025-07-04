@@ -3,6 +3,7 @@ package persistence
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -223,5 +224,15 @@ func (r *TransactionRepositoryImpl) VoidTransaction(ctx context.Context, transac
 		where name like '%Anular Transacción%' and type = $1
 	`
 
-	adjustmentCatID = tx.QueryRow(ctx, sql string, args ...any)
+	var opposingCatID int
+	err = tx.QueryRow(ctx, adjustmentCatQuery, opposingCatType).
+		Scan(opposingCatID)
+	if err != nil {
+		return fmt.Errorf("failed to get the opposing category: %w", err)
+	}
+
+	newDescription := "Anulada por transaccion #" + strconv.Itoa(originalTransaction.ID) + ": " + originalTransaction.Description
+	TransactionDate := time.Now()
+
+	return nil
 }
