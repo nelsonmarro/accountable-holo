@@ -54,8 +54,8 @@ func (r *CategoryRepositoryImpl) GetPaginatedCategories(ctx context.Context, pag
 	}
 
 	var totalCount int64
-	var queryArgs []interface{}
-	var countQueryArgs []interface{}
+	var queryArgs []any
+	var countQueryArgs []any
 	whereClause := ""
 
 	if len(filter) > 0 && filter[0] != "" {
