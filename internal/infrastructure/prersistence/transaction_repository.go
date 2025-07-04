@@ -40,3 +40,11 @@ func (r *TransactionRepositoryImpl) CreateTransaction(ctx context.Context, tx *d
 	return nil
 }
 
+func (r *TransactionRepositoryImpl) GetTransactionsByAccountPaginated(
+	ctx context.Context,
+	accountID,
+	page,
+	pageSize int,
+	filter ...string,
+) (*domain.PaginatedResult[domain.Transaction], error) {
+}
