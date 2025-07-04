@@ -189,5 +189,5 @@ func (r *TransactionRepositoryImpl) VoidTransaction(ctx context.Context, transac
 	var originalTransaction domain.Transaction
 	var originalCatType domain.CategoryType
 
-	err = tx.QueryRow(ctx, sql string, args ...any)
+	row := tx.QueryRow(ctx, originalTransactionQuery, transactionID)
 }
