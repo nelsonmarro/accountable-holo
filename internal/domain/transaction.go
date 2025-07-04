@@ -4,9 +4,12 @@ import "time"
 
 type Transaction struct {
 	BaseEntity
-	Amount          float64   `db:"amount"`
-	Description     string    `db:"description"`
-	TransactionDate time.Time `db:"transaction_date"`
+	Amount                float64   `db:"amount"`
+	Description           string    `db:"description"`
+	TransactionDate       time.Time `db:"transaction_date"`
+	IsVoided              bool      `db:"is_voided"`
+	VoidedByTransactionID int       `db:"voided_by_transaction_id"`
+	VoidsTransactionID    int       `db:"voids_transaction_id"`
 
 	// Relationships
 	AccountID  int64 `db:"account_id"`

@@ -190,4 +190,15 @@ func (r *TransactionRepositoryImpl) VoidTransaction(ctx context.Context, transac
 	var originalCatType domain.CategoryType
 
 	row := tx.QueryRow(ctx, originalTransactionQuery, transactionID)
+	err = row.Scan(
+		&originalTransaction.ID,
+		&originalTransaction.Description,
+		&originalTransaction.Amount,
+		&originalTransaction.AccountID,
+		&originalTransaction.IsVoided,
+		&originalCatType,
+	)
+	if err != nil {
+		return fmt.Errorf("failed to get original transaction: %w", err)
+	}
 }
