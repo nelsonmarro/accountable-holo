@@ -7,6 +7,7 @@ import (
 )
 
 type AccountRepository interface {
+	GetPaginatedAccounts(ctx context.Context, page, pageSize int, filter string) (*domain.PaginatedResult[domain.Account], error)
 	GetAllAccounts(ctx context.Context) ([]domain.Account, error)
 	GetAccountByID(ctx context.Context, id int) (*domain.Account, error)
 	AccountExists(ctx context.Context, name, number string, id int) (bool, error)

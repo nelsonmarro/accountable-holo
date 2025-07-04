@@ -3,7 +3,6 @@ package ui
 import (
 	"context"
 	"fmt"
-	"strconv"
 	"time"
 
 	"fyne.io/fyne/v2"
@@ -13,7 +12,6 @@ import (
 	"fyne.io/fyne/v2/widget"
 	"github.com/nelsonmarro/accountable-holo/internal/domain"
 	"github.com/nelsonmarro/accountable-holo/internal/ui/componets"
-	"github.com/nelsonmarro/accountable-holo/internal/ui/componets/transaction"
 )
 
 func (ui *UI) makeTransactionUI() fyne.CanvasObject {
@@ -191,7 +189,7 @@ func (ui *UI) loadTransactions(page int, pageSize int) {
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
 
-	result, err := ui.Services.TxService.GetTransactionsByAccountPaginated(ctx, int(ui.selectedAccountID), page, pageSize, ui.transactionFilter)
+	result, err := ui.Services.TxService.GetTransactionByAccountPaginated(ctx, int(ui.selectedAccountID), page, pageSize, ui.transactionFilter)
 	if err != nil {
 		dialog.ShowError(err, ui.mainWindow)
 		return
@@ -210,18 +208,18 @@ func (ui *UI) filterTransactions(filter string) {
 	ui.loadTransactions(1, ui.transactionPaginator.GetPageSize())
 }
 
-func (ui *UI) loadAccounts() {
+func (ui *UI) loadAccountsForTx() {
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
 
 	// Assuming page 1 and a large enough page size to get all accounts
-	result, err := ui.Services.AccService.GetPaginatedAccounts(ctx, 1, 1000, "")
+	result, err := ui.Services.AccService.GetAllAccounts(ctx)
 	if err != nil {
 		dialog.ShowError(err, ui.mainWindow)
 		return
 	}
 
-	ui.accounts = result.Data
+	ui.accounts = result
 	accountNames := make([]string, len(ui.accounts))
 	for i, acc := range ui.accounts {
 		accountNames[i] = acc.Name

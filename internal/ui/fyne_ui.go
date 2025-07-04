@@ -15,6 +15,7 @@ import (
 type Services struct {
 	AccService AccountService
 	CatService CategoryService
+	TxService  TransactionService
 }
 
 // The UI struct holds the dependencies and state for the Fyne UI.
@@ -40,7 +41,7 @@ type UI struct {
 	transactions         *domain.PaginatedResult[domain.Transaction]
 	transactionFilter    string
 	accountSelector      *widget.Select
-	selectedAccountID    int64
+	selectedAccountID    int
 
 	// ---- Debug ----
 	infoLogger  *log.Logger

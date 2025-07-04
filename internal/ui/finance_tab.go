@@ -8,7 +8,7 @@ import (
 
 func (ui *UI) makeFinanceTab() fyne.CanvasObject {
 	// UI widgets
-	transactionsTab := container.NewTabItem("Transacciones", widget.NewLabel("Transacciones"))
+	transactionsTab := container.NewTabItem("Transacciones", ui.makeTransactionUI())
 	categoriesTab := container.NewTabItem("Categorías", ui.makeCategoryUI())
 
 	// Containers
