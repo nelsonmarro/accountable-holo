@@ -119,7 +119,10 @@ CREATE TABLE public.transactions (
     account_id integer NOT NULL,
     category_id integer NOT NULL,
     created_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL
+    updated_at timestamp without time zone NOT NULL,
+    is_voided boolean DEFAULT false NOT NULL,
+    voided_by_transaction_id integer,
+    voids_transaction_id integer
 );
 
 
@@ -235,6 +238,22 @@ ALTER TABLE ONLY public.transactions
 
 ALTER TABLE ONLY public.transactions
     ADD CONSTRAINT transactions_category_fk FOREIGN KEY (category_id) REFERENCES public.categories(id) ON UPDATE CASCADE ON DELETE CASCADE;
+
+
+--
+-- Name: transactions transactions_voided_by_transaction_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: nelson
+--
+
+ALTER TABLE ONLY public.transactions
+    ADD CONSTRAINT transactions_voided_by_transaction_id_fkey FOREIGN KEY (voided_by_transaction_id) REFERENCES public.transactions(id);
+
+
+--
+-- Name: transactions transactions_voids_transaction_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: nelson
+--
+
+ALTER TABLE ONLY public.transactions
+    ADD CONSTRAINT transactions_voids_transaction_id_fkey FOREIGN KEY (voids_transaction_id) REFERENCES public.transactions(id);
 
 
 --
