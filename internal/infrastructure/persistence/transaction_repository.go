@@ -213,5 +213,15 @@ func (r *TransactionRepositoryImpl) VoidTransaction(ctx context.Context, transac
 	var opposingCatType domain.CategoryType
 	if originalCatType == domain.Income {
 		opposingCatType = domain.Outcome
+	} else {
+		opposingCatType = domain.Income
 	}
+
+	adjustmentCatQuery := `
+	  select id
+	  from categoies
+		where name like '%Anular Transacción%' and type = $1
+	`
+
+	adjustmentCatID = tx.QueryRow(ctx, sql string, args ...any)
 }
