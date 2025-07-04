@@ -251,15 +251,24 @@ func (r *TransactionRepositoryImpl) VoidTransaction(ctx context.Context, transac
 		time.Now(),
 	)
 	if err != nil {
-		return fmt.Errorf("error when voiding the transaction: %w", err)
+		return fmt.Errorf("error when inserting the void transaction: %w", err)
 	}
 
-	// Mark the original transaction as voided 
-	marAsVoidedQuery := ` 
+	// Mark the original transaction as voided
+	markAsVoidedQuery := `
 	  update transactions set is_voided = TRUE
-		where 
+		where id = $1
 	`
-	_, err
+	_, err = tx.Exec(ctx, markAsVoidedQuery, originalTransaction.ID)
+	if err != nil {
+		return fmt.Errorf("error when voiding the transaction: %d\nerror: %w", originalTransaction.ID, err)
+	}
+
+	// Commit transactions
+	err = tx.Commit(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to commit transaction: %w", err)
+	}
 
 	return nil
 }
