@@ -235,8 +235,9 @@ func (r *TransactionRepositoryImpl) VoidTransaction(ctx context.Context, transac
 	newTransactionDate := time.Now()
 
 	voidTransactionQuery := `
-	  insert into transactions (description, amount, transaction_date, account_id, category_id, created_at, updated_at)
-		                   values($1, $2, $3, $4, $5, $6, $7)
+	  insert into transactions
+			                 (description, amount, transaction_date, account_id, category_id, voids_transaction_id, created_at, updated_at)
+		                   values($1, $2, $3, $4, $5, $6, $7, $8)
 	`
 
 	_, err = tx.Exec(
@@ -247,6 +248,7 @@ func (r *TransactionRepositoryImpl) VoidTransaction(ctx context.Context, transac
 		&newTransactionDate,
 		&originalTransaction.AccountID,
 		&opposingCatID,
+		&originalTransaction.ID,
 		time.Now(),
 		time.Now(),
 	)
