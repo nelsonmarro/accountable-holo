@@ -7,7 +7,6 @@ import (
 )
 
 type AccountService interface {
-	GetPaginatedAccounts(ctx context.Context, page, pageSize int, filter string) (*domain.PaginatedResult[domain.Account], error)
 	GetAllAccounts(ctx context.Context) ([]domain.Account, error)
 	GetAccountByID(ctx context.Context, id int) (*domain.Account, error)
 	CreateNewAccount(ctx context.Context, acc *domain.Account) error
