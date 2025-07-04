@@ -178,6 +178,16 @@ func (r *TransactionRepositoryImpl) VoidTransaction(ctx context.Context, transac
 	}
 	defer tx.Rollback(ctx)
 
+	originalTransactionQuery := `
+	  SELECT t.id, t.description, t.amount, t.account_id, t.is_voided, c.type
+	  FROM transactions t
+		JOIN categories c ON t.category_id = c.id
+		WHERE t.id = $1
+		FOR UPDATE;
+	`
+
 	var originalTransaction domain.Transaction
 	var originalCatType domain.CategoryType
+
+	err = tx.QueryRow(ctx, sql string, args ...any)
 }
