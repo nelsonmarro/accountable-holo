@@ -1,0 +1,239 @@
+package ui
+
+import (
+	"context"
+	"fmt"
+	"strconv"
+	"time"
+
+	"fyne.io/fyne/v2"
+	"fyne.io/fyne/v2/container"
+	"fyne.io/fyne/v2/dialog"
+	"fyne.io/fyne/v2/theme"
+	"fyne.io/fyne/v2/widget"
+	"github.com/nelsonmarro/accountable-holo/internal/domain"
+	"github.com/nelsonmarro/accountable-holo/internal/ui/componets"
+	"github.com/nelsonmarro/accountable-holo/internal/ui/componets/transaction"
+)
+
+func (ui *UI) makeTransactionUI() fyne.CanvasObject {
+	// Title
+	title := widget.NewRichText(&widget.TextSegment{
+		Text: "Transacciones",
+		Style: widget.RichTextStyle{
+			SizeName:  theme.SizeNameHeadingText,
+			Alignment: fyne.TextAlignCenter,
+		},
+	})
+
+	// Search Bar
+	searchBar := componets.NewSearchBar(ui.filterTransactions)
+
+	// Pagination and List
+	ui.transactionPaginator = componets.NewPagination(
+		func() (totalCount int) {
+			if ui.transactions == nil {
+				return 0
+			}
+			return int(ui.transactions.TotalCount)
+		},
+		ui.loadTransactions,
+		pageSizeOpts...,
+	)
+
+	ui.transactionList = widget.NewList(
+		func() int {
+			if ui.transactions == nil {
+				return 0
+			}
+			return len(ui.transactions.Data)
+		},
+		ui.makeTransactionListUI,
+		ui.fillTransactionListData,
+	)
+
+	// Account selector
+	ui.accountSelector = widget.NewSelect(
+		[]string{},
+		func(s string) {
+			for _, acc := range ui.accounts {
+				if acc.Name == s {
+					ui.selectedAccountID = acc.ID
+					ui.loadTransactions(1, ui.transactionPaginator.GetPageSize())
+					break
+				}
+			}
+		},
+	)
+	ui.loadAccounts()
+
+	// Add Transaction Button
+	txAddBtn := widget.NewButtonWithIcon("Agregar Transacción", theme.ContentAddIcon(), func() {
+		dialog.ShowInformation("TODO", "Agregar transaccion no implementado", ui.mainWindow)
+	})
+	txAddBtn.Importance = widget.HighImportance
+
+	// Containers
+	topBar := container.NewBorder(nil, nil, txAddBtn, nil, searchBar)
+	filters := container.NewVBox(
+		widget.NewLabel("Cuenta:"),
+		ui.accountSelector,
+	)
+
+	titleContainer := container.NewVBox(
+		container.NewCenter(title),
+		container.NewBorder(nil, nil, nil, filters, topBar),
+	)
+
+	tableHeader := container.NewBorder(
+		ui.transactionPaginator,
+		nil, nil, nil,
+		container.NewGridWithColumns(7,
+			widget.NewLabel("Fecha"),
+			widget.NewLabel("Descripción"),
+			widget.NewLabel("Categoría"),
+			widget.NewLabel("Tipo"),
+			widget.NewLabel("Monto"),
+			widget.NewLabel("Saldo"),
+			widget.NewLabel("Acciones"),
+		),
+	)
+
+	tableContainer := container.NewBorder(
+		tableHeader, nil, nil, nil,
+		ui.transactionList,
+	)
+
+	mainContent := container.NewBorder(
+		container.NewPadded(titleContainer),
+		nil, nil, nil,
+		tableContainer,
+	)
+
+	return mainContent
+}
+
+func (ui *UI) makeTransactionListUI() fyne.CanvasObject {
+	editBtn := widget.NewButtonWithIcon("", theme.DocumentCreateIcon(), nil)
+	editBtn.Importance = widget.HighImportance
+
+	voidBtn := widget.NewButtonWithIcon("", theme.CancelIcon(), nil)
+	voidBtn.Importance = widget.DangerImportance
+
+	return container.NewGridWithColumns(7,
+		widget.NewLabel("2025-07-03"),
+		widget.NewLabel("template description"),
+		widget.NewLabel("template category"),
+		widget.NewLabel("template type"),
+		widget.NewLabel("$1,200.00"),
+		widget.NewLabel("$5,250.50"),
+		container.NewHBox(
+			editBtn,
+			voidBtn,
+		),
+	)
+}
+
+func (ui *UI) fillTransactionListData(i widget.ListItemID, o fyne.CanvasObject) {
+	tx := ui.transactions.Data[i]
+
+	rowContainer := o.(*fyne.Container)
+
+	dateLabel := rowContainer.Objects[0].(*widget.Label)
+	dateLabel.SetText(tx.TransactionDate.Format("2006-01-02"))
+
+	descLabel := rowContainer.Objects[1].(*widget.Label)
+	descLabel.SetText(tx.Description)
+
+	categoryLabel := rowContainer.Objects[2].(*widget.Label)
+	if tx.Category != nil {
+		categoryLabel.SetText(tx.Category.Name)
+	} else {
+		categoryLabel.SetText("-")
+	}
+
+	typeLabel := rowContainer.Objects[3].(*widget.Label)
+	if tx.Category != nil {
+		typeLabel.SetText(string(tx.Category.Type))
+	} else {
+		typeLabel.SetText("-")
+	}
+
+	amountLabel := rowContainer.Objects[4].(*widget.Label)
+	amountText := fmt.Sprintf("%.2f", tx.Amount)
+	if tx.Category != nil && tx.Category.Type == domain.Income {
+		amountText = "+ $" + amountText
+	} else {
+		amountText = "- $" + amountText
+	}
+	amountLabel.SetText(amountText)
+
+	balanceLabel := rowContainer.Objects[5].(*widget.Label)
+	balanceLabel.SetText(fmt.Sprintf("$%.2f", tx.RunningBalance))
+
+	actionsContainer := rowContainer.Objects[6].(*fyne.Container)
+	editBtn := actionsContainer.Objects[0].(*widget.Button)
+	voidBtn := actionsContainer.Objects[1].(*widget.Button)
+
+	editBtn.OnTapped = func() {
+		dialog.ShowInformation("Info", "Edit transaction not implemented yet.", ui.mainWindow)
+	}
+	voidBtn.OnTapped = func() {
+		dialog.ShowInformation("Info", "Void transaction not implemented yet.", ui.mainWindow)
+	}
+}
+
+func (ui *UI) loadTransactions(page int, pageSize int) {
+	if ui.selectedAccountID == 0 {
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cancel()
+
+	result, err := ui.Services.TxService.GetTransactionsByAccountPaginated(ctx, int(ui.selectedAccountID), page, pageSize, ui.transactionFilter)
+	if err != nil {
+		dialog.ShowError(err, ui.mainWindow)
+		return
+	}
+
+	ui.transactions = result
+
+	fyne.Do(func() {
+		ui.transactionList.Refresh()
+		ui.transactionPaginator.Refresh()
+	})
+}
+
+func (ui *UI) filterTransactions(filter string) {
+	ui.transactionFilter = filter
+	ui.loadTransactions(1, ui.transactionPaginator.GetPageSize())
+}
+
+func (ui *UI) loadAccounts() {
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cancel()
+
+	// Assuming page 1 and a large enough page size to get all accounts
+	result, err := ui.Services.AccService.GetPaginatedAccounts(ctx, 1, 1000, "")
+	if err != nil {
+		dialog.ShowError(err, ui.mainWindow)
+		return
+	}
+
+	ui.accounts = result.Data
+	accountNames := make([]string, len(ui.accounts))
+	for i, acc := range ui.accounts {
+		accountNames[i] = acc.Name
+	}
+
+	fyne.Do(func() {
+		ui.accountSelector.Options = accountNames
+		if len(ui.accounts) > 0 {
+			ui.selectedAccountID = ui.accounts[0].ID
+			ui.accountSelector.SetSelected(ui.accounts[0].Name)
+		}
+		ui.accountSelector.Refresh()
+		ui.loadTransactions(1, ui.transactionPaginator.GetPageSize())
+	})
+}

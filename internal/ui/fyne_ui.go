@@ -35,6 +35,13 @@ type UI struct {
 	categories        *domain.PaginatedResult[domain.Category]
 	categoryFilter    string
 
+	transactionList      *widget.List
+	transactionPaginator *componets.Pagination
+	transactions         *domain.PaginatedResult[domain.Transaction]
+	transactionFilter    string
+	accountSelector      *widget.Select
+	selectedAccountID    int64
+
 	// ---- Debug ----
 	infoLogger  *log.Logger
 	errorLogger *log.Logger
