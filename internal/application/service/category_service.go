@@ -30,7 +30,7 @@ func (s *CategoryServiceImpl) GetPaginatedCategories(ctx context.Context, page, 
 
 func (s *CategoryServiceImpl) GetCategoryByID(ctx context.Context, id int) (*domain.Category, error) {
 	if id < 0 {
-		return nil, fmt.Errorf("invalid category ID: %d", id)
+		return nil, fmt.Errorf("ID de cuenta inválido: %d ", id)
 	}
 	return s.repo.GetCategoryByID(ctx, id)
 }
@@ -62,7 +62,7 @@ func (s *CategoryServiceImpl) CreateCategory(ctx context.Context, category *doma
 
 func (s *CategoryServiceImpl) UpdateCategory(ctx context.Context, category *domain.Category) error {
 	if category.ID < 0 {
-		return fmt.Errorf("invalid category ID: %d", category.ID)
+		return fmt.Errorf("ID de cuenta inválido: %d ", category.ID)
 	}
 
 	catValidator := validator.New().For(category)
@@ -89,7 +89,7 @@ func (s *CategoryServiceImpl) UpdateCategory(ctx context.Context, category *doma
 
 func (s *CategoryServiceImpl) DeleteCategory(ctx context.Context, id int) error {
 	if id < 0 {
-		return fmt.Errorf("invalid category ID: %d", id)
+		return fmt.Errorf("ID de cuenta inválido: %d ", id)
 	}
 
 	err := s.repo.DeleteCategory(ctx, id)
