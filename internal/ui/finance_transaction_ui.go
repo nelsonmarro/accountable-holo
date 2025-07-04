@@ -63,7 +63,7 @@ func (ui *UI) makeTransactionUI() fyne.CanvasObject {
 			}
 		},
 	)
-	ui.loadAccounts()
+	ui.loadAccountsForTx()
 
 	// Add Transaction Button
 	txAddBtn := widget.NewButtonWithIcon("Agregar Transacción", theme.ContentAddIcon(), func() {
@@ -189,7 +189,7 @@ func (ui *UI) loadTransactions(page int, pageSize int) {
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
 
-	result, err := ui.Services.TxService.GetTransactionByAccountPaginated(ctx, int(ui.selectedAccountID), page, pageSize, ui.transactionFilter)
+	result, err := ui.Services.TxService.GetTransactionByAccountPaginated(ctx, ui.selectedAccountID, page, pageSize, ui.transactionFilter)
 	if err != nil {
 		dialog.ShowError(err, ui.mainWindow)
 		return
