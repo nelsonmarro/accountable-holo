@@ -47,4 +47,13 @@ func (r *TransactionRepositoryImpl) GetTransactionsByAccountPaginated(
 	pageSize int,
 	filter ...string,
 ) (*domain.PaginatedResult[domain.Transaction], error) {
+	if page < 1 {
+		page = 1
+	}
+	if pageSize < 1 {
+		pageSize = 10 // Default page size}
+	}
+	if page > 100 {
+		page = 100 // Limit to 100 pages
+	}
 }

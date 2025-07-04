@@ -9,7 +9,7 @@ import (
 	"github.com/nelsonmarro/accountable-holo/config"
 	"github.com/nelsonmarro/accountable-holo/internal/application/service"
 	"github.com/nelsonmarro/accountable-holo/internal/infrastructure/database"
-	persistence "github.com/nelsonmarro/accountable-holo/internal/infrastructure/prersistence"
+	persistence "github.com/nelsonmarro/accountable-holo/internal/infrastructure/persistence"
 	"github.com/nelsonmarro/accountable-holo/internal/ui"
 )
 
