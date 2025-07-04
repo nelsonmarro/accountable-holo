@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/nelsonmarro/accountable-holo/internal/domain"
 )
@@ -199,6 +200,18 @@ func (r *TransactionRepositoryImpl) VoidTransaction(ctx context.Context, transac
 		&originalCatType,
 	)
 	if err != nil {
+		if err == pgx.ErrNoRows {
+			return fmt.Errorf("transaction with ID %d not found", transactionID)
+		}
 		return fmt.Errorf("failed to get original transaction: %w", err)
+	}
+
+	if originalTransaction.IsVoided {
+		return fmt.Errorf("transaction with ID %d is already voided", transactionID)
+	}
+
+	var opposingCatType domain.CategoryType
+	if originalCatType == domain.Income {
+		opposingCatType = domain.Outcome
 	}
 }
