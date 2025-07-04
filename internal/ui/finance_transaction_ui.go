@@ -73,7 +73,7 @@ func (ui *UI) makeTransactionUI() fyne.CanvasObject {
 
 	// Containers
 	topBar := container.NewBorder(nil, nil, txAddBtn, nil, searchBar)
-	filters := container.NewVBox(
+	filters := container.NewHBox(
 		widget.NewLabel("Cuenta:"),
 		ui.accountSelector,
 	)
