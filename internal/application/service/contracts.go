@@ -34,4 +34,5 @@ type TransactionRepository interface {
 		pageSize int,
 		filter ...string,
 	) (*domain.PaginatedResult[domain.Transaction], error)
+	VoidTransaction(ctx context.Context, transactionID int) error
 }
