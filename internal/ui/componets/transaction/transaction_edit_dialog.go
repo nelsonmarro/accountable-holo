@@ -26,7 +26,7 @@ type EditTransactionDialog struct {
 	descriptionEntry *widget.Entry
 	amountEntry      *widget.Entry
 	dateEntry        *widget.Entry
-	categorySelect   *widget.Select
+	categorySelect   *widget.SelectEntry
 
 	// Data
 	accountID  int
@@ -46,7 +46,7 @@ func NewEditTransactionDialog(win fyne.Window, l *log.Logger, txs TransactionSer
 		descriptionEntry: widget.NewEntry(),
 		amountEntry:      widget.NewEntry(),
 		dateEntry:        widget.NewEntry(),
-		categorySelect:   widget.NewSelect([]string{}, func(s string) {}),
+		categorySelect:   widget.NewSelectEntry([]string{}),
 	}
 }
 
@@ -108,11 +108,11 @@ func (d *EditTransactionDialog) showEditForm(tx *domain.Transaction) {
 	for i, cat := range d.categories {
 		categoryNames[i] = cat.Name
 	}
-	d.categorySelect.Options = categoryNames
+	d.categorySelect.SetOptions(categoryNames)
 
 	for _, cat := range d.categories {
-		if int64(cat.ID) == tx.CategoryID {
-			d.categorySelect.SetSelected(cat.Name)
+		if cat.ID == tx.CategoryID {
+			d.categorySelect.SetText(cat.Name)
 			break
 		}
 	}
@@ -122,7 +122,6 @@ func (d *EditTransactionDialog) showEditForm(tx *domain.Transaction) {
 			d.descriptionEntry,
 			d.amountEntry,
 			d.dateEntry,
-			d.accountID,
 			d.categorySelect,
 		),
 		d.handleSubmit, // The submit callback
@@ -144,10 +143,10 @@ func (d *EditTransactionDialog) handleSubmit(valid bool) {
 		amount, _ := strconv.ParseFloat(d.amountEntry.Text, 64)
 		transactionDate, _ := time.Parse("2006-01-02", d.dateEntry.Text)
 
-		var categoryID int64
+		var categoryID int
 		for _, cat := range d.categories {
-			if cat.Name == d.categorySelect.Selected {
-				categoryID = int64(cat.ID)
+			if cat.Name == d.categorySelect.SelectedText() {
+				categoryID = cat.ID
 				break
 			}
 		}

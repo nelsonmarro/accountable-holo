@@ -44,7 +44,7 @@ func NewAddTransactionDialog(win fyne.Window, l *log.Logger, txs TransactionServ
 		amountEntry:      widget.NewEntry(),
 		dateEntry:        widget.NewEntry(),
 		accountID:        accountID,
-		categorySelect:   widget.NewSelectEntry([]string{}, func(s string) {}),
+		categorySelect:   widget.NewSelectEntry([]string{}),
 	}
 }
 
@@ -67,7 +67,7 @@ func (d *AddTransactionDialog) Show() {
 }
 
 func (d *AddTransactionDialog) loadData() {
-	progressDialog := dialog.NewCustomWithoutButtons("Loading...", widget.NewProgressBarInfinite(), d.mainWin)
+	progressDialog := dialog.NewCustomWithoutButtons("Cargando...", widget.NewProgressBarInfinite(), d.mainWin)
 	progressDialog.Show()
 
 	go func() {
@@ -91,7 +91,7 @@ func (d *AddTransactionDialog) loadData() {
 		}
 
 		fyne.Do(func() {
-			d.categorySelect.Options = categoryNames
+			d.categorySelect.SetOptions(categoryNames)
 			d.categorySelect.Refresh()
 		})
 	}()
@@ -111,7 +111,7 @@ func (d *AddTransactionDialog) handleSubmit(valid bool) {
 
 		var categoryID int
 		for _, cat := range d.categories {
-			if cat.Name == d.categorySelect.Selected {
+			if cat.Name == d.categorySelect.SelectedText() {
 				categoryID = cat.ID
 				break
 			}

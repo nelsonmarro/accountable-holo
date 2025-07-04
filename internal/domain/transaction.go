@@ -12,8 +12,8 @@ type Transaction struct {
 	VoidsTransactionID    int       `db:"voids_transaction_id"`
 
 	// Relationships
-	AccountID  int64 `db:"account_id"`
-	CategoryID int64 `db:"category_id"`
+	AccountID  int `db:"account_id"`
+	CategoryID int `db:"category_id"`
 
 	Account  *Account
 	Category *Category
