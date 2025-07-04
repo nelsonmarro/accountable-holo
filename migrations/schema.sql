@@ -122,7 +122,8 @@ CREATE TABLE public.transactions (
     updated_at timestamp without time zone NOT NULL,
     is_voided boolean DEFAULT false NOT NULL,
     voided_by_transaction_id integer,
-    voids_transaction_id integer
+    voids_transaction_id integer,
+    transaction_date date DEFAULT CURRENT_DATE NOT NULL
 );
 
 
