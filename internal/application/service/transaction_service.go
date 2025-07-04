@@ -32,6 +32,18 @@ func (s *TransactionServiceImpl) GetTransactionByAccountPaginated(ctx context.Co
 	return s.repo.GetTransactionsByAccountPaginated(ctx, accountID, page, pageSize, filter...)
 }
 
+func (s *TransactionServiceImpl) GetTransactionByID(ctx context.Context, id int) (*domain.Transaction, error) {
+	if id <= 0 {
+		return nil, fmt.Errorf("ID de transacción inválido: %d", id)
+	}
+	tx, err := s.repo.GetTransactionByID(ctx, id)
+	if err != nil {
+		return nil, fmt.Errorf("error al obtener la transacción: %w", err)
+	}
+
+	return tx, nil
+}
+
 func (s *TransactionServiceImpl) CreateTransaction(ctx context.Context, tx *domain.Transaction) error {
 	if tx == nil {
 		return fmt.Errorf("transacción no puede ser nula")
@@ -59,4 +71,22 @@ func (s *TransactionServiceImpl) VoidTransaction(ctx context.Context, transactio
 	}
 
 	return s.repo.VoidTransaction(ctx, transactionID)
+}
+
+func (s *TransactionServiceImpl) UpdateTransaction(ctx context.Context, tx *domain.Transaction) error {
+	if tx == nil {
+		return fmt.Errorf("transacción no puede ser nula")
+	}
+
+	txValidator := validator.New().For(tx)
+	txValidator.Required("ID", "Amount", "Description", "TransactionDate", "AccountID", "CategoryID")
+	err := txValidator.ConsolidateErrors()
+	if err != nil {
+		return err
+	}
+	err = s.repo.UpdateTransaction(ctx, tx)
+	if err != nil {
+		return fmt.Errorf("error al actualizar la transacción: %w", err)
+	}
+	return nil
 }

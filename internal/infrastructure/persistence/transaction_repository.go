@@ -272,9 +272,7 @@ func (r *TransactionRepositoryImpl) GetTransactionByID(ctx context.Context, tran
 			from transactions t
       where id = $1
 	`
-
 	var tx domain.Transaction
-
 	err := r.db.QueryRow(ctx, query, transactionID).Scan(
 		&tx.ID,
 		&tx.Description,
@@ -293,4 +291,24 @@ func (r *TransactionRepositoryImpl) GetTransactionByID(ctx context.Context, tran
 	}
 
 	return &tx, nil
+}
+
+func (r *TransactionRepositoryImpl) UpdateTransaction(ctx context.Context, tx *domain.Transaction) error {
+	query := `
+		update transactions
+		set description = $1, transaction_date = $2, category_id = $3, updated_at = $4
+		where id = $6
+	`
+	now := time.Now()
+	_, err := r.db.Exec(ctx, query,
+		tx.Description,
+		tx.TransactionDate,
+		tx.CategoryID,
+		now,
+		tx.ID,
+	)
+	if err != nil {
+		return fmt.Errorf("failed to update transaction: %w", err)
+	}
+	return nil
 }

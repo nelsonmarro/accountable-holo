@@ -102,6 +102,30 @@ func (v *Validator) NumberMin(min float64, fieldNames ...string) *Validator {
 	return v
 }
 
+func (v *Validator) IsDate(fieldName string) *Validator {
+	val, err := v.getValidTarget()
+	if err != nil {
+		v.errs = append(v.errs, err)
+		return v
+	}
+	field := val.FieldByName(fieldName)
+	if !field.IsValid() {
+		v.errs = append(v.errs, fmt.Errorf("field '%s' not found in struct", fieldName))
+		return v
+	}
+	if field.Kind() != reflect.String {
+		v.errs = append(v.errs, fmt.Errorf("el campo '%s' debe ser de tipo string para validación de fecha", fieldName))
+		return v
+	}
+	dateStr := field.String()
+	if dateStr == "" {
+		v.errs = append(v.errs, fmt.Errorf("el campo '%s' no puede estar vacío", fieldName))
+		return v
+	}
+	// Here you can add more complex date validation logic if needed
+	return v
+}
+
 // Validate returns a slice of errors, or nil if no errors were found.
 func (v *Validator) Validate() []error {
 	if len(v.errs) == 0 {
