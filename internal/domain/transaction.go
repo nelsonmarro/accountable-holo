@@ -14,4 +14,7 @@ type Transaction struct {
 
 	Account  *Account
 	Category *Category
+
+	// Calculated field
+	RunningBalance float64 `db:"-"`
 }

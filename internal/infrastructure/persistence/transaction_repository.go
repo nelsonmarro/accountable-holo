@@ -51,9 +51,122 @@ func (r *TransactionRepositoryImpl) GetTransactionsByAccountPaginated(
 		page = 1
 	}
 	if pageSize < 1 {
-		pageSize = 10 // Default page size}
+		pageSize = 10 // Default page size
 	}
 	if page > 100 {
 		page = 100 // Limit to 100 pages
 	}
+
+	offset := (page - 1) * pageSize
+
+	// Base query
+	query := `
+		from transactions t
+		join categories c on t.category_id = c.id
+		where t.account_id = $1
+	`
+	args := []any{accountID}
+
+	// Get total count
+	countQuery := "select count(*)" + query
+	var totalCount int64
+	err := r.db.QueryRow(ctx, countQuery, args...).Scan(&totalCount)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get total transaction count: %w", err)
+	}
+
+	// Get paginated transactions
+	dataQuery := `
+		select
+			t.id,
+			t.description,
+			t.amount,
+			t.transaction_date,
+			t.account_id,
+			t.category_id,
+			c.name as category_name,
+			c.type as category_type
+		` + query + `
+		order by t.transaction_date desc
+		limit $2 offset $3
+	`
+	args = append(args, pageSize, offset)
+
+	rows, err := r.db.Query(ctx, dataQuery, args...)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get paginated transactions: %w", err)
+	}
+	defer rows.Close()
+
+	transactions := make([]domain.Transaction, 0, pageSize)
+	for rows.Next() {
+		var tx domain.Transaction
+		var categoryName string
+		var categoryType domain.CategoryType
+		err := rows.Scan(
+			&tx.ID,
+			&tx.Description,
+			&tx.Amount,
+			&tx.TransactionDate,
+			&tx.AccountID,
+			&tx.CategoryID,
+			&categoryName,
+			&categoryType,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan transaction: %w", err)
+		}
+		tx.Category = &domain.Category{
+			Name: categoryName,
+			Type: categoryType,
+		}
+		transactions = append(transactions, tx)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, fmt.Errorf("error iterating over transactions: %w", err)
+	}
+
+	// Calculate running balance
+	// Get the balance up to the current page
+	var balanceUpToPage float64
+	balanceQuery := `
+		select coalesce(sum(case when c.type = 'Ingreso' then t.amount else -t.amount end), 0)
+		from transactions t
+		join categories c on t.category_id = c.id
+		where t.account_id = $1 and t.id not in (
+			select id from transactions where account_id = $1 order by transaction_date desc limit $2
+		)
+	`
+	err = r.db.QueryRow(ctx, balanceQuery, accountID, offset).Scan(&balanceUpToPage)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get balance up to page: %w", err)
+	}
+
+	// Add initial balance
+	var initialBalance float64
+	err = r.db.QueryRow(ctx, "select initial_balance from accounts where id = $1", accountID).Scan(&initialBalance)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get initial balance: %w", err)
+	}
+	balanceUpToPage += initialBalance
+
+	// Calculate running balance for the current page
+	runningBalance := balanceUpToPage
+	for i := range transactions {
+		tx := &transactions[i]
+		if tx.Category.Type == domain.Income {
+			runningBalance += tx.Amount
+		} else {
+			runningBalance -= tx.Amount
+		}
+		tx.RunningBalance = runningBalance
+	}
+
+	return &domain.PaginatedResult[domain.Transaction]{
+		Data:       transactions,
+		TotalCount: totalCount,
+		Page:       page,
+		PageSize:   pageSize,
+	}, nil
 }
