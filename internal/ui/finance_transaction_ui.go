@@ -57,13 +57,13 @@ func (ui *UI) makeTransactionUI() fyne.CanvasObject {
 			for _, acc := range ui.accounts {
 				if acc.Name == s {
 					ui.selectedAccountID = acc.ID
-					ui.loadTransactions(1, ui.transactionPaginator.GetPageSize())
+					go ui.loadTransactions(1, ui.transactionPaginator.GetPageSize())
 					break
 				}
 			}
 		},
 	)
-	ui.loadAccountsForTx()
+	go ui.loadAccountsForTx()
 
 	// Add Transaction Button
 	txAddBtn := widget.NewButtonWithIcon("Agregar Transacción", theme.ContentAddIcon(), func() {
