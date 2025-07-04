@@ -170,3 +170,14 @@ func (r *TransactionRepositoryImpl) GetTransactionsByAccountPaginated(
 		PageSize:   pageSize,
 	}, nil
 }
+
+func (r *TransactionRepositoryImpl) VoidTransaction(ctx context.Context, transactionID int) error {
+	tx, err := r.db.Begin(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to begin transaction: %w", err)
+	}
+	defer tx.Rollback(ctx)
+
+	var originalTransaction domain.Transaction
+	var originalCatType domain.CategoryType
+}
