@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"reflect"
 	"strings"
+	"time"
 )
 
 // Validator is a struct that holds the target value and a slice of errors.
@@ -117,12 +118,12 @@ func (v *Validator) IsDate(fieldName string) *Validator {
 		v.errs = append(v.errs, fmt.Errorf("el campo '%s' debe ser de tipo string para validación de fecha", fieldName))
 		return v
 	}
-	dateStr := field.String()
-	if dateStr == "" {
-		v.errs = append(v.errs, fmt.Errorf("el campo '%s' no puede estar vacío", fieldName))
-		return v
+
+	_, err = time.Parse("2006-01-02", field.String())
+	if err != nil {
+		v.errs = append(v.errs, fmt.Errorf("el campo '%s' no es una fecha válida: %v", fieldName, err))
 	}
-	// Here you can add more complex date validation logic if needed
+
 	return v
 }
 

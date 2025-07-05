@@ -5,6 +5,7 @@ import (
 	"errors"
 	"strconv"
 	"strings"
+	"time"
 )
 
 type UIValidator struct {
@@ -51,6 +52,16 @@ func (v *UIValidator) MinLength(min int) {
 	validatorFunc := func(s string) error {
 		if len(s) < min {
 			return errors.New("el campo debe tener al menos " + strconv.Itoa(min) + " caracteres")
+		}
+		return nil
+	}
+	v.validatorFuncs = append(v.validatorFuncs, validatorFunc)
+}
+
+func (v *UIValidator) IsDate() {
+	validatorFunc := func(s string) error {
+		if _, err := time.Parse("2006-01-02", s); err != nil {
+			return errors.New("el campo debe ser una fecha válida en formato YYYY-MM-DD")
 		}
 		return nil
 	}
