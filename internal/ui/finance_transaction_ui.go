@@ -12,6 +12,7 @@ import (
 	"fyne.io/fyne/v2/widget"
 	"github.com/nelsonmarro/accountable-holo/internal/domain"
 	"github.com/nelsonmarro/accountable-holo/internal/ui/componets"
+	"github.com/nelsonmarro/accountable-holo/internal/ui/componets/transaction"
 )
 
 func (ui *UI) makeTransactionUI() fyne.CanvasObject {
@@ -67,7 +68,17 @@ func (ui *UI) makeTransactionUI() fyne.CanvasObject {
 
 	// Add Transaction Button
 	txAddBtn := widget.NewButtonWithIcon("Agregar Transacción", theme.ContentAddIcon(), func() {
-		dialog.ShowInformation("TODO", "Agregar transaccion no implementado", ui.mainWindow)
+		dialogHanlder := transaction.NewAddTransactionDialog(
+			ui.mainWindow,
+			ui.errorLogger,
+			ui.Services.TxService,
+			ui.Services.CatService,
+			func() {
+				ui.loadTransactions(1, ui.transactionPaginator.GetPageSize())
+			},
+			ui.selectedAccountID)
+
+		dialogHanlder.Show()
 	})
 	txAddBtn.Importance = widget.HighImportance
 

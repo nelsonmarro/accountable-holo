@@ -33,7 +33,14 @@ type AddTransactionDialog struct {
 }
 
 // NewAddTransactionDialog creates a new dialog handler.
-func NewAddTransactionDialog(win fyne.Window, l *log.Logger, txs TransactionService, cs CategoryService, callback func(), accountID int) *AddTransactionDialog {
+func NewAddTransactionDialog(
+	win fyne.Window,
+	l *log.Logger,
+	txs TransactionService,
+	cs CategoryService,
+	callback func(),
+	accountID int,
+) *AddTransactionDialog {
 	return &AddTransactionDialog{
 		mainWin:          win,
 		logger:           l,
