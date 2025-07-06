@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -26,19 +27,26 @@ func (r *TransactionRepositoryImpl) CreateTransaction(ctx context.Context, trans
 	}
 	defer tx.Rollback(ctx)
 
-	var catType domain.CategoryType
-	err = tx.QueryRow(ctx, "SELECT type FROM categories WHERE id = $1").
-		Scan(&catType)
+	var cat domain.Category
+	err = tx.QueryRow(ctx, "SELECT name, type FROM categories WHERE id = $1", transaction.CategoryID).
+		Scan(&cat.Name, &cat.Type)
 	if err != nil {
 		return err
 	}
 
+	// prefix based on category
 	var prefix string
-	if catType == domain.Income {
+	if cat.Type == domain.Income {
 		prefix = "ING"
 	} else {
 		prefix = "EGR"
 	}
+	if strings.Contains(cat.Name, "Anular") {
+		prefix = "ANU"
+	}
+
+	// get the current sequence of number for the month
+	dateComp := transaction.TransactionDate.Format("200601")
 
 	query := `
 		insert into transactions (description, amount, transaction_date, account_id, category_id, created_at, updated_at) 
