@@ -19,22 +19,42 @@ func NewTransactionRepository(db *pgxpool.Pool) *TransactionRepositoryImpl {
 	return &TransactionRepositoryImpl{db: db}
 }
 
-func (r *TransactionRepositoryImpl) CreateTransaction(ctx context.Context, tx *domain.Transaction) error {
+func (r *TransactionRepositoryImpl) CreateTransaction(ctx context.Context, transaction *domain.Transaction) error {
+	tx, err := r.db.Begin(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to begin transaction: %w", err)
+	}
+	defer tx.Rollback(ctx)
+
+	var catType domain.CategoryType
+	err = tx.QueryRow(ctx, "SELECT type FROM categories WHERE id = $1").
+		Scan(&catType)
+	if err != nil {
+		return err
+	}
+
+	var prefix string
+	if catType == domain.Income {
+		prefix = "ING"
+	} else {
+		prefix = "EGR"
+	}
+
 	query := `
 		insert into transactions (description, amount, transaction_date, account_id, category_id, created_at, updated_at) 
 											values ($1, $2, $3, $4, $5, $6, $7)
 		                  returning id, created_at, updated_at`
 
 	now := time.Now()
-	err := r.db.QueryRow(ctx, query,
-		tx.Description,
-		tx.Amount,
-		tx.TransactionDate,
-		tx.AccountID,
-		tx.CategoryID,
+	err = r.db.QueryRow(ctx, query,
+		transaction.Description,
+		transaction.Amount,
+		transaction.TransactionDate,
+		transaction.AccountID,
+		transaction.CategoryID,
 		now,
 		now,
-	).Scan(&tx.ID, &tx.CreatedAt, &tx.UpdatedAt)
+	).Scan(&transaction.ID, &transaction.CreatedAt, &transaction.UpdatedAt)
 	if err != nil {
 		return fmt.Errorf("failed to create transaction: %w", err)
 	}

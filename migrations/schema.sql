@@ -123,7 +123,8 @@ CREATE TABLE public.transactions (
     is_voided boolean DEFAULT false NOT NULL,
     voided_by_transaction_id integer,
     voids_transaction_id integer,
-    transaction_date date DEFAULT CURRENT_DATE NOT NULL
+    transaction_date date DEFAULT CURRENT_DATE NOT NULL,
+    transaction_number character varying(20) NOT NULL
 );
 
 
@@ -202,6 +203,14 @@ ALTER TABLE ONLY public.schema_migration
 
 ALTER TABLE ONLY public.transactions
     ADD CONSTRAINT transactions_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: transactions uq_transaction_number; Type: CONSTRAINT; Schema: public; Owner: nelson
+--
+
+ALTER TABLE ONLY public.transactions
+    ADD CONSTRAINT uq_transaction_number UNIQUE (transaction_number);
 
 
 --
