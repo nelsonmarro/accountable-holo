@@ -51,25 +51,18 @@ func (r *TransactionRepositoryImpl) GetTransactionsByAccountPaginated(
 ) (*domain.PaginatedResult[domain.Transaction], error) {
 	offset := (page - 1) * pageSize
 
-	// Base query
-	query := `
-		from transactions t
-		join categories c on t.category_id = c.id
-		where t.account_id = $1
-	`
-	args := []any{accountID}
-
-	// Get total count
-	countQuery := "select count(*)" + query
+	// TODO: Add filtering to the count query
+	countQuery := `SELECT count(*) FROM transactions WHERE account_id = $1`
 	var totalCount int64
-	err := r.db.QueryRow(ctx, countQuery, args...).Scan(&totalCount)
+	err := r.db.QueryRow(ctx, countQuery, accountID).Scan(&totalCount)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get total transaction count: %w", err)
 	}
 
-	// Get paginated transactions
+	// This query uses a window function to calculate the running balance in the database.
+	// This is more efficient and less error-prone than calculating it in Go.
 	dataQuery := `
-		select
+		SELECT
 			t.id,
 			t.description,
 			t.amount,
@@ -77,12 +70,21 @@ func (r *TransactionRepositoryImpl) GetTransactionsByAccountPaginated(
 			t.account_id,
 			t.category_id,
 			c.name as category_name,
-			c.type as category_type
-		` + query + `
-		order by t.transaction_date desc
-		limit $2 offset $3
+			c.type as category_type,
+			a.initial_balance + SUM(CASE WHEN c.type = 'Ingreso' THEN t.amount ELSE -t.amount END) OVER (ORDER BY t.transaction_date ASC, t.id ASC) as running_balance
+		FROM
+			transactions t
+		JOIN
+			categories c ON t.category_id = c.id
+		JOIN
+			accounts a ON t.account_id = a.id
+		WHERE
+			t.account_id = $1
+		ORDER BY
+			t.transaction_date DESC, t.id DESC
+		LIMIT $2 OFFSET $3
 	`
-	args = append(args, pageSize, offset)
+	args := []any{accountID, pageSize, offset}
 
 	rows, err := r.db.Query(ctx, dataQuery, args...)
 	if err != nil {
@@ -104,6 +106,7 @@ func (r *TransactionRepositoryImpl) GetTransactionsByAccountPaginated(
 			&tx.CategoryID,
 			&categoryName,
 			&categoryType,
+			&tx.RunningBalance, // Scan the calculated running balance directly
 		)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan transaction: %w", err)
@@ -119,48 +122,13 @@ func (r *TransactionRepositoryImpl) GetTransactionsByAccountPaginated(
 		return nil, fmt.Errorf("error iterating over transactions: %w", err)
 	}
 
-	// Calculate running balance
-	// Get the balance up to the current page
-	var balanceUpToPage float64
-	balanceQuery := `
-		select coalesce(sum(case when c.type = 'Ingreso' then t.amount else -t.amount end), 0)
-		from transactions t
-		join categories c on t.category_id = c.id
-		where t.account_id = $1 and t.id not in (
-			select id from transactions where account_id = $1 order by transaction_date desc limit $2
-		)
-	`
-	err = r.db.QueryRow(ctx, balanceQuery, accountID, offset).Scan(&balanceUpToPage)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get balance up to page: %w", err)
-	}
-
-	// Add initial balance
-	var initialBalance float64
-	err = r.db.QueryRow(ctx, "select initial_balance from accounts where id = $1", accountID).Scan(&initialBalance)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get initial balance: %w", err)
-	}
-	balanceUpToPage += initialBalance
-
-	// Calculate running balance for the current page
-	runningBalance := balanceUpToPage
-	for i := range transactions {
-		tx := &transactions[i]
-		if tx.Category.Type == domain.Income {
-			runningBalance += tx.Amount
-		} else {
-			runningBalance -= tx.Amount
-		}
-		tx.RunningBalance = runningBalance
-	}
-
 	return &domain.PaginatedResult[domain.Transaction]{
-		Data:       transactions,
-		TotalCount: totalCount,
-		Page:       page,
-		PageSize:   pageSize,
-	}, nil
+			Data:       transactions,
+			TotalCount: totalCount,
+			Page:       page,
+			PageSize:   pageSize,
+		},
+		nil
 }
 
 func (r *TransactionRepositoryImpl) VoidTransaction(ctx context.Context, transactionID int) error {
@@ -227,7 +195,7 @@ func (r *TransactionRepositoryImpl) VoidTransaction(ctx context.Context, transac
 	voidTransactionQuery := `
 	  insert into transactions
 			                 (description, amount, transaction_date, account_id, category_id, voids_transaction_id, created_at, updated_at)
-											 values($1, $2, $3, $4, $5, $6, $7, $8) returning id
+										 values($1, $2, $3, $4, $5, $6, $7, $8) returning id
 	`
 
 	var voidTransactionID int
