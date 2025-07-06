@@ -47,14 +47,28 @@ func (r *TransactionRepositoryImpl) CreateTransaction(ctx context.Context, trans
 
 	// get the current sequence of number for the month
 	dateComp := transaction.TransactionDate.Format("200601")
+	sequenceQuery := `
+	  SELECT COUNT(*) + 1
+    FROM transactions
+		WHERE to_char(transaction_date, 'YYYYMM') = $1
+	`
+	var sequence int
+	err = tx.QueryRow(ctx, sequenceQuery, dateComp).Scan(&sequence)
+	if err != nil {
+		return err
+	}
+
+	// format the final transaction number
+	transaction.TransactionNumber = fmt.Sprintf("%s-%s-%04d", prefix, dateComp, sequence)
 
 	query := `
-		insert into transactions (description, amount, transaction_date, account_id, category_id, created_at, updated_at) 
-											values ($1, $2, $3, $4, $5, $6, $7)
+		insert into transactions (transaction_number, description, amount, transaction_date, account_id, category_id, created_at, updated_at) 
+											values ($1, $2, $3, $4, $5, $6, $7, $8)
 		                  returning id, created_at, updated_at`
 
 	now := time.Now()
 	err = r.db.QueryRow(ctx, query,
+		transaction.TransactionNumber,
 		transaction.Description,
 		transaction.Amount,
 		transaction.TransactionDate,

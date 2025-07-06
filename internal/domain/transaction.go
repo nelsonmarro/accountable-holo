@@ -4,6 +4,7 @@ import "time"
 
 type Transaction struct {
 	BaseEntity
+	TransactionNumber     string    `db:"transaction_number"`
 	Amount                float64   `db:"amount"`
 	Description           string    `db:"description"`
 	TransactionDate       time.Time `db:"transaction_date"`
