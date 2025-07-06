@@ -123,7 +123,7 @@ func (d *AddTransactionDialog) handleSubmit(valid bool) {
 
 		var categoryID int
 		for _, cat := range d.categories {
-			if cat.Name == d.categorySelect.SelectedText() {
+			if cat.Name == d.categorySelect.Text {
 				categoryID = cat.ID
 				break
 			}
