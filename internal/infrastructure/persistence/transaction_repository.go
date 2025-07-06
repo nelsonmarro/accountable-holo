@@ -51,17 +51,39 @@ func (r *TransactionRepositoryImpl) GetTransactionsByAccountPaginated(
 ) (*domain.PaginatedResult[domain.Transaction], error) {
 	offset := (page - 1) * pageSize
 
-	// TODO: Add filtering to the count query
-	countQuery := `SELECT count(*) FROM transactions WHERE account_id = $1`
+	// --- Dynamic query building ---
+	queryArgs := []any{accountID}
+	countArgs := []any{accountID}
+
+	whereClauses := " WHERE t.account_id = $1"
+	countWhereClauses := " WHERE t.account_id = $1"
+
+	// Add filter if provided
+	if len(filter) > 0 && filter[0] != "" {
+		filterValue := "%" + filter[0] + "%"
+		filterClause := " AND (t.description ILIKE $2 OR c.name ILIKE $2 OR c.type ILIKE $2)"
+
+		whereClauses += filterClause
+		// The count query needs the join if we are filtering
+		countWhereClauses = " JOIN categories c ON t.category_id = c.id" + whereClauses
+
+		queryArgs = append(queryArgs, filterValue)
+		countArgs = append(countArgs, filterValue)
+	}
+
+	// --- Count Query ---
+	countQuery := `SELECT count(*) FROM transactions t` + countWhereClauses
 	var totalCount int64
-	err := r.db.QueryRow(ctx, countQuery, accountID).Scan(&totalCount)
+	err := r.db.QueryRow(ctx, countQuery, countArgs...).Scan(&totalCount)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get total transaction count: %w", err)
 	}
 
-	// This query uses a window function to calculate the running balance in the database.
-	// This is more efficient and less error-prone than calculating it in Go.
-	dataQuery := `
+	// --- Data Query ---
+	limitParamIndex := len(queryArgs) + 1
+	offsetParamIndex := len(queryArgs) + 2
+
+	dataQuery := fmt.Sprintf(`
 		SELECT
 			t.id,
 			t.description,
@@ -78,15 +100,15 @@ func (r *TransactionRepositoryImpl) GetTransactionsByAccountPaginated(
 			categories c ON t.category_id = c.id
 		JOIN
 			accounts a ON t.account_id = a.id
-		WHERE
-			t.account_id = $1
+		%s
 		ORDER BY
 			t.transaction_date DESC, t.id DESC
-		LIMIT $2 OFFSET $3
-	`
-	args := []any{accountID, pageSize, offset}
+		LIMIT $%d OFFSET $%d
+	`, whereClauses, limitParamIndex, offsetParamIndex)
 
-	rows, err := r.db.Query(ctx, dataQuery, args...)
+	finalArgs := append(queryArgs, pageSize, offset)
+
+	rows, err := r.db.Query(ctx, dataQuery, finalArgs...)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get paginated transactions: %w", err)
 	}
@@ -123,12 +145,11 @@ func (r *TransactionRepositoryImpl) GetTransactionsByAccountPaginated(
 	}
 
 	return &domain.PaginatedResult[domain.Transaction]{
-			Data:       transactions,
-			TotalCount: totalCount,
-			Page:       page,
-			PageSize:   pageSize,
-		},
-		nil
+		Data:       transactions,
+		TotalCount: totalCount,
+		Page:       page,
+		PageSize:   pageSize,
+	}, nil
 }
 
 func (r *TransactionRepositoryImpl) VoidTransaction(ctx context.Context, transactionID int) error {
