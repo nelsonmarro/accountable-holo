@@ -114,7 +114,7 @@ ALTER TABLE public.schema_migration OWNER TO nelson;
 
 CREATE TABLE public.transactions (
     id integer NOT NULL,
-    amount real NOT NULL,
+    amount numeric(10,2) NOT NULL,
     description character varying(300) DEFAULT ''::character varying NOT NULL,
     account_id integer NOT NULL,
     category_id integer NOT NULL,
