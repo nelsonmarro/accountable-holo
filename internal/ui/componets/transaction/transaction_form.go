@@ -11,8 +11,9 @@ func TransactionForm(
 	dateEntry *widget.Entry,
 	categorySelect *widget.SelectEntry,
 ) []*widget.FormItem {
-	addFormValidation(descriptionEntry, amountEntry, dateEntry, categorySelect)
+	dateEntry.SetPlaceHolder("YYYY-MM-DD")
 
+	addFormValidation(descriptionEntry, amountEntry, dateEntry, categorySelect)
 	return []*widget.FormItem{
 		{Text: "Description", Widget: descriptionEntry},
 		{Text: "Amount", Widget: amountEntry},

@@ -58,6 +58,7 @@ func NewAddTransactionDialog(
 // Show creates and displays the Fyne form dialog.
 func (d *AddTransactionDialog) Show() {
 	d.loadData()
+
 	formDialog := dialog.NewForm("Create Transaction", "Save", "Cancel",
 		TransactionForm(
 			d.descriptionEntry,
@@ -74,10 +75,12 @@ func (d *AddTransactionDialog) Show() {
 }
 
 func (d *AddTransactionDialog) loadData() {
-	progressDialog := dialog.NewCustomWithoutButtons("Cargando...", widget.NewProgressBarInfinite(), d.mainWin)
-	progressDialog.Show()
-
 	go func() {
+		progressDialog := dialog.NewCustomWithoutButtons("Cargando...", widget.NewProgressBarInfinite(), d.mainWin)
+		fyne.Do(func() {
+			progressDialog.Show()
+		})
+
 		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 		defer cancel()
 
@@ -98,7 +101,9 @@ func (d *AddTransactionDialog) loadData() {
 		}
 
 		fyne.Do(func() {
+			progressDialog.Hide()
 			d.categorySelect.SetOptions(categoryNames)
+			d.categorySelect.SetText(categoryNames[0])
 			d.categorySelect.Refresh()
 		})
 	}()
