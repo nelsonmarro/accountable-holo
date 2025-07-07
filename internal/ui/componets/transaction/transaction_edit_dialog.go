@@ -103,7 +103,7 @@ func (d *EditTransactionDialog) fetchTransaction(onSuccess func(tx *domain.Trans
 }
 
 func (d *EditTransactionDialog) showEditForm(tx *domain.Transaction) {
-	d.txNumber.SetText(fmt.Sprintf("Transaction #%s", tx.TransactionNumber))
+	d.txNumber.SetText(fmt.Sprintf("#%s", tx.TransactionNumber))
 	d.descriptionEntry.SetText(tx.Description)
 	d.amountEntry.SetText(fmt.Sprintf("%.2f", tx.Amount))
 	d.dateEntry.SetText(tx.TransactionDate.Format("2006-01-02"))
@@ -121,7 +121,7 @@ func (d *EditTransactionDialog) showEditForm(tx *domain.Transaction) {
 		}
 	}
 
-	formDialog := dialog.NewForm("Edit Transaction", "Save", "Cancel",
+	formDialog := dialog.NewForm("Editar Transacción", "Guardar", "Cancelar",
 		TransactionForm(
 			d.descriptionEntry,
 			d.amountEntry,
@@ -140,7 +140,7 @@ func (d *EditTransactionDialog) handleSubmit(valid bool) {
 		return
 	}
 
-	progress := dialog.NewCustomWithoutButtons("Saving Changes...", widget.NewProgressBarInfinite(), d.mainWin)
+	progress := dialog.NewCustomWithoutButtons("Guardando...", widget.NewProgressBarInfinite(), d.mainWin)
 	progress.Show()
 
 	go func() {
@@ -171,7 +171,7 @@ func (d *EditTransactionDialog) handleSubmit(valid bool) {
 		if err != nil {
 			fyne.Do(func() {
 				progress.Hide()
-				dialog.ShowError(err, d.mainWin)
+				dialog.ShowError(fmt.Errorf("error al editar la transacción: %w", err), d.mainWin)
 			})
 			d.logger.Printf("Error updating transaction %d: %v", d.txID, err)
 			return
@@ -179,7 +179,7 @@ func (d *EditTransactionDialog) handleSubmit(valid bool) {
 
 		fyne.Do(func() {
 			progress.Hide()
-			dialog.ShowInformation("Success", "Changes have been saved.", d.mainWin)
+			dialog.ShowInformation("Exito!", "Cambios guardados correctamente", d.mainWin)
 		})
 
 		go d.callbackAction()

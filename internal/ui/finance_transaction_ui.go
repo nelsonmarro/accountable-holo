@@ -102,7 +102,7 @@ func (ui *UI) makeTransactionUI() fyne.CanvasObject {
 		ui.transactionPaginator,
 		nil, nil, nil,
 		container.NewGridWithColumns(7,
-			widget.NewLabel("ID-Transacción"),
+			widget.NewLabel("#"),
 			widget.NewLabel("Fecha"),
 			widget.NewLabel("Descripción"),
 			widget.NewLabel("Categoría"),

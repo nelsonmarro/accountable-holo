@@ -59,7 +59,7 @@ func NewAddTransactionDialog(
 func (d *AddTransactionDialog) Show() {
 	d.loadData()
 
-	formDialog := dialog.NewForm("Create Transaction", "Save", "Cancel",
+	formDialog := dialog.NewForm("Crear Transacción", "Guardar", "Cancelar",
 		TransactionForm(
 			d.descriptionEntry,
 			d.amountEntry,
@@ -114,7 +114,7 @@ func (d *AddTransactionDialog) handleSubmit(valid bool) {
 		return
 	}
 
-	progressDialog := dialog.NewCustomWithoutButtons("Please wait", widget.NewProgressBarInfinite(), d.mainWin)
+	progressDialog := dialog.NewCustomWithoutButtons("Espere...", widget.NewProgressBarInfinite(), d.mainWin)
 	progressDialog.Show()
 
 	go func() {
