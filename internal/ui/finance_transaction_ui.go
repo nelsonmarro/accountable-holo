@@ -101,7 +101,7 @@ func (ui *UI) makeTransactionUI() fyne.CanvasObject {
 	tableHeader := container.NewBorder(
 		ui.transactionPaginator,
 		nil, nil, nil,
-		container.NewGridWithColumns(7,
+		container.NewGridWithColumns(8,
 			widget.NewLabel("#"),
 			widget.NewLabel("Fecha"),
 			widget.NewLabel("Descripción"),
@@ -134,7 +134,7 @@ func (ui *UI) makeTransactionListUI() fyne.CanvasObject {
 	voidBtn := widget.NewButtonWithIcon("", theme.CancelIcon(), nil)
 	voidBtn.Importance = widget.DangerImportance
 
-	return container.NewGridWithColumns(7,
+	return container.NewGridWithColumns(8,
 		widget.NewLabel("12345"),
 		widget.NewLabel("2025-07-03"),
 		widget.NewLabel("template description"),
