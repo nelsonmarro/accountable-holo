@@ -128,6 +128,7 @@ func (r *TransactionRepositoryImpl) GetTransactionsByAccountPaginated(
 	dataQuery := fmt.Sprintf(`
 		SELECT
 			t.id,
+			t.transaction_number,
 			t.description,
 			t.amount,
 			t.transaction_date,
