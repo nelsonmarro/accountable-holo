@@ -115,7 +115,7 @@ func (ui *UI) makeTransactionUI() fyne.CanvasObject {
 
 	tableContainer := container.NewBorder(
 		tableHeader, nil, nil, nil,
-		ui.transactionList,
+		container.NewHScroll(ui.transactionList),
 	)
 
 	mainContent := container.NewBorder(
@@ -155,7 +155,7 @@ func (ui *UI) makeTransactionListUI() fyne.CanvasObject {
 	lblBalance := widget.NewLabel("$5,250.50")
 	lblBalance.Wrapping = fyne.TextWrap(fyne.TextTruncateClip)
 
-	return container.NewGridWithColumns(8,
+	grid := container.NewGridWithColumns(8,
 		lblTxNumber,
 		lblDate,
 		lblDescription,
@@ -168,6 +168,7 @@ func (ui *UI) makeTransactionListUI() fyne.CanvasObject {
 			voidBtn,
 		),
 	)
+	return grid
 }
 
 func (ui *UI) fillTransactionListData(i widget.ListItemID, o fyne.CanvasObject) {
