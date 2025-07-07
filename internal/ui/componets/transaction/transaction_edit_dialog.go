@@ -24,7 +24,7 @@ type EditTransactionDialog struct {
 	txID            int
 
 	// UI Components
-	txNumberLabel    *widget.Label
+	txNumber         *widget.Entry
 	descriptionEntry *widget.Entry
 	amountEntry      *widget.Entry
 	dateEntry        *widget.Entry
@@ -45,6 +45,7 @@ func NewEditTransactionDialog(win fyne.Window, l *log.Logger, txs TransactionSer
 		callbackAction:   callback,
 		txID:             txID,
 		accountID:        accountID,
+		txNumber:         widget.NewEntry(),
 		descriptionEntry: widget.NewEntry(),
 		amountEntry:      widget.NewEntry(),
 		dateEntry:        widget.NewEntry(),
@@ -63,7 +64,7 @@ func (d *EditTransactionDialog) Show() {
 	onFailure := func(err error) {
 		d.logger.Println("Error getting transaction by ID:", err)
 		fyne.Do(func() {
-			dialog.ShowError(fmt.Errorf("error fetching transaction: %w", err), d.mainWin)
+			dialog.ShowError(fmt.Errorf("error al cargar la transacción: %w", err), d.mainWin)
 		})
 	}
 
@@ -71,7 +72,7 @@ func (d *EditTransactionDialog) Show() {
 }
 
 func (d *EditTransactionDialog) fetchTransaction(onSuccess func(tx *domain.Transaction), onFailure func(err error)) {
-	progress := dialog.NewCustomWithoutButtons("Loading Transaction...", widget.NewProgressBarInfinite(), d.mainWin)
+	progress := dialog.NewCustomWithoutButtons("Cargando...", widget.NewProgressBarInfinite(), d.mainWin)
 	progress.Show()
 
 	go func() {
@@ -102,6 +103,7 @@ func (d *EditTransactionDialog) fetchTransaction(onSuccess func(tx *domain.Trans
 }
 
 func (d *EditTransactionDialog) showEditForm(tx *domain.Transaction) {
+	d.txNumber.SetText(fmt.Sprintf("Transaction #%s", tx.TransactionNumber))
 	d.descriptionEntry.SetText(tx.Description)
 	d.amountEntry.SetText(fmt.Sprintf("%.2f", tx.Amount))
 	d.dateEntry.SetText(tx.TransactionDate.Format("2006-01-02"))
