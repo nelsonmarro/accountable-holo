@@ -134,10 +134,13 @@ func (ui *UI) makeTransactionListUI() fyne.CanvasObject {
 	voidBtn := widget.NewButtonWithIcon("", theme.CancelIcon(), nil)
 	voidBtn.Importance = widget.DangerImportance
 
+	lblDescription := widget.NewLabel("template description")
+	lblDescription.Wrapping = fyne.TextWrap(fyne.TextTruncateClip)
+
 	return container.NewGridWithColumns(8,
 		widget.NewLabel("12345"),
 		widget.NewLabel("2025-07-03"),
-		widget.NewLabel("template description"),
+		lblDescription,
 		widget.NewLabel("template category"),
 		widget.NewLabel("template type"),
 		widget.NewLabel("$1,200.00"),
