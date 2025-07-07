@@ -89,7 +89,7 @@ func (d *AddTransactionDialog) loadData() {
 			d.logger.Println("Error loading categories:", err)
 			fyne.Do(func() {
 				progressDialog.Hide()
-				dialog.ShowError(err, d.mainWin)
+				dialog.ShowError(fmt.Errorf("error al cargar las categorias: %w", err), d.mainWin)
 			})
 			return
 		}
@@ -144,7 +144,7 @@ func (d *AddTransactionDialog) handleSubmit(valid bool) {
 		if err != nil {
 			fyne.Do(func() {
 				progressDialog.Hide()
-				dialog.ShowError(fmt.Errorf("error creating transaction: %w", err), d.mainWin)
+				dialog.ShowError(fmt.Errorf("error al crear la Transacción: %w", err), d.mainWin)
 			})
 			d.logger.Println("Error creating transaction:", err)
 			return
@@ -152,7 +152,7 @@ func (d *AddTransactionDialog) handleSubmit(valid bool) {
 
 		fyne.Do(func() {
 			progressDialog.Hide()
-			dialog.ShowInformation("Transaction Created", "Transaction created successfully!", d.mainWin)
+			dialog.ShowInformation("Transacción Creada", "Transacción creada exitosamente!", d.mainWin)
 		})
 
 		go d.callbackAction()

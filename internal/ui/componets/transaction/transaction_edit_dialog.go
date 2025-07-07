@@ -24,6 +24,7 @@ type EditTransactionDialog struct {
 	txID            int
 
 	// UI Components
+	txNumberLabel    *widget.Label
 	descriptionEntry *widget.Entry
 	amountEntry      *widget.Entry
 	dateEntry        *widget.Entry

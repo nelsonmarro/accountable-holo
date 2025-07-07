@@ -154,27 +154,30 @@ func (ui *UI) fillTransactionListData(i widget.ListItemID, o fyne.CanvasObject) 
 
 	rowContainer := o.(*fyne.Container)
 
-	dateLabel := rowContainer.Objects[0].(*widget.Label)
+	tIDLabel := rowContainer.Objects[0].(*widget.Label)
+	tIDLabel.SetText(tx.TransactionNumber)
+
+	dateLabel := rowContainer.Objects[1].(*widget.Label)
 	dateLabel.SetText(tx.TransactionDate.Format("2006-01-02"))
 
-	descLabel := rowContainer.Objects[1].(*widget.Label)
+	descLabel := rowContainer.Objects[2].(*widget.Label)
 	descLabel.SetText(tx.Description)
 
-	categoryLabel := rowContainer.Objects[2].(*widget.Label)
+	categoryLabel := rowContainer.Objects[3].(*widget.Label)
 	if tx.Category != nil {
 		categoryLabel.SetText(tx.Category.Name)
 	} else {
 		categoryLabel.SetText("-")
 	}
 
-	typeLabel := rowContainer.Objects[3].(*widget.Label)
+	typeLabel := rowContainer.Objects[4].(*widget.Label)
 	if tx.Category != nil {
 		typeLabel.SetText(string(tx.Category.Type))
 	} else {
 		typeLabel.SetText("-")
 	}
 
-	amountLabel := rowContainer.Objects[4].(*widget.Label)
+	amountLabel := rowContainer.Objects[5].(*widget.Label)
 	amountText := fmt.Sprintf("%.2f", tx.Amount)
 	if tx.Category != nil && tx.Category.Type == domain.Income {
 		amountText = "+ $" + amountText
@@ -183,10 +186,10 @@ func (ui *UI) fillTransactionListData(i widget.ListItemID, o fyne.CanvasObject) 
 	}
 	amountLabel.SetText(amountText)
 
-	balanceLabel := rowContainer.Objects[5].(*widget.Label)
+	balanceLabel := rowContainer.Objects[6].(*widget.Label)
 	balanceLabel.SetText(fmt.Sprintf("$%.2f", tx.RunningBalance))
 
-	actionsContainer := rowContainer.Objects[6].(*fyne.Container)
+	actionsContainer := rowContainer.Objects[7].(*fyne.Container)
 	editBtn := actionsContainer.Objects[0].(*widget.Button)
 	voidBtn := actionsContainer.Objects[1].(*widget.Button)
 
