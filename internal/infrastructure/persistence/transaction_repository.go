@@ -103,7 +103,7 @@ func (r *TransactionRepositoryImpl) GetTransactionsByAccountPaginated(
 	// Add filter if provided
 	if len(filter) > 0 && filter[0] != "" {
 		filterValue := "%" + filter[0] + "%"
-		filterClause := " AND (t.description ILIKE $2 OR c.name ILIKE $2 OR c.type ILIKE $2)"
+		filterClause := " AND (t.description ILIKE $2 OR t.transaction_number ILIKE $2 OR c.name ILIKE $2 OR c.type ILIKE $2)"
 
 		whereClauses += filterClause
 		// The count query needs the join if we are filtering
@@ -164,6 +164,7 @@ func (r *TransactionRepositoryImpl) GetTransactionsByAccountPaginated(
 		var categoryType domain.CategoryType
 		err := rows.Scan(
 			&tx.ID,
+			&tx.TransactionNumber,
 			&tx.Description,
 			&tx.Amount,
 			&tx.TransactionDate,
@@ -300,13 +301,14 @@ func (r *TransactionRepositoryImpl) VoidTransaction(ctx context.Context, transac
 
 func (r *TransactionRepositoryImpl) GetTransactionByID(ctx context.Context, transactionID int) (*domain.Transaction, error) {
 	query := `
-			select id, description, amount, transaction_date, account_id, category_id, created_at, updated_at,
+			select id, transaction_number, description, amount, transaction_date, account_id, category_id, created_at, updated_at
 			from transactions t
       where id = $1
 	`
 	var tx domain.Transaction
 	err := r.db.QueryRow(ctx, query, transactionID).Scan(
 		&tx.ID,
+		&tx.TransactionNumber,
 		&tx.Description,
 		&tx.Amount,
 		&tx.TransactionDate,
