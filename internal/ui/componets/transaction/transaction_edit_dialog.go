@@ -46,7 +46,7 @@ func NewEditTransactionDialog(win fyne.Window, l *log.Logger, txs TransactionSer
 		txID:             txID,
 		accountID:        accountID,
 		txNumber:         widget.NewEntry(),
-		descriptionEntry: widget.NewEntry(),
+		descriptionEntry: widget.NewMultiLineEntry(),
 		amountEntry:      widget.NewEntry(),
 		dateEntry:        widget.NewEntry(),
 		categorySelect:   widget.NewSelectEntry([]string{}),
@@ -136,7 +136,7 @@ func (d *EditTransactionDialog) showEditForm(tx *domain.Transaction) {
 		d.handleSubmit, // The submit callback
 		d.mainWin,
 	)
-	formDialog.Resize(fyne.NewSize(480, 300))
+	formDialog.Resize(fyne.NewSize(500, 350))
 	formDialog.Show()
 }
 

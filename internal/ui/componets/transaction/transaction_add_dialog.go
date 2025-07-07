@@ -47,7 +47,7 @@ func NewAddTransactionDialog(
 		txService:        txs,
 		categoryService:  cs,
 		callbackAction:   callback,
-		descriptionEntry: widget.NewEntry(),
+		descriptionEntry: widget.NewMultiLineEntry(),
 		amountEntry:      widget.NewEntry(),
 		dateEntry:        widget.NewEntry(),
 		accountID:        accountID,
@@ -70,7 +70,7 @@ func (d *AddTransactionDialog) Show() {
 		d.mainWin,
 	)
 
-	formDialog.Resize(fyne.NewSize(480, 300))
+	formDialog.Resize(fyne.NewSize(500, 350))
 	formDialog.Show()
 }
 

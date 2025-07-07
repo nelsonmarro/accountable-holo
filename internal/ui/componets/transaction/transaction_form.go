@@ -15,10 +15,10 @@ func TransactionForm(
 
 	addFormValidation(descriptionEntry, amountEntry, dateEntry, categorySelect)
 	return []*widget.FormItem{
-		{Text: "Description", Widget: descriptionEntry},
-		{Text: "Amount", Widget: amountEntry},
-		{Text: "Date", Widget: dateEntry},
-		{Text: "Category", Widget: categorySelect},
+		{Text: "Descripción", Widget: descriptionEntry},
+		{Text: "Monto", Widget: amountEntry},
+		{Text: "Fecha", Widget: dateEntry},
+		{Text: "Categoria", Widget: categorySelect},
 	}
 }
 
