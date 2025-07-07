@@ -121,13 +121,18 @@ func (d *EditTransactionDialog) showEditForm(tx *domain.Transaction) {
 		}
 	}
 
+	txFormItems := TransactionForm(
+		d.descriptionEntry,
+		d.amountEntry,
+		d.dateEntry,
+		d.categorySelect,
+	)
+
+	txNumberFormItem := widget.NewFormItem("Número de Transacción", d.txNumber)
+	txFormItems = append([]*widget.FormItem{txNumberFormItem}, txFormItems...)
+
 	formDialog := dialog.NewForm("Editar Transacción", "Guardar", "Cancelar",
-		TransactionForm(
-			d.descriptionEntry,
-			d.amountEntry,
-			d.dateEntry,
-			d.categorySelect,
-		),
+		txFormItems,
 		d.handleSubmit, // The submit callback
 		d.mainWin,
 	)
