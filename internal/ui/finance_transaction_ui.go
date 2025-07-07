@@ -194,7 +194,19 @@ func (ui *UI) fillTransactionListData(i widget.ListItemID, o fyne.CanvasObject) 
 	voidBtn := actionsContainer.Objects[1].(*widget.Button)
 
 	editBtn.OnTapped = func() {
-		dialog.ShowInformation("Info", "Edit transaction not implemented yet.", ui.mainWindow)
+		dialigHandler := transaction.NewEditTransactionDialog(
+			ui.mainWindow,
+			ui.errorLogger,
+			ui.Services.TxService,
+			ui.Services.CatService,
+			func() {
+				ui.loadTransactions(1, ui.transactionPaginator.GetPageSize())
+			},
+			tx.ID,
+			ui.selectedAccountID,
+		)
+
+		dialigHandler.Show()
 	}
 	voidBtn.OnTapped = func() {
 		dialog.ShowInformation("Info", "Void transaction not implemented yet.", ui.mainWindow)
