@@ -134,17 +134,35 @@ func (ui *UI) makeTransactionListUI() fyne.CanvasObject {
 	voidBtn := widget.NewButtonWithIcon("", theme.CancelIcon(), nil)
 	voidBtn.Importance = widget.DangerImportance
 
+	lblTxNumber := widget.NewLabel("template number")
+	lblTxNumber.Wrapping = fyne.TextWrap(fyne.TextTruncateClip)
+
+	lblDate := widget.NewLabel("2025-07-03")
+	lblDate.Wrapping = fyne.TextWrap(fyne.TextTruncateClip)
+
 	lblDescription := widget.NewLabel("template description")
 	lblDescription.Wrapping = fyne.TextWrap(fyne.TextTruncateClip)
 
+	lblCategory := widget.NewLabel("template category")
+	lblCategory.Wrapping = fyne.TextWrap(fyne.TextTruncateClip)
+
+	lblType := widget.NewLabel("template type")
+	lblType.Wrapping = fyne.TextWrap(fyne.TextTruncateClip)
+
+	lblAmount := widget.NewLabel("$1,200.00")
+	lblAmount.Wrapping = fyne.TextWrap(fyne.TextTruncateClip)
+
+	lblBalance := widget.NewLabel("$5,250.50")
+	lblBalance.Wrapping = fyne.TextWrap(fyne.TextTruncateClip)
+
 	return container.NewGridWithColumns(8,
-		widget.NewLabel("12345"),
-		widget.NewLabel("2025-07-03"),
+		lblTxNumber,
+		lblDate,
 		lblDescription,
-		widget.NewLabel("template category"),
-		widget.NewLabel("template type"),
-		widget.NewLabel("$1,200.00"),
-		widget.NewLabel("$5,250.50"),
+		lblCategory,
+		lblType,
+		lblAmount,
+		lblBalance,
 		container.NewHBox(
 			editBtn,
 			voidBtn,
