@@ -98,14 +98,22 @@ func (d *EditTransactionDialog) fetchTransaction(onSuccess func(tx *domain.Trans
 		}
 		d.categories = categories
 
+		fyne.Do(func() {
+			progress.Hide()
+		})
 		onSuccess(tx)
 	}()
 }
 
 func (d *EditTransactionDialog) showEditForm(tx *domain.Transaction) {
 	d.txNumber.SetText(fmt.Sprintf("#%s", tx.TransactionNumber))
+	d.txNumber.Disable()
+
 	d.descriptionEntry.SetText(tx.Description)
+
 	d.amountEntry.SetText(fmt.Sprintf("%.2f", tx.Amount))
+	d.amountEntry.Disable()
+
 	d.dateEntry.SetText(tx.TransactionDate.Format("2006-01-02"))
 
 	categoryNames := make([]string, len(d.categories))
@@ -145,12 +153,10 @@ func (d *EditTransactionDialog) handleSubmit(valid bool) {
 		return
 	}
 
-	go func() {
-		progress := dialog.NewCustomWithoutButtons("Guardando...", widget.NewProgressBarInfinite(), d.mainWin)
-		fyne.Do(func() {
-			progress.Show()
-		})
+	progress := dialog.NewCustomWithoutButtons("Guardando...", widget.NewProgressBarInfinite(), d.mainWin)
+	progress.Show()
 
+	go func() {
 		amount, _ := strconv.ParseFloat(d.amountEntry.Text, 64)
 		transactionDate, _ := time.Parse("2006-01-02", d.dateEntry.Text)
 

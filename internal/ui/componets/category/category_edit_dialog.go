@@ -70,7 +70,7 @@ func (d *EditCategoryDialog) Show() {
 
 // Show begins the process by fetching the account data first.
 func (d *EditCategoryDialog) fetchCategory(onSuccess func(acc *domain.Category), onFailure func(err error)) {
-	progress := dialog.NewCustomWithoutButtons("Cargando Categoria...", widget.NewProgressBarInfinite(), d.mainWin)
+	progress := dialog.NewCustomWithoutButtons("Cargando...", widget.NewProgressBarInfinite(), d.mainWin)
 	progress.Show()
 
 	go func() {
