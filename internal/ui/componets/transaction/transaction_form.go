@@ -34,28 +34,32 @@ func addFormValidation(
 	category fyne.CanvasObject,
 ) {
 	descEntry, ok := description.(*widget.Entry)
-
-	if !ok {
+	if ok {
 		descriptionValidator := uivalidators.NewValidator()
 		descriptionValidator.Required()
 		descriptionValidator.MinLength(3)
 		descEntry.Validator = descriptionValidator.Validate
 	}
 
-	amtEntry := amount.(*widget.Entry)
-	dtEntry := date.(*widget.Entry)
-	catSelect := category.(*widget.SelectEntry)
+	amtEntry, ok := amount.(*widget.Entry)
+	if ok {
+		amountValidator := uivalidators.NewValidator()
+		amountValidator.Required()
+		amountValidator.IsFloat()
+		amtEntry.Validator = amountValidator.Validate
+	}
 
-	amountValidator := uivalidators.NewValidator()
-	amountValidator.Required()
-	amountValidator.IsFloat()
-	amount.Validator = amountValidator.Validate
+	dtEntry, ok := date.(*widget.Entry)
+	if ok {
+		dateValidator := uivalidators.NewValidator()
+		dateValidator.Required()
+		dtEntry.Validator = dateValidator.Validate
+	}
 
-	dateValidator := uivalidators.NewValidator()
-	dateValidator.Required()
-	date.Validator = dateValidator.Validate
-
-	categoryValidator := uivalidators.NewValidator()
-	categoryValidator.Required()
-	category.Validator = categoryValidator.Validate
+	catSelect, ok := category.(*widget.SelectEntry)
+	if ok {
+		categoryValidator := uivalidators.NewValidator()
+		categoryValidator.Required()
+		catSelect.Validator = categoryValidator.Validate
+	}
 }
