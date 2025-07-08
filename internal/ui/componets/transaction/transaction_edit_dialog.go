@@ -24,9 +24,9 @@ type EditTransactionDialog struct {
 	txID            int
 
 	// UI Components
-	txNumber         *widget.Entry
+	txNumber         *widget.Label
 	descriptionEntry *widget.Entry
-	amountEntry      *widget.Entry
+	amountEntry      *widget.Label
 	dateEntry        *widget.Entry
 	categorySelect   *widget.SelectEntry
 
@@ -45,9 +45,9 @@ func NewEditTransactionDialog(win fyne.Window, l *log.Logger, txs TransactionSer
 		callbackAction:   callback,
 		txID:             txID,
 		accountID:        accountID,
-		txNumber:         widget.NewEntry(),
+		txNumber:         widget.NewLabel(""),
 		descriptionEntry: widget.NewMultiLineEntry(),
-		amountEntry:      widget.NewEntry(),
+		amountEntry:      widget.NewLabel(""),
 		dateEntry:        widget.NewEntry(),
 		categorySelect:   widget.NewSelectEntry([]string{}),
 	}
@@ -107,13 +107,8 @@ func (d *EditTransactionDialog) fetchTransaction(onSuccess func(tx *domain.Trans
 
 func (d *EditTransactionDialog) showEditForm(tx *domain.Transaction) {
 	d.txNumber.SetText(fmt.Sprintf("#%s", tx.TransactionNumber))
-	d.txNumber.Disable()
-
 	d.descriptionEntry.SetText(tx.Description)
-
 	d.amountEntry.SetText(fmt.Sprintf("%.2f", tx.Amount))
-	d.amountEntry.Disable()
-
 	d.dateEntry.SetText(tx.TransactionDate.Format("2006-01-02"))
 
 	categoryNames := make([]string, len(d.categories))

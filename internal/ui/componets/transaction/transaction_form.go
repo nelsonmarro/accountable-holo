@@ -1,24 +1,33 @@
 package transaction
 
 import (
+	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/widget"
 	"github.com/nelsonmarro/accountable-holo/internal/application/uivalidators"
 )
 
 func TransactionForm(
-	descriptionEntry *widget.Entry,
-	amountEntry *widget.Entry,
-	dateEntry *widget.Entry,
-	categorySelect *widget.SelectEntry,
+	descriptionEntry fyne.CanvasObject,
+	amountEntry fyne.CanvasObject,
+	dateEntry fyne.CanvasObject,
+	categorySelect fyne.CanvasObject,
 ) []*widget.FormItem {
-	dateEntry.SetPlaceHolder("YYYY-MM-DD")
+	// Assert canvas objects to their concrete widget types
+	descEntry := descriptionEntry.(*widget.Entry)
+	amtEntry := amountEntry.(*widget.Entry)
+	dtEntry := dateEntry.(*widget.Entry)
+	catSelect := categorySelect.(*widget.SelectEntry)
 
-	addFormValidation(descriptionEntry, amountEntry, dateEntry, categorySelect)
+	dtEntry.SetPlaceHolder("YYYY-MM-DD")
+
+	// Pass the asserted widgets to the validation function
+	addFormValidation(descEntry, amtEntry, dtEntry, catSelect)
+
 	return []*widget.FormItem{
-		{Text: "Descripción", Widget: descriptionEntry},
-		{Text: "Monto", Widget: amountEntry},
-		{Text: "Fecha", Widget: dateEntry},
-		{Text: "Categoria", Widget: categorySelect},
+		{Text: "Descripción", Widget: descEntry},
+		{Text: "Monto", Widget: amtEntry},
+		{Text: "Fecha", Widget: dtEntry},
+		{Text: "Categoria", Widget: catSelect},
 	}
 }
 
