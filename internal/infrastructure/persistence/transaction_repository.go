@@ -331,7 +331,7 @@ func (r *TransactionRepositoryImpl) UpdateTransaction(ctx context.Context, tx *d
 	query := `
 		update transactions
 		set description = $1, transaction_date = $2, category_id = $3, updated_at = $4
-		where id = $6
+		where id = $5
 	`
 	now := time.Now()
 	_, err := r.db.Exec(ctx, query,

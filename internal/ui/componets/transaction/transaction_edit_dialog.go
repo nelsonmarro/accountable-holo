@@ -145,16 +145,18 @@ func (d *EditTransactionDialog) handleSubmit(valid bool) {
 		return
 	}
 
-	progress := dialog.NewCustomWithoutButtons("Guardando...", widget.NewProgressBarInfinite(), d.mainWin)
-	progress.Show()
-
 	go func() {
+		progress := dialog.NewCustomWithoutButtons("Guardando...", widget.NewProgressBarInfinite(), d.mainWin)
+		fyne.Do(func() {
+			progress.Show()
+		})
+
 		amount, _ := strconv.ParseFloat(d.amountEntry.Text, 64)
 		transactionDate, _ := time.Parse("2006-01-02", d.dateEntry.Text)
 
 		var categoryID int
 		for _, cat := range d.categories {
-			if cat.Name == d.categorySelect.SelectedText() {
+			if cat.Name == d.categorySelect.Text {
 				categoryID = cat.ID
 				break
 			}
