@@ -10,6 +10,7 @@ import (
 	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
+	"github.com/nelsonmarro/accountable-holo/internal/application/helpers"
 	"github.com/nelsonmarro/accountable-holo/internal/domain"
 	"github.com/nelsonmarro/accountable-holo/internal/ui/componets"
 	"github.com/nelsonmarro/accountable-holo/internal/ui/componets/transaction"
@@ -183,7 +184,7 @@ func (ui *UI) fillTransactionListData(i widget.ListItemID, o fyne.CanvasObject) 
 	dateLabel.SetText(tx.TransactionDate.Format("2006-01-02"))
 
 	descLabel := rowContainer.Objects[2].(*widget.Label)
-	descLabel.SetText(tx.Description)
+	descLabel.SetText(helpers.PrepareForTruncation(tx.Description))
 
 	categoryLabel := rowContainer.Objects[3].(*widget.Label)
 	if tx.Category != nil {

@@ -144,7 +144,7 @@ func (d *EditTransactionDialog) showEditForm(tx *domain.Transaction) {
 		d.handleSubmit, // The submit callback
 		d.mainWin,
 	)
-	formDialog.Resize(fyne.NewSize(500, 350))
+	formDialog.Resize(fyne.NewSize(560, 400))
 	formDialog.Show()
 }
 
