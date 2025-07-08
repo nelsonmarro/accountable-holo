@@ -135,25 +135,25 @@ func (ui *UI) makeTransactionListUI() fyne.CanvasObject {
 	voidBtn.Importance = widget.DangerImportance
 
 	lblTxNumber := widget.NewLabel("template number")
-	lblTxNumber.Wrapping = fyne.TextWrap(fyne.TextTruncateEllipsis)
+	lblTxNumber.Wrapping = fyne.TextWrap(fyne.TextTruncateClip)
 
 	lblDate := widget.NewLabel("2025-07-03")
-	lblDate.Wrapping = fyne.TextWrap(fyne.TextTruncateEllipsis)
+	lblDate.Wrapping = fyne.TextWrap(fyne.TextTruncateClip)
 
 	lblDescription := widget.NewLabel("template description")
-	lblDescription.Wrapping = fyne.TextWrap(fyne.TextTruncateEllipsis)
+	lblDescription.Wrapping = fyne.TextWrap(fyne.TextTruncateClip)
 
 	lblCategory := widget.NewLabel("template category")
-	lblCategory.Wrapping = fyne.TextWrap(fyne.TextTruncateEllipsis)
+	lblCategory.Wrapping = fyne.TextWrap(fyne.TextTruncateClip)
 
 	lblType := widget.NewLabel("template type")
-	lblType.Wrapping = fyne.TextWrap(fyne.TextTruncateEllipsis)
+	lblType.Wrapping = fyne.TextWrap(fyne.TextTruncateClip)
 
 	lblAmount := widget.NewLabel("$1,200.00")
-	lblAmount.Wrapping = fyne.TextWrap(fyne.TextTruncateEllipsis)
+	lblAmount.Wrapping = fyne.TextWrap(fyne.TextTruncateClip)
 
 	lblBalance := widget.NewLabel("$5,250.50")
-	lblBalance.Wrapping = fyne.TextWrap(fyne.TextTruncateEllipsis)
+	lblBalance.Wrapping = fyne.TextWrap(fyne.TextTruncateClip)
 
 	grid := container.NewGridWithColumns(8,
 		lblTxNumber,
