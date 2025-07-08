@@ -7,51 +7,55 @@ import (
 )
 
 func TransactionForm(
-	descriptionEntry fyne.CanvasObject,
-	amountEntry fyne.CanvasObject,
-	dateEntry fyne.CanvasObject,
-	categorySelect fyne.CanvasObject,
+	description fyne.CanvasObject,
+	amount fyne.CanvasObject,
+	date fyne.CanvasObject,
+	category fyne.CanvasObject,
 ) []*widget.FormItem {
-	// Assert canvas objects to their concrete widget types
-	descEntry := descriptionEntry.(*widget.Entry)
-	amtEntry := amountEntry.(*widget.Entry)
-	dtEntry := dateEntry.(*widget.Entry)
-	catSelect := categorySelect.(*widget.SelectEntry)
+	dtEntry, ok := date.(*widget.Entry)
+	if ok {
+		dtEntry.SetPlaceHolder("YYYY-MM-DD")
+	}
 
-	dtEntry.SetPlaceHolder("YYYY-MM-DD")
-
-	// Pass the asserted widgets to the validation function
-	addFormValidation(descEntry, amtEntry, dtEntry, catSelect)
+	addFormValidation(description, amount, date, category)
 
 	return []*widget.FormItem{
-		{Text: "Descripción", Widget: descEntry},
-		{Text: "Monto", Widget: amtEntry},
-		{Text: "Fecha", Widget: dtEntry},
-		{Text: "Categoria", Widget: catSelect},
+		{Text: "Descripción", Widget: description},
+		{Text: "Monto", Widget: amount},
+		{Text: "Fecha", Widget: date},
+		{Text: "Categoria", Widget: category},
 	}
 }
 
 func addFormValidation(
-	descriptionEntry *widget.Entry,
-	amountEntry *widget.Entry,
-	dateEntry *widget.Entry,
-	categorySelect *widget.SelectEntry,
+	description fyne.CanvasObject,
+	amount fyne.CanvasObject,
+	date fyne.CanvasObject,
+	category fyne.CanvasObject,
 ) {
-	descriptionValidator := uivalidators.NewValidator()
-	descriptionValidator.Required()
-	descriptionValidator.MinLength(3)
-	descriptionEntry.Validator = descriptionValidator.Validate
+	descEntry, ok := description.(*widget.Entry)
+
+	if !ok {
+		descriptionValidator := uivalidators.NewValidator()
+		descriptionValidator.Required()
+		descriptionValidator.MinLength(3)
+		descEntry.Validator = descriptionValidator.Validate
+	}
+
+	amtEntry := amount.(*widget.Entry)
+	dtEntry := date.(*widget.Entry)
+	catSelect := category.(*widget.SelectEntry)
 
 	amountValidator := uivalidators.NewValidator()
 	amountValidator.Required()
 	amountValidator.IsFloat()
-	amountEntry.Validator = amountValidator.Validate
+	amount.Validator = amountValidator.Validate
 
 	dateValidator := uivalidators.NewValidator()
 	dateValidator.Required()
-	dateEntry.Validator = dateValidator.Validate
+	date.Validator = dateValidator.Validate
 
 	categoryValidator := uivalidators.NewValidator()
 	categoryValidator.Required()
-	categorySelect.Validator = categoryValidator.Validate
+	category.Validator = categoryValidator.Validate
 }
