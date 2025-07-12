@@ -46,3 +46,29 @@ func NewCategorySearchDialog(
 
 	return d
 }
+
+func (d *CategorySearchDialog) Show() {
+	// Create the dialog's content
+	content := d.createContent()
+
+	// Create a new custom dialog
+	d.dl = dialog.NewCustom("Buscar Categorias", "Cerrar", content, d.mainWin)
+	d.dl.Resize(fyne.NewSize(450, 530))
+
+	// Fetch the first page of categories
+
+	d.dl.Show()
+}
+
+func (d *CategorySearchDialog) createContent() fyne.CanvasObject {
+	// Create and arrange UI Components
+
+	return widget.NewLabel("UI content goes here")
+}
+
+const CategoryPageSize = 10
+
+func (d *CategorySearchDialog) fetchCategories(page int, s string) {
+	progressDialog := dialog.NewCustomWithoutButtons("Espere", widget.NewProgressBarInfinite(), d.mainWin)
+	progressDialog.Show()
+}
