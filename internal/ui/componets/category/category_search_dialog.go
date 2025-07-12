@@ -28,3 +28,21 @@ type CategorySearchDialog struct {
 	totalCount int
 	searchTerm string
 }
+
+func NewCategorySearchDialog(
+	mainWin fyne.Window,
+	looger *log.Logger,
+	catService CategoryService,
+	onCategorySelected func(domain.Category),
+) *CategorySearchDialog {
+	d := &CategorySearchDialog{
+		mainWin:            mainWin,
+		logger:             looger,
+		catService:         catService,
+		onCategorySelected: onCategorySelected,
+	}
+	d.searchEntry = widget.NewEntry()
+	d.searchEntry.SetPlaceHolder("Buscar...")
+
+	return d
+}
