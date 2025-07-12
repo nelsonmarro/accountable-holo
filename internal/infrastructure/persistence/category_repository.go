@@ -117,7 +117,7 @@ func (r *CategoryRepositoryImpl) getPaginatedCategories(
 	}, nil
 }
 
-// GetPaginatedCategories now calls the helper with an empty base WHERE clause.
+// GetPaginatedCategories calls the helper without any base WHERE clause.
 func (r *CategoryRepositoryImpl) GetPaginatedCategories(ctx context.Context, page, pageSize int, filter ...string) (
 	*domain.PaginatedResult[domain.Category],
 	error,
