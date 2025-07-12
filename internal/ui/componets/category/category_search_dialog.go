@@ -60,7 +60,7 @@ func (d *CategorySearchDialog) Show() {
 	content := d.createContent()
 
 	d.dl = dialog.NewCustom("Buscar Categoría", "Cerrar", content, d.mainWin)
-	d.dl.Resize(fyne.NewSize(500, 550))
+	d.dl.Resize(fyne.NewSize(630, 550))
 
 	// Initial load
 	go d.loadCategories(1, d.pagination.GetPageSize())
@@ -186,4 +186,3 @@ func (d *CategorySearchDialog) filterCategories(filter string) {
 	// Reset to page 1 for a new search
 	d.loadCategories(1, d.pagination.GetPageSize())
 }
-
