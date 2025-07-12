@@ -41,7 +41,7 @@ func NewAddTransactionDialog(
 	callback func(),
 	accountID int,
 ) *AddTransactionDialog {
-	return &AddTransactionDialog{
+	d := &AddTransactionDialog{
 		mainWin:          win,
 		logger:           l,
 		txService:        txs,
@@ -51,20 +51,34 @@ func NewAddTransactionDialog(
 		amountEntry:      widget.NewEntry(),
 		dateEntry:        widget.NewEntry(),
 		accountID:        accountID,
-		categorySelect:   widget.NewSelectEntry([]string{}),
+		categoryLabel:    widget.NewLabel("Ninguna seleccionada"),
 	}
+
+	d.searchCategoryBtn = widget.NewButtonWithIcon("", theme.SearchIcon(), func() {
+		searchDialog := category.NewCategorySearchDialog(
+			d.mainWin,
+			d.logger,
+			d.categoryService,
+			func(cat domain.Category) {
+				d.selectedCategory = &cat
+				d.categoryLabel.SetText(cat.Name)
+			},
+		)
+		searchDialog.Show()
+	})
+
+	return d
 }
 
 // Show creates and displays the Fyne form dialog.
 func (d *AddTransactionDialog) Show() {
-	d.loadData()
-
+	categoryContainer := container.NewBorder(nil, nil, nil, d.searchCategoryBtn, d.categoryLabel)
 	formDialog := dialog.NewForm("Crear Transacción", "Guardar", "Cancelar",
 		TransactionForm(
 			d.descriptionEntry,
 			d.amountEntry,
 			d.dateEntry,
-			d.categorySelect,
+			categoryContainer,
 		),
 		d.handleSubmit, // Pass the method as the callback
 		d.mainWin,
@@ -74,43 +88,15 @@ func (d *AddTransactionDialog) Show() {
 	formDialog.Show()
 }
 
-func (d *AddTransactionDialog) loadData() {
-	go func() {
-		progressDialog := dialog.NewCustomWithoutButtons("Cargando...", widget.NewProgressBarInfinite(), d.mainWin)
-		fyne.Do(func() {
-			progressDialog.Show()
-		})
 
-		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
-		defer cancel()
-
-		categories, err := d.categoryService.GetAllCategories(ctx)
-		if err != nil {
-			d.logger.Println("Error loading categories:", err)
-			fyne.Do(func() {
-				progressDialog.Hide()
-				dialog.ShowError(fmt.Errorf("error al cargar las categorias: %w", err), d.mainWin)
-			})
-			return
-		}
-		d.categories = categories
-
-		categoryNames := make([]string, len(categories))
-		for i, cat := range categories {
-			categoryNames[i] = cat.Name
-		}
-
-		fyne.Do(func() {
-			progressDialog.Hide()
-			d.categorySelect.SetOptions(categoryNames)
-			d.categorySelect.SetText(categoryNames[0])
-			d.categorySelect.Refresh()
-		})
-	}()
-}
 
 func (d *AddTransactionDialog) handleSubmit(valid bool) {
 	if !valid {
+		return
+	}
+
+	if d.selectedCategory == nil {
+		dialog.ShowError(fmt.Errorf("por favor, seleccione una categoría"), d.mainWin)
 		return
 	}
 
@@ -121,20 +107,12 @@ func (d *AddTransactionDialog) handleSubmit(valid bool) {
 		amount, _ := strconv.ParseFloat(d.amountEntry.Text, 64)
 		transactionDate, _ := time.Parse("2006-01-02", d.dateEntry.Text)
 
-		var categoryID int
-		for _, cat := range d.categories {
-			if cat.Name == d.categorySelect.Text {
-				categoryID = cat.ID
-				break
-			}
-		}
-
 		tx := &domain.Transaction{
 			Description:     d.descriptionEntry.Text,
 			Amount:          amount,
 			TransactionDate: transactionDate,
 			AccountID:       d.accountID,
-			CategoryID:      categoryID,
+			CategoryID:      d.selectedCategory.ID, // Use the new field
 		}
 
 		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
