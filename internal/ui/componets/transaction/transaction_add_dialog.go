@@ -64,8 +64,8 @@ func NewAddTransactionDialog(
 			d.mainWin,
 			d.logger,
 			d.categoryService,
-			func(cat domain.Category) {
-				d.selectedCategory = &cat
+			func(cat *domain.Category) {
+				d.selectedCategory = cat
 				d.categoryLabel.SetText(cat.Name)
 			},
 		)

@@ -20,7 +20,7 @@ type CategorySearchDialog struct {
 	mainWin            fyne.Window
 	logger             *log.Logger
 	catService         CategoryService
-	onCategorySelected func(domain.Category)
+	onCategorySelected func(*domain.Category)
 
 	// UI Components
 	searchEntry  *widget.Entry
@@ -42,7 +42,7 @@ func NewCategorySearchDialog(
 	mainWin fyne.Window,
 	logger *log.Logger,
 	catService CategoryService,
-	onCategorySelected func(domain.Category),
+	onCategorySelected func(*domain.Category),
 ) *CategorySearchDialog {
 	d := &CategorySearchDialog{
 		mainWin:            mainWin,
@@ -148,7 +148,7 @@ func (d *CategorySearchDialog) updateListItem(i widget.ListItemID, o fyne.Canvas
 	selectBtn.OnTapped = func() {
 		d.logger.Printf("Category selected: %s (ID: %d)", cat.Name, cat.ID)
 		if d.onCategorySelected != nil {
-			d.onCategorySelected(cat)
+			d.onCategorySelected(&cat)
 		}
 		d.dl.Hide()
 	}
@@ -186,3 +186,4 @@ func (d *CategorySearchDialog) filterCategories(filter string) {
 	// Reset to page 1 for a new search
 	d.loadCategories(1, d.pagination.GetPageSize())
 }
+

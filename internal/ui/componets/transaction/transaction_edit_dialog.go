@@ -9,9 +9,12 @@ import (
 	"time"
 
 	"fyne.io/fyne/v2"
+	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/dialog"
+	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 	"github.com/nelsonmarro/accountable-holo/internal/domain"
+	"github.com/nelsonmarro/accountable-holo/internal/ui/componets/category"
 )
 
 // EditTransactionDialog holds the state and logic for the 'Edit Transaction' dialog.
@@ -28,16 +31,19 @@ type EditTransactionDialog struct {
 	descriptionEntry *widget.Entry
 	amountEntry      *widget.Label
 	dateEntry        *widget.Entry
-	categorySelect   *widget.SelectEntry
+	categoryLabel    *widget.Label
+	categoryButton   *widget.Button
+	searchDialog     *category.CategorySearchDialog
 
 	// Data
-	accountID  int
-	categories []domain.Category
+	accountID          int
+	categories         []domain.Category
+	selectedCategoryID int
 }
 
 // NewEditTransactionDialog creates a new dialog handler for the edit action.
 func NewEditTransactionDialog(win fyne.Window, l *log.Logger, txs TransactionService, cs CategoryService, callback func(), txID int, accountID int) *EditTransactionDialog {
-	return &EditTransactionDialog{
+	d := &EditTransactionDialog{
 		mainWin:          win,
 		logger:           l,
 		txService:        txs,
@@ -49,8 +55,20 @@ func NewEditTransactionDialog(win fyne.Window, l *log.Logger, txs TransactionSer
 		descriptionEntry: widget.NewMultiLineEntry(),
 		amountEntry:      widget.NewLabel(""),
 		dateEntry:        widget.NewEntry(),
-		categorySelect:   widget.NewSelectEntry([]string{}),
+		categoryLabel:    widget.NewLabel(""),
 	}
+	d.categoryButton = widget.NewButtonWithIcon("", theme.SearchIcon(), d.openCategorySearch)
+	d.searchDialog = category.NewCategorySearchDialog(win, l, cs, d.handleCategorySelect)
+	return d
+}
+
+func (d *EditTransactionDialog) openCategorySearch() {
+	d.searchDialog.Show()
+}
+
+func (d *EditTransactionDialog) handleCategorySelect(cat *domain.Category) {
+	d.selectedCategoryID = cat.ID
+	d.categoryLabel.SetText(cat.Name)
 }
 
 // Show begins the entire "edit" process.
@@ -111,24 +129,20 @@ func (d *EditTransactionDialog) showEditForm(tx *domain.Transaction) {
 	d.amountEntry.SetText(fmt.Sprintf("%.2f", tx.Amount))
 	d.dateEntry.SetText(tx.TransactionDate.Format("2006-01-02"))
 
-	categoryNames := make([]string, len(d.categories))
-	for i, cat := range d.categories {
-		categoryNames[i] = cat.Name
-	}
-	d.categorySelect.SetOptions(categoryNames)
-
 	for _, cat := range d.categories {
 		if cat.ID == tx.CategoryID {
-			d.categorySelect.SetText(cat.Name)
+			d.selectedCategoryID = cat.ID
+			d.categoryLabel.SetText(cat.Name)
 			break
 		}
 	}
 
+	categoryContainer := container.NewBorder(nil, nil, nil, d.categoryButton, d.categoryLabel)
 	txFormItems := TransactionForm(
 		d.descriptionEntry,
 		d.amountEntry,
 		d.dateEntry,
-		d.categorySelect,
+		categoryContainer,
 	)
 
 	txNumberFormItem := widget.NewFormItem("Número de Transacción", d.txNumber)
@@ -155,21 +169,13 @@ func (d *EditTransactionDialog) handleSubmit(valid bool) {
 		amount, _ := strconv.ParseFloat(d.amountEntry.Text, 64)
 		transactionDate, _ := time.Parse("2006-01-02", d.dateEntry.Text)
 
-		var categoryID int
-		for _, cat := range d.categories {
-			if cat.Name == d.categorySelect.Text {
-				categoryID = cat.ID
-				break
-			}
-		}
-
 		updatedTx := &domain.Transaction{
 			BaseEntity:      domain.BaseEntity{ID: d.txID},
 			Description:     d.descriptionEntry.Text,
 			Amount:          amount,
 			TransactionDate: transactionDate,
 			AccountID:       d.accountID,
-			CategoryID:      categoryID,
+			CategoryID:      d.selectedCategoryID,
 		}
 
 		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
