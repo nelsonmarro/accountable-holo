@@ -1,13 +1,14 @@
 package category
 
 import (
+	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/widget"
 	"github.com/nelsonmarro/accountable-holo/internal/application/uivalidators"
 )
 
 func CategoryForm(
-	nameEntry *widget.Entry,
-	tipoSelect *widget.SelectEntry,
+	nameEntry fyne.CanvasObject,
+	tipoSelect fyne.CanvasObject,
 ) []*widget.FormItem {
 	addFormValidation(nameEntry, tipoSelect)
 
@@ -18,15 +19,21 @@ func CategoryForm(
 }
 
 func addFormValidation(
-	nameEntry *widget.Entry,
-	tipoSelect *widget.SelectEntry,
+	nameEntry fyne.CanvasObject,
+	tipoSelect fyne.CanvasObject,
 ) {
-	nameValidator := uivalidators.NewValidator()
-	nameValidator.Required()
-	nameValidator.MinLength(3)
-	nameEntry.Validator = nameValidator.Validate
+	name, ok := nameEntry.(*widget.Entry)
+	if ok {
+		nameValidator := uivalidators.NewValidator()
+		nameValidator.Required()
+		nameValidator.MinLength(3)
+		name.Validator = nameValidator.Validate
+	}
 
-	tipoValidator := uivalidators.NewValidator()
-	tipoValidator.Required()
-	tipoSelect.Validator = tipoValidator.Validate
+	tipo, ok := tipoSelect.(*widget.SelectEntry)
+	if ok {
+		tipoValidator := uivalidators.NewValidator()
+		tipoValidator.Required()
+		tipo.Validator = tipoValidator.Validate
+	}
 }

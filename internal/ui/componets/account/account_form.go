@@ -1,15 +1,16 @@
 package account
 
 import (
+	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/widget"
 	"github.com/nelsonmarro/accountable-holo/internal/application/uivalidators"
 )
 
 func AccountForm(
-	nameEntry *widget.Entry,
-	tipoSelect *widget.SelectEntry,
-	amountEntry *widget.Entry,
-	numberEntry *widget.Entry,
+	nameEntry fyne.CanvasObject,
+	tipoSelect fyne.CanvasObject,
+	amountEntry fyne.CanvasObject,
+	numberEntry fyne.CanvasObject,
 ) []*widget.FormItem {
 	addFormValidation(nameEntry, amountEntry, tipoSelect, numberEntry)
 
@@ -22,31 +23,39 @@ func AccountForm(
 }
 
 func addFormValidation(
-	nameEntry *widget.Entry,
-	amountEntry *widget.Entry,
-	tipoSelect *widget.SelectEntry,
-	numberEntry *widget.Entry,
+	nameEntry fyne.CanvasObject,
+	amountEntry fyne.CanvasObject,
+	tipoSelect fyne.CanvasObject,
+	numberEntry fyne.CanvasObject,
 ) {
-	nameValidator := uivalidators.NewValidator()
-	nameValidator.Required()
-	nameValidator.MinLength(3)
+	name, ok := nameEntry.(*widget.Entry)
+	if ok {
+		nameValidator := uivalidators.NewValidator()
+		nameValidator.Required()
+		nameValidator.MinLength(3)
+		name.Validator = nameValidator.Validate
+	}
 
-	nameEntry.Validator = nameValidator.Validate
+	amount, ok := amountEntry.(*widget.Entry)
+	if ok {
+		amountValidator := uivalidators.NewValidator()
+		amountValidator.Required()
+		amountValidator.IsFloat()
+		amount.Validator = amountValidator.Validate
+	}
 
-	amountValidator := uivalidators.NewValidator()
-	amountValidator.Required()
-	amountValidator.IsFloat()
+	tipo, ok := tipoSelect.(*widget.SelectEntry)
+	if ok {
+		tipoValidator := uivalidators.NewValidator()
+		tipoValidator.Required()
+		tipo.Validator = tipoValidator.Validate
+	}
 
-	amountEntry.Validator = amountValidator.Validate
-
-	tipoValidator := uivalidators.NewValidator()
-	tipoValidator.Required()
-
-	tipoSelect.Validator = tipoValidator.Validate
-
-	numberValidator := uivalidators.NewValidator()
-	numberValidator.Required()
-	numberValidator.IsInt()
-
-	numberEntry.Validator = numberValidator.Validate
+	number, ok := numberEntry.(*widget.Entry)
+	if ok {
+		numberValidator := uivalidators.NewValidator()
+		numberValidator.Required()
+		numberValidator.IsInt()
+		number.Validator = numberValidator.Validate
+	}
 }
