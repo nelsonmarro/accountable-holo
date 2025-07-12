@@ -149,13 +149,15 @@ func (r *CategoryRepositoryImpl) GetSelectablePaginatedCategories(
 	var totalCount int64
 	var queryArgs []any
 	var countQueryArgs []any
-	whereClause := ""
+	whereClause := " WHERE name NOT LIKE '%Anular Transacción%'"
+	paramIndex := 1 // Start parameter index at 1
 
 	if len(filter) > 0 && filter[0] != "" {
-		whereClause = " WHERE name ILIKE $1 OR type ILIKE $1"
+		whereClause += fmt.Sprintf(" AND (name ILIKE $%d OR type ILIKE $%d)", paramIndex, paramIndex)
 		filterArg := "%" + filter[0] + "%"
 		countQueryArgs = append(countQueryArgs, filterArg)
 		queryArgs = append(queryArgs, filterArg)
+		paramIndex++
 	}
 
 	countQuery := `SELECT count(*) FROM categories` + whereClause
@@ -178,17 +180,11 @@ func (r *CategoryRepositoryImpl) GetSelectablePaginatedCategories(
 	// calculate offset
 	offset := (page - 1) * pageSize
 
-	limitOffsetClause := ""
-	paramIndex := len(queryArgs) + 1
-	if len(queryArgs) > 0 {
-		limitOffsetClause = fmt.Sprintf(" ORDER BY name ASC LIMIT $%d OFFSET $%d", paramIndex, paramIndex+1)
-	} else {
-		limitOffsetClause = " ORDER BY name ASC LIMIT $1 OFFSET $2"
-	}
+	limitOffsetClause := fmt.Sprintf(" ORDER BY name ASC LIMIT $%d OFFSET $%d", paramIndex, paramIndex+1)
 	queryArgs = append(queryArgs, pageSize, offset)
 
 	dataQuery := `
-	   SELECT id, name, type 
+	   SELECT id, name, type
 	   FROM categories` + whereClause + limitOffsetClause
 
 	rows, err := r.db.Query(ctx, dataQuery, queryArgs...)
