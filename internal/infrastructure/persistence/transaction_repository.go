@@ -34,32 +34,11 @@ func (r *TransactionRepositoryImpl) CreateTransaction(ctx context.Context, trans
 		return err
 	}
 
-	// prefix based on category
-	var prefix string
-	if cat.Type == domain.Income {
-		prefix = "ING"
-	} else {
-		prefix = "EGR"
-	}
-	if strings.Contains(cat.Name, "Anular") {
-		prefix = "ANU"
-	}
-
-	// get the current sequence of number for the month
-	dateComp := transaction.TransactionDate.Format("200601")
-	sequenceQuery := `
-	  SELECT COUNT(*) + 1
-    FROM transactions
-		WHERE to_char(transaction_date, 'YYYYMM') = $1
-	`
-	var sequence int
-	err = tx.QueryRow(ctx, sequenceQuery, dateComp).Scan(&sequence)
+	newTxNumber, err := r.generateTransactionNumber(ctx, tx, cat.Type, cat.Name, transaction.TransactionDate)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to generate transaction number: %w", err)
 	}
-
-	// format the final transaction number
-	transaction.TransactionNumber = fmt.Sprintf("%s-%s-%04d", prefix, dateComp, sequence)
+	transaction.TransactionNumber = newTxNumber
 
 	query := `
 		insert into transactions (transaction_number, description, amount, transaction_date, account_id, category_id, created_at, updated_at) 
@@ -67,7 +46,7 @@ func (r *TransactionRepositoryImpl) CreateTransaction(ctx context.Context, trans
 		                  returning id, created_at, updated_at`
 
 	now := time.Now()
-	err = r.db.QueryRow(ctx, query,
+	err = tx.QueryRow(ctx, query,
 		transaction.TransactionNumber,
 		transaction.Description,
 		transaction.Amount,
@@ -81,7 +60,7 @@ func (r *TransactionRepositoryImpl) CreateTransaction(ctx context.Context, trans
 		return fmt.Errorf("failed to create transaction: %w", err)
 	}
 
-	return nil
+	return tx.Commit(ctx)
 }
 
 func (r *TransactionRepositoryImpl) GetTransactionsByAccountPaginated(
@@ -328,21 +307,100 @@ func (r *TransactionRepositoryImpl) GetTransactionByID(ctx context.Context, tran
 }
 
 func (r *TransactionRepositoryImpl) UpdateTransaction(ctx context.Context, tx *domain.Transaction) error {
+	dbTx, err := r.db.Begin(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to begin transaction: %w", err)
+	}
+	defer dbTx.Rollback(ctx)
+
+	// Get original category to compare
+	var originalCategoryID int
+	err = dbTx.QueryRow(ctx, "SELECT category_id FROM transactions WHERE id = $1", tx.ID).Scan(&originalCategoryID)
+	if err != nil {
+		return fmt.Errorf("failed to get original category id: %w", err)
+	}
+
+	// If category has not changed, do a simple update
+	if originalCategoryID == tx.CategoryID {
+		query := `
+			update transactions
+			set description = $1, transaction_date = $2, updated_at = $3
+			where id = $4
+		`
+		_, err := dbTx.Exec(ctx, query, tx.Description, tx.TransactionDate, time.Now(), tx.ID)
+		if err != nil {
+			return fmt.Errorf("failed to update transaction: %w", err)
+		}
+		return dbTx.Commit(ctx)
+	}
+
+	// Category has changed, check if the type also changed
+	var originalCatType, newCatType domain.CategoryType
+	var newCatName string
+	err = dbTx.QueryRow(ctx, "SELECT type FROM categories WHERE id = $1", originalCategoryID).Scan(&originalCatType)
+	if err != nil {
+		return fmt.Errorf("failed to get original category type: %w", err)
+	}
+	err = dbTx.QueryRow(ctx, "SELECT name, type FROM categories WHERE id = $1", tx.CategoryID).Scan(&newCatName, &newCatType)
+	if err != nil {
+		return fmt.Errorf("failed to get new category type: %w", err)
+	}
+
+	// If the type is the same, just update the category id
+	if originalCatType == newCatType {
+		query := `
+			update transactions
+			set description = $1, transaction_date = $2, category_id = $3, updated_at = $4
+			where id = $5
+		`
+		_, err := dbTx.Exec(ctx, query, tx.Description, tx.TransactionDate, tx.CategoryID, time.Now(), tx.ID)
+		if err != nil {
+			return fmt.Errorf("failed to update transaction with new category: %w", err)
+		}
+		return dbTx.Commit(ctx)
+	}
+
+	// Type has changed, must regenerate transaction number
+	newTxNumber, err := r.generateTransactionNumber(ctx, dbTx, newCatType, newCatName, tx.TransactionDate)
+	if err != nil {
+		return fmt.Errorf("failed to generate new transaction number during update: %w", err)
+	}
+
 	query := `
 		update transactions
-		set description = $1, transaction_date = $2, category_id = $3, updated_at = $4
-		where id = $5
+		set description = $1, transaction_date = $2, category_id = $3, transaction_number = $4, updated_at = $5
+		where id = $6
 	`
-	now := time.Now()
-	_, err := r.db.Exec(ctx, query,
-		tx.Description,
-		tx.TransactionDate,
-		tx.CategoryID,
-		now,
-		tx.ID,
-	)
+	_, err = dbTx.Exec(ctx, query, tx.Description, tx.TransactionDate, tx.CategoryID, newTxNumber, time.Now(), tx.ID)
 	if err != nil {
-		return fmt.Errorf("failed to update transaction: %w", err)
+		return fmt.Errorf("failed to update transaction with new category and number: %w", err)
 	}
-	return nil
+
+	return dbTx.Commit(ctx)
+}
+
+func (r *TransactionRepositoryImpl) generateTransactionNumber(ctx context.Context, tx pgx.Tx, catType domain.CategoryType, catName string, date time.Time) (string, error) {
+	var prefix string
+	if catType == domain.Income {
+		prefix = "ING"
+	} else {
+		prefix = "EGR"
+	}
+	if strings.Contains(catName, "Anular") {
+		prefix = "ANU"
+	}
+
+	dateComp := date.Format("200601")
+	sequenceQuery := `
+	  SELECT COUNT(*) + 1
+    FROM transactions
+		WHERE to_char(transaction_date, 'YYYYMM') = $1
+	`
+	var sequence int
+	err := tx.QueryRow(ctx, sequenceQuery, dateComp).Scan(&sequence)
+	if err != nil {
+		return "", fmt.Errorf("failed to get transaction sequence number: %w", err)
+	}
+
+	return fmt.Sprintf("%s-%s-%04d", prefix, dateComp, sequence), nil
 }
