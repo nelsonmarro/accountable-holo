@@ -43,16 +43,6 @@ func (r *CategoryRepositoryImpl) GetPaginatedCategories(ctx context.Context, pag
 	*domain.PaginatedResult[domain.Category],
 	error,
 ) {
-	if page < 1 {
-		page = 1
-	}
-	if pageSize < 1 {
-		pageSize = 10
-	}
-	if page > 100 {
-		page = 100
-	}
-
 	var totalCount int64
 	var queryArgs []any
 	var countQueryArgs []any
@@ -136,16 +126,6 @@ func (r *CategoryRepositoryImpl) GetSelectablePaginatedCategories(
 	*domain.PaginatedResult[domain.Category],
 	error,
 ) {
-	if page < 1 {
-		page = 1
-	}
-	if pageSize < 1 {
-		pageSize = 10
-	}
-	if page > 100 {
-		page = 100
-	}
-
 	var totalCount int64
 	var queryArgs []any
 	var countQueryArgs []any

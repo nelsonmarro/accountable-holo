@@ -159,7 +159,7 @@ func (d *CategorySearchDialog) loadCategories(page int, pageSize int) {
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
 
-	result, err := d.catService.GetPaginatedCategories(ctx, page, pageSize, d.searchTerm)
+	result, err := d.catService.GetSelectablePaginatedCategories(ctx, page, pageSize, d.searchTerm)
 	if err != nil {
 		d.logger.Printf("Error loading categories for search dialog: %v", err)
 		// Show error on the main thread

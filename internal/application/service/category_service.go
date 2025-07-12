@@ -25,7 +25,34 @@ func (s *CategoryServiceImpl) GetPaginatedCategories(ctx context.Context, page, 
 	*domain.PaginatedResult[domain.Category],
 	error,
 ) {
+	if page < 1 {
+		page = 1
+	}
+	if pageSize < 1 {
+		pageSize = 10
+	}
+	if page > 100 {
+		page = 100
+	}
+
 	return s.repo.GetPaginatedCategories(ctx, page, pageSize, filter...)
+}
+
+func (s *CategoryServiceImpl) GetSelectablePaginatedCategories(ctx context.Context, page, pageSize int, filter ...string) (
+	*domain.PaginatedResult[domain.Category],
+	error,
+) {
+	if page < 1 {
+		page = 1
+	}
+	if pageSize < 1 {
+		pageSize = 10
+	}
+	if page > 100 {
+		page = 100
+	}
+
+	return s.repo.GetSelectablePaginatedCategories(ctx, page, pageSize, filter...)
 }
 
 func (s *CategoryServiceImpl) GetCategoryByID(ctx context.Context, id int) (*domain.Category, error) {
