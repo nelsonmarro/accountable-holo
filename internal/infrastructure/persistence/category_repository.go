@@ -3,6 +3,7 @@ package persistence
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -15,6 +16,122 @@ type CategoryRepositoryImpl struct {
 
 func NewCategoryRepository(db *pgxpool.Pool) *CategoryRepositoryImpl {
 	return &CategoryRepositoryImpl{db: db}
+}
+
+// getPaginatedCategories is the private helper function that contains the common logic.
+func (r *CategoryRepositoryImpl) getPaginatedCategories(
+	ctx context.Context,
+	page, pageSize int,
+	baseWhereClause string,
+	filter ...string,
+) (*domain.PaginatedResult[domain.Category], error) {
+	if page < 1 {
+		page = 1
+	}
+	if pageSize < 1 {
+		pageSize = 10
+	}
+	if page > 100 {
+		page = 100
+	}
+
+	var queryArgs []any
+	var countQueryArgs []any
+	whereClauses := []string{}
+
+	// Start with the base WHERE clause if it exists
+	if baseWhereClause != "" {
+		whereClauses = append(whereClauses, baseWhereClause)
+	}
+
+	// Add the user's search filter if provided
+	if len(filter) > 0 && filter[0] != "" {
+		// The parameter index will depend on how many clauses we already have
+		paramIndex := len(queryArgs) + 1
+		filterClause := fmt.Sprintf("(name ILIKE $%d OR type ILIKE $%d)", paramIndex, paramIndex)
+		whereClauses = append(whereClauses, filterClause)
+
+		filterArg := "%" + filter[0] + "%"
+		queryArgs = append(queryArgs, filterArg)
+		countQueryArgs = append(countQueryArgs, filterArg)
+	}
+
+	// Join all WHERE clauses with " AND "
+	fullWhereClause := ""
+	if len(whereClauses) > 0 {
+		fullWhereClause = " WHERE " + strings.Join(whereClauses, " AND ")
+	}
+
+	// --- Count Query ---
+	countQuery := `SELECT count(*) FROM categories` + fullWhereClause
+	var totalCount int64
+	err := r.db.QueryRow(ctx, countQuery, countQueryArgs...).Scan(&totalCount)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get total category count: %w", err)
+	}
+
+	if totalCount == 0 {
+		return &domain.PaginatedResult[domain.Category]{
+			Data:       []domain.Category{},
+			TotalCount: 0,
+			Page:       page,
+			PageSize:   pageSize,
+		}, nil
+	}
+
+	// --- Data Query ---
+	offset := (page - 1) * pageSize
+	limitParamIndex := len(queryArgs) + 1
+	offsetParamIndex := len(queryArgs) + 2
+
+	limitOffsetClause := fmt.Sprintf(" ORDER BY name ASC LIMIT $%d OFFSET $%d", limitParamIndex, offsetParamIndex)
+	finalQueryArgs := append(queryArgs, pageSize, offset)
+
+	dataQuery := `SELECT id, name, type FROM categories` + fullWhereClause + limitOffsetClause
+
+	rows, err := r.db.Query(ctx, dataQuery, finalQueryArgs...)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get paginated categories: %w", err)
+	}
+	defer rows.Close()
+
+	var categories []domain.Category
+	for rows.Next() {
+		var cat domain.Category
+		err := rows.Scan(&cat.ID, &cat.Name, &cat.Type)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan category row: %w", err)
+		}
+		categories = append(categories, cat)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("error iterating category rows: %w", err)
+	}
+
+	return &domain.PaginatedResult[domain.Category]{
+		Data:       categories,
+		TotalCount: totalCount,
+		Page:       page,
+		PageSize:   pageSize,
+	}, nil
+}
+
+// GetPaginatedCategories now calls the helper with an empty base WHERE clause.
+func (r *CategoryRepositoryImpl) GetPaginatedCategories(ctx context.Context, page, pageSize int, filter ...string) (
+	*domain.PaginatedResult[domain.Category],
+	error,
+) {
+	return r.getPaginatedCategories(ctx, page, pageSize, "", filter...)
+}
+
+// GetSelectablePaginatedCategories calls the helper with the clause to exclude system categories.
+func (r *CategoryRepositoryImpl) GetSelectablePaginatedCategories(ctx context.Context, page, pageSize int, filter ...string) (
+	*domain.PaginatedResult[domain.Category],
+	error,
+) {
+	baseWhere := "name NOT LIKE '%Anular Transacción%'"
+	return r.getPaginatedCategories(ctx, page, pageSize, baseWhere, filter...)
 }
 
 func (r *CategoryRepositoryImpl) GetAllCategories(ctx context.Context) ([]domain.Category, error) {
@@ -37,164 +154,6 @@ func (r *CategoryRepositoryImpl) GetAllCategories(ctx context.Context) ([]domain
 		categories = append(categories, cat)
 	}
 	return categories, rows.Err()
-}
-
-func (r *CategoryRepositoryImpl) GetPaginatedCategories(ctx context.Context, page, pageSize int, filter ...string) (
-	*domain.PaginatedResult[domain.Category],
-	error,
-) {
-	var totalCount int64
-	var queryArgs []any
-	var countQueryArgs []any
-	whereClause := ""
-
-	if len(filter) > 0 && filter[0] != "" {
-		whereClause = " WHERE name ILIKE $1 OR type ILIKE $1"
-		filterArg := "%" + filter[0] + "%"
-		countQueryArgs = append(countQueryArgs, filterArg)
-		queryArgs = append(queryArgs, filterArg)
-	}
-
-	countQuery := `SELECT count(*) FROM categories` + whereClause
-
-	err := r.db.QueryRow(ctx, countQuery, countQueryArgs...).Scan(&totalCount)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get total category count: %w", err)
-	}
-
-	// there are no records, return empty result
-	if totalCount == 0 {
-		return &domain.PaginatedResult[domain.Category]{
-			Data:       []domain.Category{},
-			TotalCount: 0,
-			Page:       page,
-			PageSize:   pageSize,
-		}, nil
-	}
-
-	// calculate offset
-	offset := (page - 1) * pageSize
-
-	limitOffsetClause := ""
-	paramIndex := len(queryArgs) + 1
-	if len(queryArgs) > 0 {
-		limitOffsetClause = fmt.Sprintf(" ORDER BY name ASC LIMIT $%d OFFSET $%d", paramIndex, paramIndex+1)
-	} else {
-		limitOffsetClause = " ORDER BY name ASC LIMIT $1 OFFSET $2"
-	}
-	queryArgs = append(queryArgs, pageSize, offset)
-
-	dataQuery := `
-	   SELECT id, name, type 
-	   FROM categories` + whereClause + limitOffsetClause
-
-	rows, err := r.db.Query(ctx, dataQuery, queryArgs...)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get paginated categories: %w", err)
-	}
-	defer rows.Close()
-
-	var categories []domain.Category
-	for rows.Next() {
-		var cat domain.Category
-		err := rows.Scan(&cat.ID, &cat.Name, &cat.Type)
-		if err != nil {
-			return nil, fmt.Errorf("failed to scan category row: %w", err)
-		}
-		categories = append(categories, cat)
-	}
-
-	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("error iterating category rows: %w", err)
-	}
-
-	result := &domain.PaginatedResult[domain.Category]{
-		Data:       categories,
-		TotalCount: totalCount,
-		Page:       page,
-		PageSize:   pageSize,
-	}
-
-	return result, nil
-}
-
-func (r *CategoryRepositoryImpl) GetSelectablePaginatedCategories(
-	ctx context.Context,
-	page, pageSize int,
-	filter ...string,
-) (
-	*domain.PaginatedResult[domain.Category],
-	error,
-) {
-	var totalCount int64
-	var queryArgs []any
-	var countQueryArgs []any
-	whereClause := " WHERE name NOT LIKE '%Anular Transacción%'"
-	paramIndex := 1 // Start parameter index at 1
-
-	if len(filter) > 0 && filter[0] != "" {
-		whereClause += fmt.Sprintf(" AND (name ILIKE $%d OR type ILIKE $%d)", paramIndex, paramIndex)
-		filterArg := "%" + filter[0] + "%"
-		countQueryArgs = append(countQueryArgs, filterArg)
-		queryArgs = append(queryArgs, filterArg)
-		paramIndex++
-	}
-
-	countQuery := `SELECT count(*) FROM categories` + whereClause
-
-	err := r.db.QueryRow(ctx, countQuery, countQueryArgs...).Scan(&totalCount)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get total category count: %w", err)
-	}
-
-	// there are no records, return empty result
-	if totalCount == 0 {
-		return &domain.PaginatedResult[domain.Category]{
-			Data:       []domain.Category{},
-			TotalCount: 0,
-			Page:       page,
-			PageSize:   pageSize,
-		}, nil
-	}
-
-	// calculate offset
-	offset := (page - 1) * pageSize
-
-	limitOffsetClause := fmt.Sprintf(" ORDER BY name ASC LIMIT $%d OFFSET $%d", paramIndex, paramIndex+1)
-	queryArgs = append(queryArgs, pageSize, offset)
-
-	dataQuery := `
-	   SELECT id, name, type
-	   FROM categories` + whereClause + limitOffsetClause
-
-	rows, err := r.db.Query(ctx, dataQuery, queryArgs...)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get paginated categories: %w", err)
-	}
-	defer rows.Close()
-
-	var categories []domain.Category
-	for rows.Next() {
-		var cat domain.Category
-		err := rows.Scan(&cat.ID, &cat.Name, &cat.Type)
-		if err != nil {
-			return nil, fmt.Errorf("failed to scan category row: %w", err)
-		}
-		categories = append(categories, cat)
-	}
-
-	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("error iterating category rows: %w", err)
-	}
-
-	result := &domain.PaginatedResult[domain.Category]{
-		Data:       categories,
-		TotalCount: totalCount,
-		Page:       page,
-		PageSize:   pageSize,
-	}
-
-	return result, nil
 }
 
 func (r *CategoryRepositoryImpl) GetCategoryByID(ctx context.Context, id int) (*domain.Category, error) {
