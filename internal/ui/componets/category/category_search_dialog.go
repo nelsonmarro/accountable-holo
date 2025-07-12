@@ -2,7 +2,6 @@ package category
 
 import (
 	"context"
-	"errors"
 	"log"
 	"time"
 
@@ -61,45 +60,39 @@ func (d *CategorySearchDialog) Show() {
 	d.dl.Resize(fyne.NewSize(450, 530))
 
 	// Fetch the first page of categories
-	d.fetchCategories(1, "")
+	go d.loadCategories(1, d.pagination.GetPageSize())
 
 	d.dl.Show()
 }
 
 func (d *CategorySearchDialog) createContent() fyne.CanvasObject {
-	// Create and arrange UI Components
+	// Search Bar
+	d.searchEntry.OnChanged = func(filter string) { d.filterCategories(filter) }
 
 	return widget.NewLabel("UI content goes here")
 }
 
 const CategoryPageSize = 10
 
-func (d *CategorySearchDialog) fetchCategories(page int, s string) {
-	progressDialog := dialog.NewCustomWithoutButtons("Espere", widget.NewProgressBarInfinite(), d.mainWin)
-	progressDialog.Show()
+func (d *CategorySearchDialog) loadCategories(page int, pageSize int) {
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cancel()
 
-	go func() {
-		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
-		defer cancel()
+	result, err := d.catService.GetPaginatedCategories(ctx, page, pageSize, d.searchTerm)
+	if err != nil {
+		dialog.ShowError(err, d.mainWin)
+		return
+	}
 
-		paginatedRes, err := d.catService.GetPaginatedCategories(ctx, page, CategoryPageSize, s)
-		if err != nil {
-			d.logger.Println("Error fetching categories:", err)
-			fyne.Do(func() {
-				progressDialog.Hide()
-				dialog.ShowError(errors.New("error al cargar categorias"), d.mainWin)
-			})
-			return
-		}
+	d.categories = result.Data
 
-		d.categories = paginatedRes.Data
-		d.totalCount = int(paginatedRes.TotalCount)
-		d.searchTerm = s
+	fyne.Do(func() {
+		d.categoryList.Refresh()
+		d.pagination.Refresh()
+	})
+}
 
-		fyne.Do(func() {
-			progressDialog.Hide()
-			d.categoryList.Refresh()
-			d.pagination.Refresh()
-		})
-	}()
+func (d *CategorySearchDialog) filterCategories(filter string) {
+	d.searchTerm = filter
+	d.loadCategories(1, d.pagination.GetPageSize())
 }
