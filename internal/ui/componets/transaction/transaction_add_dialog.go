@@ -8,9 +8,12 @@ import (
 	"time"
 
 	"fyne.io/fyne/v2"
+	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/dialog"
+	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 	"github.com/nelsonmarro/accountable-holo/internal/domain"
+	"github.com/nelsonmarro/accountable-holo/internal/ui/componets/category"
 )
 
 // AddTransactionDialog holds the state and logic for the 'Add Transaction' dialog.
@@ -22,14 +25,16 @@ type AddTransactionDialog struct {
 	callbackAction  func()
 
 	// UI Components
-	descriptionEntry *widget.Entry
-	amountEntry      *widget.Entry
-	dateEntry        *widget.Entry
-	categorySelect   *widget.SelectEntry
+	descriptionEntry  *widget.Entry
+	amountEntry       *widget.Entry
+	dateEntry         *widget.Entry
+	categoryLabel     *widget.Label
+	searchCategoryBtn *widget.Button
 
 	// Data
-	accountID  int
-	categories []domain.Category
+	accountID        int
+	categories       []domain.Category
+	selectedCategory *domain.Category // New field to hold the selected category
 }
 
 // NewAddTransactionDialog creates a new dialog handler.
@@ -87,8 +92,6 @@ func (d *AddTransactionDialog) Show() {
 	formDialog.Resize(fyne.NewSize(560, 400))
 	formDialog.Show()
 }
-
-
 
 func (d *AddTransactionDialog) handleSubmit(valid bool) {
 	if !valid {

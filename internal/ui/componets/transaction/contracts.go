@@ -17,4 +17,12 @@ type TransactionService interface {
 // CategoryService defines the interface for category-related business logic.
 type CategoryService interface {
 	GetAllCategories(ctx context.Context) ([]domain.Category, error)
+	GetPaginatedCategories(ctx context.Context, page, pageSize int, filter ...string) (
+		*domain.PaginatedResult[domain.Category],
+		error,
+	)
+	GetCategoryByID(ctx context.Context, id int) (*domain.Category, error)
+	CreateCategory(ctx context.Context, category *domain.Category) error
+	UpdateCategory(ctx context.Context, category *domain.Category) error
+	DeleteCategory(ctx context.Context, id int) error
 }
