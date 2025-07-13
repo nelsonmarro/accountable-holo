@@ -60,7 +60,7 @@ func (v *UIValidator) MinLength(min int) {
 
 func (v *UIValidator) IsDate() {
 	validatorFunc := func(s string) error {
-		if _, err := time.Parse("02/01/2006", s); err != nil {
+		if _, err := time.Parse("01/02/2006", s); err != nil {
 			return errors.New("el campo debe ser una fecha válida en formato YYYY-MM-DD")
 		}
 		return nil

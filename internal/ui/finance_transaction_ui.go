@@ -181,7 +181,7 @@ func (ui *UI) fillTransactionListData(i widget.ListItemID, o fyne.CanvasObject) 
 	tIDLabel.SetText(tx.TransactionNumber)
 
 	dateLabel := rowContainer.Objects[1].(*widget.Label)
-	dateLabel.SetText(tx.TransactionDate.Format("02/01/2006"))
+	dateLabel.SetText(tx.TransactionDate.Format("01/02/2006"))
 
 	descLabel := rowContainer.Objects[2].(*widget.Label)
 	descLabel.SetText(helpers.PrepareForTruncation(tx.Description))
