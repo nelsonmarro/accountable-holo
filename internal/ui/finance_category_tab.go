@@ -2,6 +2,7 @@ package ui
 
 import (
 	"context"
+	"strings"
 	"time"
 
 	"fyne.io/fyne/v2"
@@ -119,7 +120,15 @@ func (ui *UI) fillCategoryListData(i widget.ListItemID, o fyne.CanvasObject) {
 
 	actionsContainer := rowContainer.Objects[2].(*fyne.Container)
 	editBtn := actionsContainer.Objects[0].(*widget.Button)
+	editBtn.Enable()
+
 	deleteBtn := actionsContainer.Objects[1].(*widget.Button)
+	editBtn.Enable()
+
+	if strings.Contains(cat.Name, "Anular") {
+		editBtn.Disable()
+		deleteBtn.Disable()
+	}
 
 	editBtn.OnTapped = func() {
 		dialogHandler := category.NewEditCategoryDialog(

@@ -27,7 +27,7 @@ type AddTransactionDialog struct {
 	// UI Components
 	descriptionEntry  *widget.Entry
 	amountEntry       *widget.Entry
-	dateEntry         *widget.Entry
+	dateEntry         *widget.DateEntry
 	categoryLabel     *widget.Label
 	searchCategoryBtn *widget.Button
 
@@ -54,7 +54,7 @@ func NewAddTransactionDialog(
 		callbackAction:   callback,
 		descriptionEntry: widget.NewMultiLineEntry(),
 		amountEntry:      widget.NewEntry(),
-		dateEntry:        widget.NewEntry(),
+		dateEntry:        widget.NewDateEntry(),
 		accountID:        accountID,
 		categoryLabel:    widget.NewLabel("Ninguna seleccionada"),
 	}

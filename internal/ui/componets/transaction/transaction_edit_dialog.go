@@ -30,7 +30,7 @@ type EditTransactionDialog struct {
 	txNumber         *widget.Label
 	descriptionEntry *widget.Entry
 	amountEntry      *widget.Label
-	dateEntry        *widget.Entry
+	dateEntry        *widget.DateEntry
 	categoryLabel    *widget.Label
 	categoryButton   *widget.Button
 	searchDialog     *category.CategorySearchDialog
