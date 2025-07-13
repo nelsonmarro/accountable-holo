@@ -54,11 +54,18 @@ func NewEditTransactionDialog(win fyne.Window, l *log.Logger, txs TransactionSer
 		txNumber:         widget.NewLabel(""),
 		descriptionEntry: widget.NewMultiLineEntry(),
 		amountEntry:      widget.NewLabel(""),
-		dateEntry:        widget.NewEntry(),
+		dateEntry:        widget.NewDateEntry(),
 		categoryLabel:    widget.NewLabel(""),
 	}
 	d.categoryButton = widget.NewButtonWithIcon("", theme.SearchIcon(), d.openCategorySearch)
 	d.searchDialog = category.NewCategorySearchDialog(win, l, cs, d.handleCategorySelect)
+	d.dateEntry.OnChanged = func(date *time.Time) {
+		if date.IsZero() {
+			d.dateEntry.SetText("") // Clear the text if no date is selected
+		} else {
+			d.dateEntry.SetText(date.Format("02/01/2006")) // Format the date as DD/MM/YYYY
+		}
+	}
 	return d
 }
 
@@ -127,7 +134,7 @@ func (d *EditTransactionDialog) showEditForm(tx *domain.Transaction) {
 	d.txNumber.SetText(fmt.Sprintf("#%s", tx.TransactionNumber))
 	d.descriptionEntry.SetText(tx.Description)
 	d.amountEntry.SetText(fmt.Sprintf("%.2f", tx.Amount))
-	d.dateEntry.SetText(tx.TransactionDate.Format("2006-01-02"))
+	d.dateEntry.SetText(tx.TransactionDate.Format("02/01/2006"))
 
 	for _, cat := range d.categories {
 		if cat.ID == tx.CategoryID {
@@ -167,7 +174,7 @@ func (d *EditTransactionDialog) handleSubmit(valid bool) {
 
 	go func() {
 		amount, _ := strconv.ParseFloat(d.amountEntry.Text, 64)
-		transactionDate, _ := time.Parse("2006-01-02", d.dateEntry.Text)
+		transactionDate, _ := time.Parse("02/01/2006", d.dateEntry.Text)
 
 		updatedTx := &domain.Transaction{
 			BaseEntity:      domain.BaseEntity{ID: d.txID},

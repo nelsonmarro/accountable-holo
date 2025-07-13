@@ -108,7 +108,7 @@ func (d *AddTransactionDialog) handleSubmit(valid bool) {
 
 	go func() {
 		amount, _ := strconv.ParseFloat(d.amountEntry.Text, 64)
-		transactionDate, _ := time.Parse("2006-01-02", d.dateEntry.Text)
+		transactionDate, _ := time.Parse("02/01/2006", d.dateEntry.Text)
 
 		tx := &domain.Transaction{
 			Description:     d.descriptionEntry.Text,

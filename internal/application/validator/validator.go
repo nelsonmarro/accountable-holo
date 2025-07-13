@@ -119,7 +119,7 @@ func (v *Validator) IsDate(fieldName string) *Validator {
 		return v
 	}
 
-	_, err = time.Parse("2006-01-02", field.String())
+	_, err = time.Parse("02/01/2006", field.String())
 	if err != nil {
 		v.errs = append(v.errs, fmt.Errorf("el campo '%s' no es una fecha válida: %v", fieldName, err))
 	}
