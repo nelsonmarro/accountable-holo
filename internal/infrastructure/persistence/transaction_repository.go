@@ -288,6 +288,9 @@ func (r *TransactionRepositoryImpl) VoidTransaction(ctx context.Context, transac
 	`
 
 	_, err = tx.Exec(ctx, markVoidsQuery, originalTransaction.ID, voidTransactionID)
+	if err != nil {
+		return fmt.Errorf("error when assigning the voids_transaction_id on the new void transaction: %d\nerror: %w", voidTransactionID, err)
+	}
 
 	// Commit transactions
 	err = tx.Commit(ctx)
