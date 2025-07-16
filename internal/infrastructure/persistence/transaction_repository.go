@@ -281,6 +281,14 @@ func (r *TransactionRepositoryImpl) VoidTransaction(ctx context.Context, transac
 		return fmt.Errorf("error when voiding the transaction: %d\nerror: %w", originalTransaction.ID, err)
 	}
 
+	// Mark that original transaction voids the new transaction
+	markVoidsQuery := `
+			update transactions set voids_transaction_id = $1
+			where id = $2
+	`
+
+	_, err = tx.Exec(ctx, markVoidsQuery, originalTransaction.ID, voidTransactionID)
+
 	// Commit transactions
 	err = tx.Commit(ctx)
 	if err != nil {
