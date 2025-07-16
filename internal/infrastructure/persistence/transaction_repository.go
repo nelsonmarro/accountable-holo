@@ -189,7 +189,6 @@ func (r *TransactionRepositoryImpl) VoidTransaction(ctx context.Context, transac
 		WHERE t.id = $1
 		FOR UPDATE;
 	`
-
 	var originalTransaction domain.Transaction
 	var originalCatType domain.CategoryType
 

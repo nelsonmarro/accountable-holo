@@ -11,8 +11,8 @@ import (
 	"fyne.io/fyne/v2/widget"
 )
 
-// DeleteTransactionDialog holds the dependencies for the delete confirmation dialog.
-type DeleteTransactionDialog struct {
+// VoidTransactionDialog holds the dependencies for the delete confirmation dialog.
+type VoidTransactionDialog struct {
 	mainWin        fyne.Window
 	logger         *log.Logger
 	service        TransactionService
@@ -20,9 +20,9 @@ type DeleteTransactionDialog struct {
 	txID           int
 }
 
-// NewDeleteTransactionDialog creates a new dialog handler for the delete action.
-func NewDeleteTransactionDialog(win fyne.Window, l *log.Logger, service TransactionService, callback func(), txID int) *DeleteTransactionDialog {
-	return &DeleteTransactionDialog{
+// NewVoidTransactionDialog creates a new dialog handler for the delete action.
+func NewVoidTransactionDialog(win fyne.Window, l *log.Logger, service TransactionService, callback func(), txID int) *VoidTransactionDialog {
+	return &VoidTransactionDialog{
 		mainWin:        win,
 		logger:         l,
 		service:        service,
@@ -32,12 +32,12 @@ func NewDeleteTransactionDialog(win fyne.Window, l *log.Logger, service Transact
 }
 
 // Show displays the confirmation dialog to the user.
-func (d *DeleteTransactionDialog) Show() {
+func (d *VoidTransactionDialog) Show() {
 	confirmCallback := func(confirm bool) {
 		if !confirm {
 			return
 		}
-		d.executeDelete()
+		d.executeVoid()
 	}
 
 	dialog.ShowConfirm(
@@ -48,13 +48,12 @@ func (d *DeleteTransactionDialog) Show() {
 	)
 }
 
-// executeDelete runs the actual deletion logic.
-func (d *DeleteTransactionDialog) executeDelete() {
+// executeVoid runs the actual deletion logic.
+func (d *VoidTransactionDialog) executeVoid() {
 	progress := dialog.NewCustomWithoutButtons("Voiding...", widget.NewProgressBarInfinite(), d.mainWin)
 	progress.Show()
 
 	go func() {
-		defer progress.Hide()
 		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 		defer cancel()
 
@@ -62,12 +61,14 @@ func (d *DeleteTransactionDialog) executeDelete() {
 		if err != nil {
 			d.logger.Printf("Error voiding transaction %d: %v", d.txID, err)
 			fyne.Do(func() {
+				progress.Hide()
 				dialog.ShowError(errors.New("error voiding transaction. Please try again"), d.mainWin)
 			})
 			return
 		}
 
 		fyne.Do(func() {
+			progress.Hide()
 			dialog.ShowInformation("Success", "Transaction voided successfully.", d.mainWin)
 		})
 
