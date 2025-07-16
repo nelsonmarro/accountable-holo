@@ -237,12 +237,20 @@ func (r *TransactionRepositoryImpl) VoidTransaction(ctx context.Context, transac
 	newDescription := "Anulada por transaccion #" + originalTransaction.TransactionNumber + ": " + originalTransaction.Description
 	newTransactionDate := time.Now()
 
-	voidTxNumber, err := r.generateTransactionNumber(ctx, tx, opposingCatType)
+	voidTransactionNumber, err := r.generateTransactionNumber(ctx,
+		tx,
+		opposingCatType,
+		opposingCatName,
+		newTransactionDate,
+	)
+	if err != nil {
+		return fmt.Errorf("failed to generate void transaction number: %w", err)
+	}
 
 	voidTransactionQuery := `
 	  insert into transactions
-	                   (description, amount, transaction_date, account_id, category_id, voids_transaction_id, created_at, updated_at)
-	  							 values($1, $2, $3, $4, $5, $6, $7, $8) returning id
+	    (description, amount, transaction_date, account_id, category_id, voids_transaction_id, created_at, updated_at, transaction_number)
+	  	values($1, $2, $3, $4, $5, $6, $7, $8, $9) returning id
 	`
 
 	var voidTransactionID int
@@ -257,6 +265,7 @@ func (r *TransactionRepositoryImpl) VoidTransaction(ctx context.Context, transac
 		&originalTransaction.ID,
 		time.Now(),
 		time.Now(),
+		&voidTransactionNumber,
 	).Scan(&voidTransactionID)
 	if err != nil {
 		return fmt.Errorf("error when inserting the void transaction: %w", err)
