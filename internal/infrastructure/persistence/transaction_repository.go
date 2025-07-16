@@ -3,7 +3,6 @@ package persistence
 import (
 	"context"
 	"fmt"
-	"strconv"
 	"strings"
 	"time"
 
@@ -183,8 +182,8 @@ func (r *TransactionRepositoryImpl) VoidTransaction(ctx context.Context, transac
 	defer tx.Rollback(ctx)
 
 	originalTransactionQuery := `
-	  SELECT t.id, t.description, t.amount, t.account_id, t.is_voided, c.type
-	  FROM transactions t
+		 SELECT t.id, t.transaction_number, transaction_date, t.description, t.amount, t.account_id, t.is_voided, c.type
+		 FROM transactions t
 		JOIN categories c ON t.category_id = c.id
 		WHERE t.id = $1
 		FOR UPDATE;
@@ -195,6 +194,8 @@ func (r *TransactionRepositoryImpl) VoidTransaction(ctx context.Context, transac
 	row := tx.QueryRow(ctx, originalTransactionQuery, transactionID)
 	err = row.Scan(
 		&originalTransaction.ID,
+		&originalTransaction.TransactionNumber,
+		&originalTransaction.TransactionDate,
 		&originalTransaction.Description,
 		&originalTransaction.Amount,
 		&originalTransaction.AccountID,
@@ -220,25 +221,28 @@ func (r *TransactionRepositoryImpl) VoidTransaction(ctx context.Context, transac
 	}
 
 	adjustmentCatQuery := `
-	  select id
-	  from categoies
+		 select id, name
+		 from categoies
 		where name like '%Anular Transacción%' and type = $1
 	`
 
 	var opposingCatID int
+	var opposingCatName string
 	err = tx.QueryRow(ctx, adjustmentCatQuery, opposingCatType).
-		Scan(opposingCatID)
+		Scan(&opposingCatID, &opposingCatName)
 	if err != nil {
 		return fmt.Errorf("failed to get the opposing category: %w", err)
 	}
 
-	newDescription := "Anulada por transaccion #" + strconv.Itoa(originalTransaction.ID) + ": " + originalTransaction.Description
+	newDescription := "Anulada por transaccion #" + originalTransaction.TransactionNumber + ": " + originalTransaction.Description
 	newTransactionDate := time.Now()
+
+	voidTxNumber, err := r.generateTransactionNumber(ctx, tx, opposingCatType)
 
 	voidTransactionQuery := `
 	  insert into transactions
-			                 (description, amount, transaction_date, account_id, category_id, voids_transaction_id, created_at, updated_at)
-										 values($1, $2, $3, $4, $5, $6, $7, $8) returning id
+	                   (description, amount, transaction_date, account_id, category_id, voids_transaction_id, created_at, updated_at)
+	  							 values($1, $2, $3, $4, $5, $6, $7, $8) returning id
 	`
 
 	var voidTransactionID int
@@ -261,7 +265,7 @@ func (r *TransactionRepositoryImpl) VoidTransaction(ctx context.Context, transac
 	// Mark the original transaction as voided
 	markAsVoidedQuery := `
 			update transactions set is_voided = TRUE, voided_by_transaction_id = $1
-		  where id = $2
+			 where id = $2
 	`
 	_, err = tx.Exec(ctx, markAsVoidedQuery, voidTransactionID, originalTransaction.ID)
 	if err != nil {
@@ -281,7 +285,7 @@ func (r *TransactionRepositoryImpl) GetTransactionByID(ctx context.Context, tran
 	query := `
 			select id, transaction_number, description, amount, transaction_date, account_id, category_id, created_at, updated_at
 			from transactions t
-      where id = $1
+			   where id = $1
 	`
 	var tx domain.Transaction
 	err := r.db.QueryRow(ctx, query, transactionID).Scan(
@@ -391,8 +395,8 @@ func (r *TransactionRepositoryImpl) generateTransactionNumber(ctx context.Contex
 
 	dateComp := date.Format("200601")
 	sequenceQuery := `
-	  SELECT COUNT(*) + 1
-    FROM transactions
+		 SELECT COUNT(*) + 1
+		  FROM transactions
 		WHERE to_char(transaction_date, 'YYYYMM') = $1
 	`
 	var sequence int
