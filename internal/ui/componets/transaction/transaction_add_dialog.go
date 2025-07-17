@@ -13,6 +13,7 @@ import (
 	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
+	"github.com/nelsonmarro/accountable-holo/internal/application/validator"
 	"github.com/nelsonmarro/accountable-holo/internal/domain"
 	"github.com/nelsonmarro/accountable-holo/internal/ui/componets/category"
 )
@@ -106,11 +107,7 @@ func (d *AddTransactionDialog) handleSubmit(valid bool) {
 		return
 	}
 
-	now := time.Now()
-	today := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC)
-	txDateOnly := time.Date(transactionDate.Year(), transactionDate.Month(), transactionDate.Day(), 0, 0, 0, 0, time.UTC)
-
-	if txDateOnly.After(today) {
+	if validator.IsDateAfter(transactionDate, time.Now()) {
 		dialog.ShowError(errors.New("la fecha de la transacción no puede ser una fecha futura"), d.mainWin)
 		return
 	}
