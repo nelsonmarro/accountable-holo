@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/nelsonmarro/accountable-holo/internal/application/validator"
 	"github.com/nelsonmarro/accountable-holo/internal/domain"
@@ -51,6 +52,7 @@ func (s *TransactionServiceImpl) CreateTransaction(ctx context.Context, tx *doma
 	txValidator := validator.New().For(tx)
 	txValidator.Required("Amount", "Description", "TransactionDate", "AccountID", "CategoryID")
 	txValidator.NumberMin(0, "Amount")
+	txValidator.MaxDate(time.Now(), "TransactionDate")
 
 	err := txValidator.ConsolidateErrors()
 	if err != nil {
@@ -80,6 +82,9 @@ func (s *TransactionServiceImpl) UpdateTransaction(ctx context.Context, tx *doma
 
 	txValidator := validator.New().For(tx)
 	txValidator.Required("ID", "Amount", "Description", "TransactionDate", "AccountID", "CategoryID")
+	txValidator.NumberMin(0, "Amount")
+	txValidator.MaxDate(time.Now(), "TransactionDate")
+
 	err := txValidator.ConsolidateErrors()
 	if err != nil {
 		return err
