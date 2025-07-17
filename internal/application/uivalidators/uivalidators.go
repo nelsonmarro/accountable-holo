@@ -3,7 +3,6 @@ package uivalidators
 
 import (
 	"errors"
-	"fmt"
 	"strconv"
 	"strings"
 	"time"

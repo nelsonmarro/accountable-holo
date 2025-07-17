@@ -12,7 +12,7 @@ func TransactionForm(
 	date fyne.CanvasObject,
 	category fyne.CanvasObject,
 ) []*widget.FormItem {
-	addFormValidation(description, amount, date, category)
+	addFormValidation(description, amount, category)
 
 	return []*widget.FormItem{
 		{Text: "Descripción", Widget: description},
@@ -25,7 +25,6 @@ func TransactionForm(
 func addFormValidation(
 	description fyne.CanvasObject,
 	amount fyne.CanvasObject,
-	date fyne.CanvasObject,
 	category fyne.CanvasObject,
 ) {
 	descEntry, ok := description.(*widget.Entry)
@@ -44,8 +43,6 @@ func addFormValidation(
 		amtEntry.Validator = amountValidator.Validate
 	}
 
-	// Date validation removed from here
-
 	catSelect, ok := category.(*widget.SelectEntry)
 	if ok {
 		categoryValidator := uivalidators.NewValidator()
@@ -53,4 +50,3 @@ func addFormValidation(
 		catSelect.Validator = categoryValidator.Validate
 	}
 }
-
