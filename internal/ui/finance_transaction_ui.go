@@ -48,8 +48,8 @@ func (ui *UI) makeTransactionUI() fyne.CanvasObject {
 			}
 			return len(ui.transactions.Data)
 		},
-		ui.makeTransactionListUI,
-		ui.fillTransactionListData,
+		ui.createTransactiontItem,
+		ui.updateTransactionItem,
 	)
 
 	// Account selector
@@ -128,7 +128,7 @@ func (ui *UI) makeTransactionUI() fyne.CanvasObject {
 	return mainContent
 }
 
-func (ui *UI) makeTransactionListUI() fyne.CanvasObject {
+func (ui *UI) createTransactiontItem() fyne.CanvasObject {
 	editBtn := widget.NewButtonWithIcon("", theme.DocumentCreateIcon(), nil)
 	editBtn.Importance = widget.HighImportance
 
@@ -172,7 +172,7 @@ func (ui *UI) makeTransactionListUI() fyne.CanvasObject {
 	return grid
 }
 
-func (ui *UI) fillTransactionListData(i widget.ListItemID, o fyne.CanvasObject) {
+func (ui *UI) updateTransactionItem(i widget.ListItemID, o fyne.CanvasObject) {
 	tx := ui.transactions.Data[i]
 
 	rowContainer := o.(*fyne.Container)
@@ -234,6 +234,8 @@ func (ui *UI) fillTransactionListData(i widget.ListItemID, o fyne.CanvasObject) 
 	voidBtn := actionsContainer.Objects[1].(*widget.Button)
 	if tx.IsVoided {
 		voidBtn.Disable()
+	} else {
+		voidBtn.Enable()
 	}
 	voidBtn.OnTapped = func() {
 		dialogHandler := transaction.NewVoidTransactionDialog(
