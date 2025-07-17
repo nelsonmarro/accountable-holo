@@ -3,9 +3,11 @@ package ui
 import (
 	"context"
 	"fmt"
+	"image/color"
 	"time"
 
 	"fyne.io/fyne/v2"
+	"fyne.io/fyne/v2/canvas"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/theme"
@@ -169,13 +171,29 @@ func (ui *UI) createTransactiontItem() fyne.CanvasObject {
 			voidBtn,
 		),
 	)
-	return grid
+
+	background := canvas.NewRectangle(color.Transparent)
+
+	return container.NewStack(background, grid)
 }
 
 func (ui *UI) updateTransactionItem(i widget.ListItemID, o fyne.CanvasObject) {
 	tx := ui.transactions.Data[i]
 
-	rowContainer := o.(*fyne.Container)
+	stack := o.(*fyne.Container)
+	background := stack.Objects[0].(*canvas.Rectangle)
+	rowContainer := stack.Objects[1].(*fyne.Container)
+
+	if tx.IsVoided {
+		// Semi-transparent background for voided transactions
+		background.FillColor = color.NRGBA{R: 255, G: 0, B: 0, A: 60}
+	} else {
+		// Default background color for active transactions
+		background.FillColor = color.Transparent
+	}
+
+	// Refresh the canvas object to apply the color change
+	background.Refresh()
 
 	tIDLabel := rowContainer.Objects[0].(*widget.Label)
 	tIDLabel.SetText(tx.TransactionNumber)
