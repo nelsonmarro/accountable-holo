@@ -14,11 +14,6 @@ func TransactionForm(
 	date fyne.CanvasObject,
 	category fyne.CanvasObject,
 ) []*widget.FormItem {
-	dtEntry, ok := date.(*widget.Entry)
-	if ok {
-		dtEntry.SetPlaceHolder("YYYY-MM-DD")
-	}
-
 	addFormValidation(description, amount, date, category)
 
 	return []*widget.FormItem{

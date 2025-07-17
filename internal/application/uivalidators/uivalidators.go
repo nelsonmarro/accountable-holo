@@ -3,6 +3,7 @@ package uivalidators
 
 import (
 	"errors"
+	"fmt"
 	"strconv"
 	"strings"
 	"time"
@@ -61,6 +62,7 @@ func (v *UIValidator) MinLength(min int) {
 // MaxDate checks if the date is before or equal to the max date.
 func (v *UIValidator) MaxDate(max time.Time) {
 	validatorFunc := func(s string) error {
+		fmt.Println("s")
 		// Parse the date string in the format "01/02/2006"
 		date, err := time.Parse("01/02/2006", s)
 		if err != nil {
