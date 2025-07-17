@@ -41,8 +41,8 @@ func (d *VoidTransactionDialog) Show() {
 	}
 
 	dialog.ShowConfirm(
-		"Confirm Void Transaction",
-		"Are you sure you want to void this transaction? This will create a new, opposing transaction.",
+		"Confirmar Anulación",
+		"Está seguro que desea anular esta transacción? Esto creará una nueva transacción opuesta.",
 		confirmCallback,
 		d.mainWin,
 	)
@@ -50,7 +50,7 @@ func (d *VoidTransactionDialog) Show() {
 
 // executeVoid runs the actual deletion logic.
 func (d *VoidTransactionDialog) executeVoid() {
-	progress := dialog.NewCustomWithoutButtons("Voiding...", widget.NewProgressBarInfinite(), d.mainWin)
+	progress := dialog.NewCustomWithoutButtons("Anulando...", widget.NewProgressBarInfinite(), d.mainWin)
 	progress.Show()
 
 	go func() {
@@ -62,14 +62,14 @@ func (d *VoidTransactionDialog) executeVoid() {
 			d.logger.Printf("Error voiding transaction %d: %v", d.txID, err)
 			fyne.Do(func() {
 				progress.Hide()
-				dialog.ShowError(errors.New("error voiding transaction. Please try again"), d.mainWin)
+				dialog.ShowError(errors.New("error al anular la Transacción. Intente otra vez"), d.mainWin)
 			})
 			return
 		}
 
 		fyne.Do(func() {
 			progress.Hide()
-			dialog.ShowInformation("Success", "Transaction voided successfully.", d.mainWin)
+			dialog.ShowInformation("Success", "Transacción anuladada con éxito.", d.mainWin)
 		})
 
 		go d.callbackAction()

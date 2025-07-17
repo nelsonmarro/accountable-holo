@@ -222,7 +222,7 @@ func (r *TransactionRepositoryImpl) VoidTransaction(ctx context.Context, transac
 
 	adjustmentCatQuery := `
 		 select id, name
-		 from categoies
+		 from categories
 		where name like '%Anular Transacción%' and type = $1
 	`
 

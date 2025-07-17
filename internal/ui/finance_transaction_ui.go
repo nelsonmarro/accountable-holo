@@ -232,7 +232,15 @@ func (ui *UI) fillTransactionListData(i widget.ListItemID, o fyne.CanvasObject) 
 		dialigHandler.Show()
 	}
 	voidBtn.OnTapped = func() {
-		dialog.ShowInformation("Info", "Void transaction not implemented yet.", ui.mainWindow)
+		dialogHandler := transaction.NewVoidTransactionDialog(
+			ui.mainWindow,
+			ui.errorLogger,
+			ui.Services.TxService,
+			ui.loadAccounts,
+			tx.ID,
+		)
+
+		dialogHandler.Show()
 	}
 }
 
