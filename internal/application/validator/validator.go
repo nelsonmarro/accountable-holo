@@ -127,6 +127,30 @@ func (v *Validator) IsDate(fieldName string) *Validator {
 	return v
 }
 
+// MaxDate checks if the specified date field is before or equal to the given max date.
+func (v *Validator) MaxDate(max time.Time, fieldName string) *Validator {
+	val, err := v.getValidTarget()
+	if err != nil {
+		v.errs = append(v.errs, err)
+		return v
+	}
+
+	field := val.FieldByName(fieldName)
+	if !field.IsValid() {
+		v.errs = append(v.errs, fmt.Errorf("field '%s' not found in struct", fieldName))
+		return v
+	}
+
+	// Check if the field is a time.Time
+	fieldTime, ok := field.Interface().(time.Time)
+	if !ok {
+		v.errs = append(v.errs, fmt.Errorf("el campo '%s' no es de tipo fecha (time.Time)", fieldName))
+		return v
+	}
+
+	// Truncate both dates to the begining of the day to compare the date part
+}
+
 // Validate returns a slice of errors, or nil if no errors were found.
 func (v *Validator) Validate() []error {
 	if len(v.errs) == 0 {
