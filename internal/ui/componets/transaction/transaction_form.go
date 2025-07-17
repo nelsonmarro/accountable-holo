@@ -46,7 +46,7 @@ func addFormValidation(
 		amtEntry.Validator = amountValidator.Validate
 	}
 
-	dtEntry, ok := date.(*widget.Entry)
+	dtEntry, ok := date.(*widget.DateEntry)
 	if ok {
 		dateValidator := uivalidators.NewValidator()
 		dateValidator.Required()
