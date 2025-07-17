@@ -249,7 +249,8 @@ func (r *TransactionRepositoryImpl) VoidTransaction(ctx context.Context, transac
 
 	voidTransactionQuery := `
 	  insert into transactions
-	    (description, amount, transaction_date, account_id, category_id, voids_transaction_id, created_at, updated_at, transaction_number)
+	    (description, amount, transaction_date, account_id,
+			category_id, voids_transaction_id, created_at, updated_at, transaction_number)
 	  	values($1, $2, $3, $4, $5, $6, $7, $8, $9) returning id
 	`
 
@@ -258,7 +259,7 @@ func (r *TransactionRepositoryImpl) VoidTransaction(ctx context.Context, transac
 		ctx,
 		voidTransactionQuery,
 		&newDescription,
-		&originalTransaction.Account,
+		&originalTransaction.Amount,
 		&newTransactionDate,
 		&originalTransaction.AccountID,
 		&opposingCatID,
