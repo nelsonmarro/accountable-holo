@@ -247,7 +247,6 @@ func (ui *UI) updateTransactionItem(i widget.ListItemID, o fyne.CanvasObject) {
 		)
 
 		dialigHandler.Show()
-		background.Refresh()
 	}
 
 	voidBtn := actionsContainer.Objects[1].(*widget.Button)
@@ -261,12 +260,13 @@ func (ui *UI) updateTransactionItem(i widget.ListItemID, o fyne.CanvasObject) {
 			ui.mainWindow,
 			ui.errorLogger,
 			ui.Services.TxService,
-			ui.loadAccounts,
+			func() {
+				ui.loadTransactions(1, ui.transactionPaginator.GetPageSize())
+			},
 			tx.ID,
 		)
 
 		dialogHandler.Show()
-		background.Refresh()
 	}
 }
 

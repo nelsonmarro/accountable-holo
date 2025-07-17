@@ -14,7 +14,7 @@ import (
 	"github.com/nelsonmarro/accountable-holo/internal/ui/componets/category"
 )
 
-var pageSizeOpts = []string{"5", "10", "20", "50", "100"}
+var pageSizeOpts = []string{"10", "20", "50", "100"}
 
 func (ui *UI) makeCategoryUI() fyne.CanvasObject {
 	// Title

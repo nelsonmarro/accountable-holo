@@ -256,7 +256,7 @@ func (r *TransactionRepositoryImpl) VoidTransaction(ctx context.Context, transac
 		return fmt.Errorf("failed to get the opposing category: %w", err)
 	}
 
-	newDescription := "Anulada por transaccion #" + originalTransaction.TransactionNumber + ": " + originalTransaction.Description
+	newDescription := "Anulación de la transacción #" + originalTransaction.TransactionNumber + ":\n" + originalTransaction.Description
 	newTransactionDate := time.Now()
 
 	voidTransactionNumber, err := r.generateTransactionNumber(ctx,
@@ -474,3 +474,4 @@ func (r *TransactionRepositoryImpl) generateTransactionNumber(ctx context.Contex
 
 	return fmt.Sprintf("%s-%s-%04d", prefix, dateComp, sequence), nil
 }
+

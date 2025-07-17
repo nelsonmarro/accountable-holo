@@ -51,7 +51,7 @@ func NewPagination(
 
 func (p *Pagination) GetPageSize() int {
 	if p.pageSize <= 0 {
-		return 5 // Default page size if not set
+		return 10 // Default page size if not set
 	}
 	return p.pageSize
 }
