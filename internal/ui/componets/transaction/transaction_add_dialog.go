@@ -2,6 +2,7 @@ package transaction
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"strconv"
@@ -58,6 +59,7 @@ func NewAddTransactionDialog(
 		accountID:        accountID,
 		categoryLabel:    widget.NewLabel("Ninguna seleccionada"),
 	}
+	d.dateEntry.SetText(time.Now().Format("01/02/2006"))
 
 	d.searchCategoryBtn = widget.NewButtonWithIcon("", theme.SearchIcon(), func() {
 		searchDialog := category.NewCategorySearchDialog(
@@ -98,6 +100,21 @@ func (d *AddTransactionDialog) handleSubmit(valid bool) {
 		return
 	}
 
+	transactionDate, err := time.Parse("01/02/2006", d.dateEntry.Text)
+	if err != nil {
+		dialog.ShowError(fmt.Errorf("formato de fecha inválido: %w", err), d.mainWin)
+		return
+	}
+
+	now := time.Now()
+	today := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC)
+	txDateOnly := time.Date(transactionDate.Year(), transactionDate.Month(), transactionDate.Day(), 0, 0, 0, 0, time.UTC)
+
+	if txDateOnly.After(today) {
+		dialog.ShowError(errors.New("la fecha de la transacción no puede ser una fecha futura"), d.mainWin)
+		return
+	}
+
 	if d.selectedCategory == nil {
 		dialog.ShowError(fmt.Errorf("por favor, seleccione una categoría"), d.mainWin)
 		return
@@ -108,14 +125,13 @@ func (d *AddTransactionDialog) handleSubmit(valid bool) {
 
 	go func() {
 		amount, _ := strconv.ParseFloat(d.amountEntry.Text, 64)
-		transactionDate, _ := time.Parse("01/02/2006", d.dateEntry.Text)
 
 		tx := &domain.Transaction{
 			Description:     d.descriptionEntry.Text,
 			Amount:          amount,
 			TransactionDate: transactionDate,
 			AccountID:       d.accountID,
-			CategoryID:      d.selectedCategory.ID, // Use the new field
+			CategoryID:      d.selectedCategory.ID,
 		}
 
 		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)

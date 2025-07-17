@@ -1,8 +1,6 @@
 package transaction
 
 import (
-	"time"
-
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/widget"
 	"github.com/nelsonmarro/accountable-holo/internal/application/uivalidators"
@@ -46,14 +44,7 @@ func addFormValidation(
 		amtEntry.Validator = amountValidator.Validate
 	}
 
-	dtEntry, ok := date.(*widget.DateEntry)
-	if ok {
-		dateValidator := uivalidators.NewValidator()
-		dateValidator.Required()
-		dateValidator.IsDate()
-		dateValidator.MaxDate(time.Now())
-		dtEntry.Validator = dateValidator.Validate
-	}
+	// Date validation removed from here
 
 	catSelect, ok := category.(*widget.SelectEntry)
 	if ok {
@@ -62,3 +53,4 @@ func addFormValidation(
 		catSelect.Validator = categoryValidator.Validate
 	}
 }
+

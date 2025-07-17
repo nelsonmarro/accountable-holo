@@ -62,11 +62,10 @@ func (v *UIValidator) MinLength(min int) {
 // MaxDate checks if the date is before or equal to the max date.
 func (v *UIValidator) MaxDate(max time.Time) {
 	validatorFunc := func(s string) error {
-		fmt.Println("s")
 		// Parse the date string in the format "01/02/2006"
 		date, err := time.Parse("01/02/2006", s)
 		if err != nil {
-			return errors.New("el campo debe ser una fecha válida en formato YYYY-MM-DD")
+			return errors.New("el campo debe ser una fecha válida en formato DD/MM/YYYY")
 		}
 		// Truncate both dates to the begining of the day to compare the date part
 		year, month, day := max.Date()
@@ -86,7 +85,7 @@ func (v *UIValidator) MaxDate(max time.Time) {
 func (v *UIValidator) IsDate() {
 	validatorFunc := func(s string) error {
 		if _, err := time.Parse("01/02/2006", s); err != nil {
-			return errors.New("el campo debe ser una fecha válida en formato YYYY-MM-DD")
+			return errors.New("el campo debe ser una fecha válida en formato DD/MM/YYYY")
 		}
 		return nil
 	}
