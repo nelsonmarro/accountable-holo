@@ -9,8 +9,8 @@ type Transaction struct {
 	Description           string    `db:"description"`
 	TransactionDate       time.Time `db:"transaction_date"`
 	IsVoided              bool      `db:"is_voided"`
-	VoidedByTransactionID int       `db:"voided_by_transaction_id"`
-	VoidsTransactionID    int       `db:"voids_transaction_id"`
+	VoidedByTransactionID *int      `db:"voided_by_transaction_id"`
+	VoidsTransactionID    *int      `db:"voids_transaction_id"`
 
 	// Relationships
 	AccountID  int `db:"account_id"`

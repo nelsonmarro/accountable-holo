@@ -318,6 +318,9 @@ func (r *TransactionRepositoryImpl) GetTransactionByID(ctx context.Context, tran
 				transaction_date,
 				account_id,
 				category_id,
+				is_voided,
+				voided_by_transaction_id,
+				voids_transaction_id,
 				created_at,
 				updated_at
 			from transactions t
@@ -332,6 +335,9 @@ func (r *TransactionRepositoryImpl) GetTransactionByID(ctx context.Context, tran
 		&tx.TransactionDate,
 		&tx.AccountID,
 		&tx.CategoryID,
+		&tx.IsVoided,
+		&tx.VoidedByTransactionID,
+		&tx.VoidsTransactionID,
 		&tx.CreatedAt,
 		&tx.UpdatedAt,
 	)
