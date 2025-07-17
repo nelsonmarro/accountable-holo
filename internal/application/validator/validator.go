@@ -103,6 +103,7 @@ func (v *Validator) NumberMin(min float64, fieldNames ...string) *Validator {
 	return v
 }
 
+// IsDate checks if the specified field is a valid date in the format "dd/mm/yyyy".
 func (v *Validator) IsDate(fieldName string) *Validator {
 	val, err := v.getValidTarget()
 	if err != nil {
