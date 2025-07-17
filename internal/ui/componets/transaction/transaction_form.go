@@ -1,6 +1,8 @@
 package transaction
 
 import (
+	"time"
+
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/widget"
 	"github.com/nelsonmarro/accountable-holo/internal/application/uivalidators"
@@ -53,6 +55,8 @@ func addFormValidation(
 	if ok {
 		dateValidator := uivalidators.NewValidator()
 		dateValidator.Required()
+		dateValidator.IsDate()
+		dateValidator.MaxDate(time.Now())
 		dtEntry.Validator = dateValidator.Validate
 	}
 
