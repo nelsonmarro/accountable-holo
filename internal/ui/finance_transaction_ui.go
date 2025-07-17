@@ -247,6 +247,7 @@ func (ui *UI) updateTransactionItem(i widget.ListItemID, o fyne.CanvasObject) {
 		)
 
 		dialigHandler.Show()
+		background.Refresh()
 	}
 
 	voidBtn := actionsContainer.Objects[1].(*widget.Button)
@@ -265,6 +266,7 @@ func (ui *UI) updateTransactionItem(i widget.ListItemID, o fyne.CanvasObject) {
 		)
 
 		dialogHandler.Show()
+		background.Refresh()
 	}
 }
 

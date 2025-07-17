@@ -22,3 +22,4 @@ type Transaction struct {
 	// Calculated field
 	RunningBalance float64 `db:"-"`
 }
+
