@@ -2,6 +2,7 @@ package persistence
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"strings"
 	"time"
@@ -41,7 +42,7 @@ func (r *TransactionRepositoryImpl) CreateTransaction(ctx context.Context, trans
 
 	query := `
 		insert into transactions (transaction_number, description, amount, transaction_date, account_id, category_id, created_at, updated_at) 
-											values ($1, $2, $3, $4, $5, $6, $7, $8)
+							values ($1, $2, $3, $4, $5, $6, $7, $8)
 		                  returning id, created_at, updated_at`
 
 	now := time.Now()
@@ -143,6 +144,10 @@ func (r *TransactionRepositoryImpl) GetTransactionsByAccountPaginated(
 		var tx domain.Transaction
 		var categoryName string
 		var categoryType domain.CategoryType
+		// Use sql.NullInt64 for nullable integer columns
+		var voidedBy sql.NullInt64
+		var voids sql.NullInt64
+
 		err := rows.Scan(
 			&tx.ID,
 			&tx.TransactionNumber,
@@ -152,15 +157,26 @@ func (r *TransactionRepositoryImpl) GetTransactionsByAccountPaginated(
 			&tx.AccountID,
 			&tx.CategoryID,
 			&tx.IsVoided,
-			&tx.VoidedByTransactionID,
-			&tx.VoidsTransactionID,
+			&voidedBy, // Scan into the nullable type
+			&voids,    // Scan into the nullable type
 			&categoryName,
 			&categoryType,
-			&tx.RunningBalance, // Scan the calculated running balance directly
+			&tx.RunningBalance,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan transaction: %w", err)
 		}
+
+		// Assign to the domain struct's pointer field only if the value is valid
+		if voidedBy.Valid {
+			val := int(voidedBy.Int64)
+			tx.VoidedByTransactionID = &val
+		}
+		if voids.Valid {
+			val := int(voids.Int64)
+			tx.VoidsTransactionID = &val
+		}
+
 		tx.Category = &domain.Category{
 			Name: categoryName,
 			Type: categoryType,
@@ -264,15 +280,15 @@ func (r *TransactionRepositoryImpl) VoidTransaction(ctx context.Context, transac
 	err = tx.QueryRow(
 		ctx,
 		voidTransactionQuery,
-		&newDescription,
-		&originalTransaction.Amount,
-		&newTransactionDate,
-		&originalTransaction.AccountID,
-		&opposingCatID,
-		&originalTransaction.ID,
+		newDescription,
+		originalTransaction.Amount,
+		newTransactionDate,
+		originalTransaction.AccountID,
+		opposingCatID,
+		originalTransaction.ID,
 		time.Now(),
 		time.Now(),
-		&voidTransactionNumber,
+		voidTransactionNumber,
 	).Scan(&voidTransactionID)
 	if err != nil {
 		return fmt.Errorf("error when inserting the void transaction: %w", err)
@@ -327,6 +343,9 @@ func (r *TransactionRepositoryImpl) GetTransactionByID(ctx context.Context, tran
 			   where id = $1
 	`
 	var tx domain.Transaction
+	var voidedBy sql.NullInt64
+	var voids sql.NullInt64
+
 	err := r.db.QueryRow(ctx, query, transactionID).Scan(
 		&tx.ID,
 		&tx.TransactionNumber,
@@ -336,8 +355,8 @@ func (r *TransactionRepositoryImpl) GetTransactionByID(ctx context.Context, tran
 		&tx.AccountID,
 		&tx.CategoryID,
 		&tx.IsVoided,
-		&tx.VoidedByTransactionID,
-		&tx.VoidsTransactionID,
+		&voidedBy,
+		&voids,
 		&tx.CreatedAt,
 		&tx.UpdatedAt,
 	)
@@ -346,6 +365,15 @@ func (r *TransactionRepositoryImpl) GetTransactionByID(ctx context.Context, tran
 			return nil, fmt.Errorf("transaction with ID %d not found", transactionID)
 		}
 		return nil, fmt.Errorf("failed to get transaction by ID: %w", err)
+	}
+
+	if voidedBy.Valid {
+		val := int(voidedBy.Int64)
+		tx.VoidedByTransactionID = &val
+	}
+	if voids.Valid {
+		val := int(voids.Int64)
+		tx.VoidsTransactionID = &val
 	}
 
 	return &tx, nil
@@ -358,67 +386,64 @@ func (r *TransactionRepositoryImpl) UpdateTransaction(ctx context.Context, tx *d
 	}
 	defer dbTx.Rollback(ctx)
 
-	// Get original category to compare
-	var originalCategoryID int
-	err = dbTx.QueryRow(ctx, "SELECT category_id FROM transactions WHERE id = $1", tx.ID).Scan(&originalCategoryID)
+	// Get original transaction to compare
+	var originalTx domain.Transaction
+	err = dbTx.QueryRow(ctx, "SELECT category_id, transaction_date FROM transactions WHERE id = $1", tx.ID).
+		Scan(&originalTx.CategoryID, &originalTx.TransactionDate)
 	if err != nil {
-		return fmt.Errorf("failed to get original category id: %w", err)
+		return fmt.Errorf("failed to get original transaction data: %w", err)
 	}
 
-	// If category has not changed, do a simple update
-	if originalCategoryID == tx.CategoryID {
-		query := `
-			update transactions
-			set description = $1, transaction_date = $2, updated_at = $3
-			where id = $4
-		`
-		_, err := dbTx.Exec(ctx, query, tx.Description, tx.TransactionDate, time.Now(), tx.ID)
-		if err != nil {
-			return fmt.Errorf("failed to update transaction: %w", err)
-		}
-		return dbTx.Commit(ctx)
+	// Get new category info
+	var newCat domain.Category
+	err = dbTx.QueryRow(ctx, "SELECT name, type FROM categories WHERE id = $1", tx.CategoryID).
+		Scan(&newCat.Name, &newCat.Type)
+	if err != nil {
+		return fmt.Errorf("failed to get new category info: %w", err)
 	}
 
-	// Category has changed, check if the type also changed
-	var originalCatType, newCatType domain.CategoryType
-	var newCatName string
-	err = dbTx.QueryRow(ctx, "SELECT type FROM categories WHERE id = $1", originalCategoryID).Scan(&originalCatType)
+	// Get original category type
+	var originalCatType domain.CategoryType
+	err = dbTx.QueryRow(ctx, "SELECT type FROM categories WHERE id = $1", originalTx.CategoryID).
+		Scan(&originalCatType)
 	if err != nil {
 		return fmt.Errorf("failed to get original category type: %w", err)
 	}
-	err = dbTx.QueryRow(ctx, "SELECT name, type FROM categories WHERE id = $1", tx.CategoryID).Scan(&newCatName, &newCatType)
-	if err != nil {
-		return fmt.Errorf("failed to get new category type: %w", err)
+
+	// Check if we need to regenerate the transaction number
+	regenerateNumber := newCat.Type != originalCatType
+
+	if tx.TransactionDate.Month() != originalTx.TransactionDate.Month() || tx.TransactionDate.Year() != originalTx.TransactionDate.Year() {
+		regenerateNumber = true
 	}
 
-	// If the type is the same, just update the category id
-	if originalCatType == newCatType {
+	if regenerateNumber {
+		newTxNumber, err := r.generateTransactionNumber(ctx, dbTx, newCat.Type, newCat.Name, tx.TransactionDate)
+		if err != nil {
+			return fmt.Errorf("failed to generate new transaction number during update: %w", err)
+		}
+		tx.TransactionNumber = newTxNumber
+
 		query := `
-			update transactions
-			set description = $1, transaction_date = $2, category_id = $3, updated_at = $4
-			where id = $5
+			UPDATE transactions
+			SET description = $1, transaction_date = $2, category_id = $3, transaction_number = $4, updated_at = $5
+			WHERE id = $6
+		`
+		_, err = dbTx.Exec(ctx, query, tx.Description, tx.TransactionDate, tx.CategoryID, tx.TransactionNumber, time.Now(), tx.ID)
+		if err != nil {
+			return fmt.Errorf("failed to update transaction with new number: %w", err)
+		}
+	} else {
+		// If no regeneration is needed, just update the relevant fields
+		query := `
+			UPDATE transactions
+			SET description = $1, transaction_date = $2, category_id = $3, updated_at = $4
+			WHERE id = $5
 		`
 		_, err := dbTx.Exec(ctx, query, tx.Description, tx.TransactionDate, tx.CategoryID, time.Now(), tx.ID)
 		if err != nil {
-			return fmt.Errorf("failed to update transaction with new category: %w", err)
+			return fmt.Errorf("failed to update transaction: %w", err)
 		}
-		return dbTx.Commit(ctx)
-	}
-
-	// Type has changed, must regenerate transaction number
-	newTxNumber, err := r.generateTransactionNumber(ctx, dbTx, newCatType, newCatName, tx.TransactionDate)
-	if err != nil {
-		return fmt.Errorf("failed to generate new transaction number during update: %w", err)
-	}
-
-	query := `
-		update transactions
-		set description = $1, transaction_date = $2, category_id = $3, transaction_number = $4, updated_at = $5
-		where id = $6
-	`
-	_, err = dbTx.Exec(ctx, query, tx.Description, tx.TransactionDate, tx.CategoryID, newTxNumber, time.Now(), tx.ID)
-	if err != nil {
-		return fmt.Errorf("failed to update transaction with new category and number: %w", err)
 	}
 
 	return dbTx.Commit(ctx)
