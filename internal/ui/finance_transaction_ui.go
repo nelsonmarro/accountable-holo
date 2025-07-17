@@ -214,7 +214,6 @@ func (ui *UI) fillTransactionListData(i widget.ListItemID, o fyne.CanvasObject) 
 
 	actionsContainer := rowContainer.Objects[7].(*fyne.Container)
 	editBtn := actionsContainer.Objects[0].(*widget.Button)
-	voidBtn := actionsContainer.Objects[1].(*widget.Button)
 
 	editBtn.OnTapped = func() {
 		dialigHandler := transaction.NewEditTransactionDialog(
@@ -230,6 +229,11 @@ func (ui *UI) fillTransactionListData(i widget.ListItemID, o fyne.CanvasObject) 
 		)
 
 		dialigHandler.Show()
+	}
+
+	voidBtn := actionsContainer.Objects[1].(*widget.Button)
+	if tx.IsVoided {
+		voidBtn.Disable()
 	}
 	voidBtn.OnTapped = func() {
 		dialogHandler := transaction.NewVoidTransactionDialog(
