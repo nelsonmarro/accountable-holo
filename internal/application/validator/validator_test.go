@@ -3,6 +3,7 @@ package validator
 import (
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -116,6 +117,58 @@ func TestValidator_NumberMin(t *testing.T) {
 				assert.NotNil(t, errs)
 			} else {
 				assert.Nil(t, errs)
+			}
+		})
+	}
+}
+
+func TestValidator_MaxDate(t *testing.T) {
+	type testStruct struct {
+		EventDate   time.Time
+		StringField string
+	}
+
+	now := time.Now()
+	// Use UTC to make the test deterministic regardless of local time zone
+	today := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC)
+	yesterday := today.AddDate(0, 0, -1)
+	tomorrow := today.AddDate(0, 0, 1)
+
+	testCases := []struct {
+		name        string
+		fieldName   string
+		maxDate     time.Time
+		fieldValue  time.Time // Only used for the EventDate field
+		expectError bool
+		errorMsg    string
+	}{
+		{"should pass for date equal to max date", "EventDate", today, today, false, ""},
+		{"should pass for date before max date", "EventDate", today, yesterday, false, ""},
+		{"should fail for date after max date", "EventDate", today, tomorrow, true, "debe ser antes o igual a"},
+		{"should fail for non-date field type", "StringField", today, time.Time{}, true, "no es de tipo fecha (time.Time)"},
+		{"should fail for non-existent field", "InvalidField", today, time.Time{}, true, "not found in struct"},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			// Arrange
+			sample := testStruct{StringField: "not a date"}
+			if tc.fieldName == "EventDate" {
+				sample.EventDate = tc.fieldValue
+			}
+			v := New().For(sample)
+
+			// Act
+			v.MaxDate(tc.maxDate, tc.fieldName)
+			errs := v.Validate()
+
+			// Assert
+			if tc.expectError {
+				require.NotNil(t, errs, "Expected an error but got none")
+				require.Len(t, errs, 1, "Expected exactly one error")
+				assert.Contains(t, errs[0].Error(), tc.errorMsg, "Error message did not match")
+			} else {
+				assert.Nil(t, errs, "Expected no error but got one")
 			}
 		})
 	}

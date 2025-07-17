@@ -149,6 +149,17 @@ func (v *Validator) MaxDate(max time.Time, fieldName string) *Validator {
 	}
 
 	// Truncate both dates to the begining of the day to compare the date part
+	year, month, day := max.Date()
+	maxDateOnly := time.Date(year, month, day, 0, 0, 0, 0, time.UTC)
+
+	year, month, day = fieldTime.Date()
+	fieldDateOnly := time.Date(year, month, day, 0, 0, 0, 0, time.UTC)
+
+	if fieldDateOnly.After(maxDateOnly) {
+		v.errs = append(v.errs, fmt.Errorf("el campo '%s' debe ser antes o igual a %s", fieldName, maxDateOnly.Format("01/02/2006")))
+	}
+
+	return v
 }
 
 // Validate returns a slice of errors, or nil if no errors were found.
