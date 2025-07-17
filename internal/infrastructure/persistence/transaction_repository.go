@@ -112,6 +112,9 @@ func (r *TransactionRepositoryImpl) GetTransactionsByAccountPaginated(
 			t.transaction_date,
 			t.account_id,
 			t.category_id,
+			t.is_voided,
+			t.voided_by_transaction_id,
+			t.voids_transaction_id,
 			c.name as category_name,
 			c.type as category_type,
 			a.initial_balance + SUM(CASE WHEN c.type = 'Ingreso' THEN t.amount ELSE -t.amount END) OVER (ORDER BY t.transaction_date ASC, t.id ASC) as running_balance
@@ -148,6 +151,9 @@ func (r *TransactionRepositoryImpl) GetTransactionsByAccountPaginated(
 			&tx.TransactionDate,
 			&tx.AccountID,
 			&tx.CategoryID,
+			&tx.IsVoided,
+			&tx.VoidedByTransactionID,
+			&tx.VoidsTransactionID,
 			&categoryName,
 			&categoryType,
 			&tx.RunningBalance, // Scan the calculated running balance directly
@@ -304,7 +310,16 @@ func (r *TransactionRepositoryImpl) VoidTransaction(ctx context.Context, transac
 
 func (r *TransactionRepositoryImpl) GetTransactionByID(ctx context.Context, transactionID int) (*domain.Transaction, error) {
 	query := `
-			select id, transaction_number, description, amount, transaction_date, account_id, category_id, created_at, updated_at
+			select
+				id,
+				transaction_number,
+				description,
+				amount,
+				transaction_date,
+				account_id,
+				category_id,
+				created_at,
+				updated_at
 			from transactions t
 			   where id = $1
 	`
