@@ -124,7 +124,8 @@ CREATE TABLE public.transactions (
     voided_by_transaction_id integer,
     voids_transaction_id integer,
     transaction_date date DEFAULT CURRENT_DATE NOT NULL,
-    transaction_number character varying(20) NOT NULL
+    transaction_number character varying(20) NOT NULL,
+    attachment_path text
 );
 
 

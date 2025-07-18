@@ -1,0 +1,1 @@
+ALTER TABLE transactions DROP COLUMN attachment_path;
