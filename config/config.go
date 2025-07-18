@@ -26,7 +26,13 @@ type App struct {
 type Config struct {
 	Database Database
 	App      App
+	Storage  Storage
 }
+
+type Storage struct {
+	LocalPath string `yaml:"local_path"`
+}
+
 
 var (
 	one            sync.Once

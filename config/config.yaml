@@ -11,3 +11,6 @@ database:
   name: "accountableholodb"
   sslmode: "disable"
   timezone: America/Guayaquil
+
+storage:
+  local_path: "attachments"

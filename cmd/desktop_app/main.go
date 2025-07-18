@@ -10,6 +10,7 @@ import (
 	"github.com/nelsonmarro/accountable-holo/internal/application/service"
 	"github.com/nelsonmarro/accountable-holo/internal/infrastructure/database"
 	persistence "github.com/nelsonmarro/accountable-holo/internal/infrastructure/persistence"
+	"github.com/nelsonmarro/accountable-holo/internal/infrastructure/storage"
 	"github.com/nelsonmarro/accountable-holo/internal/ui"
 )
 
@@ -27,6 +28,12 @@ func main() {
 	defer pool.Close()
 	log.Println("Connected to the database successfully")
 
+	// ---- Infrastructure (Storage) ----
+	storageService, err := storage.NewLocalStorageService(conf.Storage.LocalPath)
+	if err != nil {
+		log.Fatalf("failed to create storage service: %v", err)
+	}
+
 	// ---- Infrastructure (Repositories) ----
 	accRepo := persistence.NewAccountRepository(pool)
 	catRepo := persistence.NewCategoryRepository(pool)
@@ -35,10 +42,6 @@ func main() {
 	// ---- Application (Services) ----
 	accService := service.NewAccountService(accRepo)
 	catService := service.NewCategoryService(catRepo)
-	storageService, err := service.NewLocalStorageService()
-	if err != nil {
-		log.Fatalf("failed to create storage service: %v", err)
-	}
 	txService := service.NewTransactionService(txRepo, storageService)
 
 	// ---- UI (Fyne) ----
