@@ -32,11 +32,14 @@ type AddTransactionDialog struct {
 	dateEntry         *widget.DateEntry
 	categoryLabel     *widget.Label
 	searchCategoryBtn *widget.Button
+	attachmentLabel   *widget.Label
+	searchFileBtn     *widget.Button
 
 	// Data
 	accountID        int
 	categories       []domain.Category
 	selectedCategory *domain.Category // New field to hold the selected category
+	attachmentPath   string
 }
 
 // NewAddTransactionDialog creates a new dialog handler.
@@ -59,6 +62,7 @@ func NewAddTransactionDialog(
 		dateEntry:        widget.NewDateEntry(),
 		accountID:        accountID,
 		categoryLabel:    widget.NewLabel("Ninguna seleccionada"),
+		attachmentLabel:  widget.NewLabel("Ninguno"),
 	}
 	d.dateEntry.SetText(time.Now().Format("01/02/2006"))
 
@@ -75,18 +79,35 @@ func NewAddTransactionDialog(
 		searchDialog.Show()
 	})
 
+	d.searchFileBtn = widget.NewButtonWithIcon("", theme.FileIcon(), func() {
+		fileDialog := dialog.NewFileOpen(func(reader fyne.URIReadCloser, err error) {
+			if err != nil {
+				dialog.ShowError(err, d.mainWin)
+				return
+			}
+			if reader == nil {
+				return
+			}
+			d.attachmentPath = reader.URI().Path()
+			d.attachmentLabel.SetText(reader.URI().Name())
+		}, d.mainWin)
+		fileDialog.Show()
+	})
+
 	return d
 }
 
 // Show creates and displays the Fyne form dialog.
 func (d *AddTransactionDialog) Show() {
 	categoryContainer := container.NewBorder(nil, nil, nil, d.searchCategoryBtn, d.categoryLabel)
+	attachmentContainer := container.NewBorder(nil, nil, nil, d.searchFileBtn, d.attachmentLabel)
 	formDialog := dialog.NewForm("Crear Transacción", "Guardar", "Cancelar",
 		TransactionForm(
 			d.descriptionEntry,
 			d.amountEntry,
 			d.dateEntry,
 			categoryContainer,
+			attachmentContainer,
 		),
 		d.handleSubmit, // Pass the method as the callback
 		d.mainWin,
@@ -129,6 +150,7 @@ func (d *AddTransactionDialog) handleSubmit(valid bool) {
 			TransactionDate: transactionDate,
 			AccountID:       d.accountID,
 			CategoryID:      d.selectedCategory.ID,
+			AttachmentPath:  d.attachmentPath,
 		}
 
 		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)

@@ -41,8 +41,8 @@ func (r *TransactionRepositoryImpl) CreateTransaction(ctx context.Context, trans
 	transaction.TransactionNumber = newTxNumber
 
 	query := `
-		insert into transactions (transaction_number, description, amount, transaction_date, account_id, category_id, created_at, updated_at) 
-							values ($1, $2, $3, $4, $5, $6, $7, $8)
+		insert into transactions (transaction_number, description, amount, transaction_date, account_id, category_id, attachment_path, created_at, updated_at)
+							values ($1, $2, $3, $4, $5, $6, $7, $8, $9)
 		                  returning id, created_at, updated_at`
 
 	now := time.Now()
@@ -53,6 +53,7 @@ func (r *TransactionRepositoryImpl) CreateTransaction(ctx context.Context, trans
 		transaction.TransactionDate,
 		transaction.AccountID,
 		transaction.CategoryID,
+		transaction.AttachmentPath,
 		now,
 		now,
 	).Scan(&transaction.ID, &transaction.CreatedAt, &transaction.UpdatedAt)
@@ -113,6 +114,7 @@ func (r *TransactionRepositoryImpl) GetTransactionsByAccountPaginated(
 			t.transaction_date,
 			t.account_id,
 			t.category_id,
+			t.attachment_path,
 			t.is_voided,
 			t.voided_by_transaction_id,
 			t.voids_transaction_id,
@@ -156,6 +158,7 @@ func (r *TransactionRepositoryImpl) GetTransactionsByAccountPaginated(
 			&tx.TransactionDate,
 			&tx.AccountID,
 			&tx.CategoryID,
+			&tx.AttachmentPath,
 			&tx.IsVoided,
 			&voidedBy, // Scan into the nullable type
 			&voids,    // Scan into the nullable type
@@ -346,6 +349,7 @@ func (r *TransactionRepositoryImpl) GetTransactionByID(ctx context.Context, tran
 				transaction_date,
 				account_id,
 				category_id,
+				attachment_path,
 				is_voided,
 				voided_by_transaction_id,
 				voids_transaction_id,
@@ -366,6 +370,7 @@ func (r *TransactionRepositoryImpl) GetTransactionByID(ctx context.Context, tran
 		&tx.TransactionDate,
 		&tx.AccountID,
 		&tx.CategoryID,
+		&tx.AttachmentPath,
 		&tx.IsVoided,
 		&voidedBy,
 		&voids,
@@ -452,10 +457,10 @@ func (r *TransactionRepositoryImpl) UpdateTransaction(ctx context.Context, tx *d
 
 		query := `
 			UPDATE transactions
-			SET description = $1, transaction_date = $2, category_id = $3, transaction_number = $4, updated_at = $5
-			WHERE id = $6
+			SET description = $1, transaction_date = $2, category_id = $3, transaction_number = $4, attachment_path = $5, updated_at = $6
+			WHERE id = $7
 		`
-		_, err = dbTx.Exec(ctx, query, tx.Description, tx.TransactionDate, tx.CategoryID, tx.TransactionNumber, time.Now(), tx.ID)
+		_, err = dbTx.Exec(ctx, query, tx.Description, tx.TransactionDate, tx.CategoryID, tx.TransactionNumber, tx.AttachmentPath, time.Now(), tx.ID)
 		if err != nil {
 			return fmt.Errorf("failed to update transaction with new number: %w", err)
 		}
@@ -463,10 +468,10 @@ func (r *TransactionRepositoryImpl) UpdateTransaction(ctx context.Context, tx *d
 		// If no regeneration is needed, just update the relevant fields
 		query := `
 			UPDATE transactions
-			SET description = $1, transaction_date = $2, category_id = $3, updated_at = $4
-			WHERE id = $5
+			SET description = $1, transaction_date = $2, category_id = $3, attachment_path = $4, updated_at = $5
+			WHERE id = $6
 		`
-		_, err := dbTx.Exec(ctx, query, tx.Description, tx.TransactionDate, tx.CategoryID, time.Now(), tx.ID)
+		_, err := dbTx.Exec(ctx, query, tx.Description, tx.TransactionDate, tx.CategoryID, tx.AttachmentPath, time.Now(), tx.ID)
 		if err != nil {
 			return fmt.Errorf("failed to update transaction: %w", err)
 		}

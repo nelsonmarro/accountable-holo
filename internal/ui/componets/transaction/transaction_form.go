@@ -11,6 +11,7 @@ func TransactionForm(
 	amount fyne.CanvasObject,
 	date fyne.CanvasObject,
 	category fyne.CanvasObject,
+	attachment fyne.CanvasObject,
 ) []*widget.FormItem {
 	addFormValidation(description, amount, category)
 
@@ -19,6 +20,7 @@ func TransactionForm(
 		{Text: "Monto", Widget: amount},
 		{Text: "Fecha", Widget: date},
 		{Text: "Categoria", Widget: category},
+		{Text: "Adjunto", Widget: attachment},
 	}
 }
 

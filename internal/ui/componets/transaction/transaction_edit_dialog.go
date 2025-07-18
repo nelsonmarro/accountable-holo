@@ -36,11 +36,14 @@ type EditTransactionDialog struct {
 	categoryLabel    *widget.Label
 	categoryButton   *widget.Button
 	searchDialog     *category.CategorySearchDialog
+	attachmentLabel  *widget.Label
+	searchFileBtn    *widget.Button
 
 	// Data
 	accountID          int
 	categories         []domain.Category
 	selectedCategoryID int
+	attachmentPath     string
 }
 
 // NewEditTransactionDialog creates a new dialog handler for the edit action.
@@ -58,9 +61,24 @@ func NewEditTransactionDialog(win fyne.Window, l *log.Logger, txs TransactionSer
 		amountEntry:      widget.NewLabel(""),
 		dateEntry:        widget.NewDateEntry(),
 		categoryLabel:    widget.NewLabel(""),
+		attachmentLabel:  widget.NewLabel("Ninguno"),
 	}
 	d.categoryButton = widget.NewButtonWithIcon("", theme.SearchIcon(), d.openCategorySearch)
 	d.searchDialog = category.NewCategorySearchDialog(win, l, cs, d.handleCategorySelect)
+	d.searchFileBtn = widget.NewButtonWithIcon("", theme.FileIcon(), func() {
+		fileDialog := dialog.NewFileOpen(func(reader fyne.URIReadCloser, err error) {
+			if err != nil {
+				dialog.ShowError(err, d.mainWin)
+				return
+			}
+			if reader == nil {
+				return
+			}
+			d.attachmentPath = reader.URI().Path()
+			d.attachmentLabel.SetText(reader.URI().Name())
+		}, d.mainWin)
+		fileDialog.Show()
+	})
 	return d
 }
 
@@ -130,6 +148,8 @@ func (d *EditTransactionDialog) showEditForm(tx *domain.Transaction) {
 	d.descriptionEntry.SetText(tx.Description)
 	d.amountEntry.SetText(fmt.Sprintf("%.2f", tx.Amount))
 	d.dateEntry.SetText(tx.TransactionDate.Format("01/02/2006"))
+	d.attachmentPath = tx.AttachmentPath
+	d.attachmentLabel.SetText(tx.AttachmentPath)
 
 	for _, cat := range d.categories {
 		if cat.ID == tx.CategoryID {
@@ -140,11 +160,13 @@ func (d *EditTransactionDialog) showEditForm(tx *domain.Transaction) {
 	}
 
 	categoryContainer := container.NewBorder(nil, nil, nil, d.categoryButton, d.categoryLabel)
+	attachmentContainer := container.NewBorder(nil, nil, nil, d.searchFileBtn, d.attachmentLabel)
 	txFormItems := TransactionForm(
 		d.descriptionEntry,
 		d.amountEntry,
 		d.dateEntry,
 		categoryContainer,
+		attachmentContainer,
 	)
 
 	txNumberFormItem := widget.NewFormItem("Número de Transacción", d.txNumber)
@@ -188,6 +210,7 @@ func (d *EditTransactionDialog) handleSubmit(valid bool) {
 			TransactionDate: transactionDate,
 			AccountID:       d.accountID,
 			CategoryID:      d.selectedCategoryID,
+			AttachmentPath:  d.attachmentPath,
 		}
 
 		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
