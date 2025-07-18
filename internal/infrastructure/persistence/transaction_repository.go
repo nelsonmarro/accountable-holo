@@ -232,6 +232,8 @@ func (r *TransactionRepositoryImpl) VoidTransaction(ctx context.Context, transac
 		&originalTransaction.Amount,
 		&originalTransaction.AccountID,
 		&originalTransaction.IsVoided,
+		&originalTransaction.VoidedByTransactionID,
+		&originalTransaction.VoidsTransactionID,
 		&originalCatType,
 	)
 	if err != nil {
@@ -241,8 +243,8 @@ func (r *TransactionRepositoryImpl) VoidTransaction(ctx context.Context, transac
 		return fmt.Errorf("failed to get original transaction: %w", err)
 	}
 
-	if originalTransaction.IsVoided {
-		return fmt.Errorf("transaction with ID %d is already voided", transactionID)
+	if originalTransaction.IsVoided || originalTransaction.VoidsTransactionID != nil {
+		return fmt.Errorf("no se puede anular una transacción previamente anulada o una transacción que anule a otra")
 	}
 
 	var opposingCatType domain.CategoryType
@@ -398,10 +400,24 @@ func (r *TransactionRepositoryImpl) UpdateTransaction(ctx context.Context, tx *d
 
 	// Get original transaction to compare
 	var originalTx domain.Transaction
-	err = dbTx.QueryRow(ctx, "SELECT category_id, transaction_date FROM transactions WHERE id = $1", tx.ID).
-		Scan(&originalTx.CategoryID, &originalTx.TransactionDate)
+	err = dbTx.QueryRow(ctx, `SELECT 
+		category_id,
+		transaction_date,
+		is_voided,
+		voids_transaction_id
+		FROM transactions WHERE id = $1`, tx.ID).
+		Scan(
+			&originalTx.CategoryID,
+			&originalTx.TransactionDate,
+			&originalTx.IsVoided,
+			&originalTx.VoidsTransactionID,
+		)
 	if err != nil {
 		return fmt.Errorf("failed to get original transaction data: %w", err)
+	}
+
+	if originalTx.IsVoided || originalTx.VoidsTransactionID != nil {
+		return fmt.Errorf("no se puede actualizar una transacción previamente anulada o una transacción que anule a otra")
 	}
 
 	// Get new category info
@@ -484,3 +500,4 @@ func (r *TransactionRepositoryImpl) generateTransactionNumber(ctx context.Contex
 
 	return fmt.Sprintf("%s-%s-%04d", prefix, dateComp, sequence), nil
 }
+
