@@ -115,7 +115,7 @@ func TestUpdateTransaction(t *testing.T) {
 		truncateTables(t)
 		acc := createTestAccount(t, accountRepo)
 		cat := createTestCategory(t, categoryRepo, "Salary", domain.Income)
-		voidCat := createTestCategory(t, categoryRepo, "Anular Transacción Ingreso", domain.Outcome)
+		_ = createTestCategory(t, categoryRepo, "Anular Transacción Ingreso", domain.Outcome)
 		tx := createTestTransaction(t, txRepo, acc.ID, cat.ID, 100.0, time.Now())
 		
 		// Manually void the transaction for the test
