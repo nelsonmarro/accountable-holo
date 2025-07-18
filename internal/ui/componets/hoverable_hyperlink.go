@@ -30,5 +30,13 @@ func (h *HoverableHyperLink) MouseIn(_ *desktop.MouseEvent) {
 	if h.TooltipText != "" && h.popup == nil {
 		label := widget.NewLabel(h.TooltipText)
 		h.popup = widget.NewPopUp(label, h.canvas)
+
+		// Position the popup below the hyperlink
+		pos := fyne.CurrentApp().Driver().AbsolutePositionForObject(h)
+		h.popup.ShowAtPosition(pos.Add(fyne.NewPos(0, h.Size().Height)))
 	}
+}
+
+func (h *HoverableHyperLink) MouseMoved(_ *desktop.MouseEvent) {
+	// We need to implement this to satisfy the desktop.Hoverable interface,
 }
