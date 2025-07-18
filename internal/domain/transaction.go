@@ -8,7 +8,7 @@ type Transaction struct {
 	Amount                float64   `db:"amount"`
 	Description           string    `db:"description"`
 	TransactionDate       time.Time `db:"transaction_date"`
-	AttachmentPath        string    `db:"attachment_path"`
+	AttachmentPath        *string   `db:"attachment_path"`
 	IsVoided              bool      `db:"is_voided"`
 	VoidedByTransactionID *int      `db:"voided_by_transaction_id"`
 	VoidsTransactionID    *int      `db:"voids_transaction_id"`

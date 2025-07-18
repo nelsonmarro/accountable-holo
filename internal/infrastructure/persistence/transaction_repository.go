@@ -146,7 +146,7 @@ func (r *TransactionRepositoryImpl) GetTransactionsByAccountPaginated(
 		var tx domain.Transaction
 		var categoryName string
 		var categoryType domain.CategoryType
-		// Use sql.NullInt64 for nullable integer columns
+		var attachment sql.NullString
 		var voidedBy sql.NullInt64
 		var voids sql.NullInt64
 
@@ -158,10 +158,10 @@ func (r *TransactionRepositoryImpl) GetTransactionsByAccountPaginated(
 			&tx.TransactionDate,
 			&tx.AccountID,
 			&tx.CategoryID,
-			&tx.AttachmentPath,
+			&attachment,
 			&tx.IsVoided,
-			&voidedBy, // Scan into the nullable type
-			&voids,    // Scan into the nullable type
+			&voidedBy,
+			&voids,
 			&categoryName,
 			&categoryType,
 			&tx.RunningBalance,
@@ -170,7 +170,9 @@ func (r *TransactionRepositoryImpl) GetTransactionsByAccountPaginated(
 			return nil, fmt.Errorf("failed to scan transaction: %w", err)
 		}
 
-		// Assign to the domain struct's pointer field only if the value is valid
+		if attachment.Valid {
+			tx.AttachmentPath = attachment.String
+		}
 		if voidedBy.Valid {
 			val := int(voidedBy.Int64)
 			tx.VoidedByTransactionID = &val
@@ -196,7 +198,8 @@ func (r *TransactionRepositoryImpl) GetTransactionsByAccountPaginated(
 		TotalCount: totalCount,
 		Page:       page,
 		PageSize:   pageSize,
-	}, nil
+	},
+	nil
 }
 
 func (r *TransactionRepositoryImpl) VoidTransaction(ctx context.Context, transactionID int) error {
@@ -359,6 +362,7 @@ func (r *TransactionRepositoryImpl) GetTransactionByID(ctx context.Context, tran
 			   where id = $1
 	`
 	var tx domain.Transaction
+	var attachment sql.NullString
 	var voidedBy sql.NullInt64
 	var voids sql.NullInt64
 
@@ -370,7 +374,7 @@ func (r *TransactionRepositoryImpl) GetTransactionByID(ctx context.Context, tran
 		&tx.TransactionDate,
 		&tx.AccountID,
 		&tx.CategoryID,
-		&tx.AttachmentPath,
+		&attachment,
 		&tx.IsVoided,
 		&voidedBy,
 		&voids,
@@ -384,6 +388,9 @@ func (r *TransactionRepositoryImpl) GetTransactionByID(ctx context.Context, tran
 		return nil, fmt.Errorf("failed to get transaction by ID: %w", err)
 	}
 
+	if attachment.Valid {
+		tx.AttachmentPath = attachment.String
+	}
 	if voidedBy.Valid {
 		val := int(voidedBy.Int64)
 		tx.VoidedByTransactionID = &val
