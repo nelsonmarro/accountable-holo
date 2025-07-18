@@ -24,15 +24,14 @@ type App struct {
 }
 
 type Config struct {
-	Database Database
-	App      App
-	Storage  Storage
+	Database Database `mapstructure:"database"`
+	App      App      `mapstructure:"app"`
+	Storage  Storage  `mapstructure:"storage"`
 }
 
 type Storage struct {
-	LocalPath string `yaml:"local_path"`
+	LocalPath string `mapstructure:"local_path"`
 }
-
 
 var (
 	one            sync.Once
