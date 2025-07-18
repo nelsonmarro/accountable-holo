@@ -10,11 +10,12 @@ import (
 )
 
 type TransactionServiceImpl struct {
-	repo TransactionRepository
+	repo    TransactionRepository
+	storage StorageService
 }
 
-func NewTransactionService(repo TransactionRepository) *TransactionServiceImpl {
-	return &TransactionServiceImpl{repo: repo}
+func NewTransactionService(repo TransactionRepository, storage StorageService) *TransactionServiceImpl {
+	return &TransactionServiceImpl{repo: repo, storage: storage}
 }
 
 func (s *TransactionServiceImpl) GetTransactionByAccountPaginated(ctx context.Context, accountID, page, pageSize int, filter ...string) (*domain.PaginatedResult[domain.Transaction], error) {

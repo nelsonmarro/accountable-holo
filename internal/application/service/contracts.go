@@ -49,4 +49,11 @@ type TransactionRepository interface {
 	GetTransactionByID(ctx context.Context, id int) (*domain.Transaction, error)
 	VoidTransaction(ctx context.Context, transactionID int) error
 	UpdateTransaction(ctx context.Context, tx *domain.Transaction) error
+	UpdateAttachmentPath(ctx context.Context, transactionID int, attachmentPath string) error
+}
+
+type StorageService interface {
+	Save(ctx context.Context, sourcePath string, destinationName string) (string, error)
+	GetFullPath(storagePath string) (string, error)
+	Delete(ctx context.Context, storagePath string) error
 }
