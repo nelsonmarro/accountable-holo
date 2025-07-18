@@ -400,7 +400,7 @@ func (r *TransactionRepositoryImpl) UpdateTransaction(ctx context.Context, tx *d
 
 	// Get original transaction to compare
 	var originalTx domain.Transaction
-	err = dbTx.QueryRow(ctx, `SELECT 
+	err = dbTx.QueryRow(ctx, `SELECT
 		category_id,
 		transaction_date,
 		is_voided,
@@ -500,4 +500,3 @@ func (r *TransactionRepositoryImpl) generateTransactionNumber(ctx context.Contex
 
 	return fmt.Sprintf("%s-%s-%04d", prefix, dateComp, sequence), nil
 }
-
