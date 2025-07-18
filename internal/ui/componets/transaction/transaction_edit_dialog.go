@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"path/filepath"
 	"strconv"
 	"time"
 
@@ -148,8 +149,11 @@ func (d *EditTransactionDialog) showEditForm(tx *domain.Transaction) {
 	d.descriptionEntry.SetText(tx.Description)
 	d.amountEntry.SetText(fmt.Sprintf("%.2f", tx.Amount))
 	d.dateEntry.SetText(tx.TransactionDate.Format("01/02/2006"))
-	d.attachmentPath = tx.AttachmentPath
-	d.attachmentLabel.SetText(tx.AttachmentPath)
+
+	if tx.AttachmentPath != nil {
+		d.attachmentPath = *tx.AttachmentPath
+		d.attachmentLabel.SetText(filepath.Base(*tx.AttachmentPath))
+	}
 
 	for _, cat := range d.categories {
 		if cat.ID == tx.CategoryID {
@@ -177,7 +181,7 @@ func (d *EditTransactionDialog) showEditForm(tx *domain.Transaction) {
 		d.handleSubmit, // The submit callback
 		d.mainWin,
 	)
-	formDialog.Resize(fyne.NewSize(560, 400))
+	formDialog.Resize(fyne.NewSize(560, 420))
 	formDialog.Show()
 }
 
@@ -203,6 +207,11 @@ func (d *EditTransactionDialog) handleSubmit(valid bool) {
 	go func() {
 		amount, _ := strconv.ParseFloat(d.amountEntry.Text, 64)
 
+		var attachmentPathPtr *string
+		if d.attachmentPath != "" {
+			attachmentPathPtr = &d.attachmentPath
+		}
+
 		updatedTx := &domain.Transaction{
 			BaseEntity:      domain.BaseEntity{ID: d.txID},
 			Description:     d.descriptionEntry.Text,
@@ -210,7 +219,7 @@ func (d *EditTransactionDialog) handleSubmit(valid bool) {
 			TransactionDate: transactionDate,
 			AccountID:       d.accountID,
 			CategoryID:      d.selectedCategoryID,
-			AttachmentPath:  d.attachmentPath,
+			AttachmentPath:  attachmentPathPtr,
 		}
 
 		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)

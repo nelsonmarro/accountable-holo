@@ -171,7 +171,7 @@ func (r *TransactionRepositoryImpl) GetTransactionsByAccountPaginated(
 		}
 
 		if attachment.Valid {
-			tx.AttachmentPath = attachment.String
+			tx.AttachmentPath = &attachment.String
 		}
 		if voidedBy.Valid {
 			val := int(voidedBy.Int64)
@@ -389,7 +389,7 @@ func (r *TransactionRepositoryImpl) GetTransactionByID(ctx context.Context, tran
 	}
 
 	if attachment.Valid {
-		tx.AttachmentPath = attachment.String
+		tx.AttachmentPath = &attachment.String
 	}
 	if voidedBy.Valid {
 		val := int(voidedBy.Int64)

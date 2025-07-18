@@ -3,8 +3,8 @@ package service
 import (
 	"context"
 	"fmt"
-	"path/filepath"
 	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/nelsonmarro/accountable-holo/internal/application/validator"
@@ -62,27 +62,26 @@ func (s *TransactionServiceImpl) CreateTransaction(ctx context.Context, tx *doma
 		return err
 	}
 
-	// Temporarily store the source path and clear it from the transaction
-	sourcePath := tx.AttachmentPath
-	tx.AttachmentPath = ""
+	var sourcePath string
+	if tx.AttachmentPath != nil {
+		sourcePath = *tx.AttachmentPath
+	}
+	tx.AttachmentPath = nil // Clear it before initial creation
 
 	err = s.repo.CreateTransaction(ctx, tx)
 	if err != nil {
 		return fmt.Errorf("error al crear la transacción: %w", err)
 	}
 
-	// If there was an attachment, save it and update the transaction
 	if sourcePath != "" {
 		destinationName := fmt.Sprintf("tx-%d-%s", tx.ID, filepath.Base(sourcePath))
 		storagePath, err := s.storage.Save(ctx, sourcePath, destinationName)
 		if err != nil {
-			// TODO: Consider how to handle this failure. Maybe delete the transaction?
 			return fmt.Errorf("failed to save attachment: %w", err)
 		}
 
 		err = s.repo.UpdateAttachmentPath(ctx, tx.ID, storagePath)
 		if err != nil {
-			// TODO: Consider how to handle this failure. Maybe delete the file?
 			return fmt.Errorf("failed to update transaction with attachment path: %w", err)
 		}
 	}
@@ -113,18 +112,15 @@ func (s *TransactionServiceImpl) UpdateTransaction(ctx context.Context, tx *doma
 		return err
 	}
 
-	// Handle attachment
-	if tx.AttachmentPath != "" {
-		// Check if the path is a new file or the existing one
-		if _, err := os.Stat(tx.AttachmentPath); err == nil {
-			// It's a new file, so we need to save it
-			sourcePath := tx.AttachmentPath
+	if tx.AttachmentPath != nil {
+		sourcePath := *tx.AttachmentPath
+		if _, err := os.Stat(sourcePath); err == nil {
 			destinationName := fmt.Sprintf("tx-%d-%s", tx.ID, filepath.Base(sourcePath))
 			storagePath, err := s.storage.Save(ctx, sourcePath, destinationName)
 			if err != nil {
 				return fmt.Errorf("failed to save attachment: %w", err)
 			}
-			tx.AttachmentPath = storagePath
+			tx.AttachmentPath = &storagePath
 		}
 	}
 

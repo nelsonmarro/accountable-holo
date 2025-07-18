@@ -144,13 +144,18 @@ func (d *AddTransactionDialog) handleSubmit(valid bool) {
 	go func() {
 		amount, _ := strconv.ParseFloat(d.amountEntry.Text, 64)
 
+		var attachmentPathPtr *string
+		if d.attachmentPath != "" {
+			attachmentPathPtr = &d.attachmentPath
+		}
+
 		tx := &domain.Transaction{
 			Description:     d.descriptionEntry.Text,
 			Amount:          amount,
 			TransactionDate: transactionDate,
 			AccountID:       d.accountID,
 			CategoryID:      d.selectedCategory.ID,
-			AttachmentPath:  d.attachmentPath,
+			AttachmentPath:  attachmentPathPtr,
 		}
 
 		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
