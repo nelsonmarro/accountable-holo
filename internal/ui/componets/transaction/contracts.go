@@ -30,3 +30,9 @@ type CategoryService interface {
 	UpdateCategory(ctx context.Context, category *domain.Category) error
 	DeleteCategory(ctx context.Context, id int) error
 }
+
+type StorageService interface {
+	Save(ctx context.Context, sourcePath string, destinationName string) (string, error)
+	GetFullPath(storagePath string) (string, error)
+	Delete(ctx context.Context, storagePath string) error
+}

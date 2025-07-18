@@ -35,7 +35,11 @@ func main() {
 	// ---- Application (Services) ----
 	accService := service.NewAccountService(accRepo)
 	catService := service.NewCategoryService(catRepo)
-	txService := service.NewTransactionService(txRepo)
+	storageService, err := service.NewLocalStorageService()
+	if err != nil {
+		log.Fatalf("failed to create storage service: %v", err)
+	}
+	txService := service.NewTransactionService(txRepo, storageService)
 
 	// ---- UI (Fyne) ----
 	// 1. Create the Fyne App first.
@@ -43,9 +47,10 @@ func main() {
 
 	// 2. Create UI struct.
 	gui := ui.NewUI(&ui.Services{
-		AccService: accService,
-		CatService: catService,
-		TxService:  txService,
+		AccService:     accService,
+		CatService:     catService,
+		TxService:      txService,
+		StorageService: storageService,
 	})
 
 	// 3. Initialize the UI with the app object.

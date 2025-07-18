@@ -15,18 +15,10 @@ func setupTestStorage(t *testing.T) (service *LocalStorageService, cleanup func(
 	tempDir, err := os.MkdirTemp("", "storage-test-*")
 	require.NoError(t, err)
 
-	// Override the user config dir for this test
-	originalUserConfigDir := os.UserConfigDir
-	os.UserConfigDir = func() (string, error) {
-		return tempDir, nil
-	}
-
-	service, err = NewLocalStorageService()
-	require.NoError(t, err)
+	service = &LocalStorageService{basePath: tempDir}
 
 	// The cleanup function to be called by the test
 	cleanup = func() {
-		os.UserConfigDir = originalUserConfigDir
 		os.RemoveAll(tempDir)
 	}
 
@@ -67,7 +59,6 @@ func TestLocalStorageService_Delete(t *testing.T) {
 	// First, save a file to delete
 	sourceFile, err := os.CreateTemp("", "source-*.txt")
 	require.NoError(t, err)
-	os.Remove(sourceFile.Name()) // clean up source
 	storagePath, err := service.Save(context.Background(), sourceFile.Name(), "file-to-delete.txt")
 	require.NoError(t, err)
 

@@ -76,6 +76,7 @@ func (ui *UI) makeTransactionUI() fyne.CanvasObject {
 			ui.errorLogger,
 			ui.Services.TxService,
 			ui.Services.CatService,
+			ui.Services.StorageService,
 			func() {
 				ui.loadTransactions(1, ui.transactionPaginator.GetPageSize())
 			},
@@ -239,6 +240,7 @@ func (ui *UI) updateTransactionItem(i widget.ListItemID, o fyne.CanvasObject) {
 			ui.errorLogger,
 			ui.Services.TxService,
 			ui.Services.CatService,
+			ui.Services.StorageService,
 			func() {
 				ui.loadTransactions(1, ui.transactionPaginator.GetPageSize())
 			},

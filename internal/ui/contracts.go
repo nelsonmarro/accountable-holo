@@ -37,3 +37,9 @@ type TransactionService interface {
 	CreateTransaction(ctx context.Context, tx *domain.Transaction) error
 	UpdateTransaction(ctx context.Context, tx *domain.Transaction) error
 }
+
+type StorageService interface {
+	Save(ctx context.Context, sourcePath string, destinationName string) (string, error)
+	GetFullPath(storagePath string) (string, error)
+	Delete(ctx context.Context, storagePath string) error
+}

@@ -25,6 +25,7 @@ type EditTransactionDialog struct {
 	logger          *log.Logger
 	txService       TransactionService
 	categoryService CategoryService
+	storageService  StorageService
 	callbackAction  func()
 	txID            int
 
@@ -47,12 +48,13 @@ type EditTransactionDialog struct {
 }
 
 // NewEditTransactionDialog creates a new dialog handler for the edit action.
-func NewEditTransactionDialog(win fyne.Window, l *log.Logger, txs TransactionService, cs CategoryService, callback func(), txID int, accountID int) *EditTransactionDialog {
+func NewEditTransactionDialog(win fyne.Window, l *log.Logger, txs TransactionService, cs CategoryService, ss StorageService, callback func(), txID int, accountID int) *EditTransactionDialog {
 	d := &EditTransactionDialog{
 		mainWin:          win,
 		logger:           l,
 		txService:        txs,
 		categoryService:  cs,
+		storageService:   ss,
 		callbackAction:   callback,
 		txID:             txID,
 		accountID:        accountID,
