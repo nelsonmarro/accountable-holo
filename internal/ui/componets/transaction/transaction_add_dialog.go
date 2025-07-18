@@ -24,7 +24,6 @@ type AddTransactionDialog struct {
 	logger          *log.Logger
 	txService       TransactionService
 	categoryService CategoryService
-	storageService  StorageService
 	callbackAction  func()
 
 	// UI Components
@@ -39,7 +38,7 @@ type AddTransactionDialog struct {
 	// Data
 	accountID        int
 	categories       []domain.Category
-	selectedCategory *domain.Category // New field to hold the selected category
+	selectedCategory *domain.Category
 	attachmentPath   string
 }
 
@@ -49,7 +48,6 @@ func NewAddTransactionDialog(
 	l *log.Logger,
 	txs TransactionService,
 	cs CategoryService,
-	ss StorageService,
 	callback func(),
 	accountID int,
 ) *AddTransactionDialog {
@@ -58,7 +56,6 @@ func NewAddTransactionDialog(
 		logger:           l,
 		txService:        txs,
 		categoryService:  cs,
-		storageService:   ss,
 		callbackAction:   callback,
 		descriptionEntry: widget.NewMultiLineEntry(),
 		amountEntry:      widget.NewEntry(),
