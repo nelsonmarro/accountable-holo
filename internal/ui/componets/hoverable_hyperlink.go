@@ -8,6 +8,7 @@ import (
 	"fyne.io/fyne/v2/widget"
 )
 
+// HoverableHyperLink is a custom widget that extends the standard Hyperlink widget
 type HoverableHyperLink struct {
 	widget.Hyperlink
 	TooltipText string
@@ -37,6 +38,19 @@ func (h *HoverableHyperLink) MouseIn(_ *desktop.MouseEvent) {
 	}
 }
 
+// MouseMoved is called when the mouse moves over the widget.
 func (h *HoverableHyperLink) MouseMoved(_ *desktop.MouseEvent) {
 	// We need to implement this to satisfy the desktop.Hoverable interface,
+}
+
+// MouseOut is called when the mouse leaves the widget area.
+func (h *HoverableHyperLink) MouseOut() {
+	if h.popup != nil {
+		h.popup.Hide()
+		h.popup = nil
+	}
+}
+
+func (h *HoverableHyperLink) SetTooltip(text string) {
+	h.TooltipText = text
 }
