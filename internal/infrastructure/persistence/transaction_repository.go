@@ -204,7 +204,17 @@ func (r *TransactionRepositoryImpl) VoidTransaction(ctx context.Context, transac
 	defer tx.Rollback(ctx)
 
 	originalTransactionQuery := `
-		 SELECT t.id, t.transaction_number, transaction_date, t.description, t.amount, t.account_id, t.is_voided, c.type
+		 SELECT 
+			 t.id, 
+			 t.transaction_number, 
+			 transaction_date, 
+			 t.description, 
+			 t.amount, 
+			 t.account_id, 
+			 t.is_voided, 
+			 t.voided_by_transaction_id,
+			 t.voids_transaction_id,
+			 c.type
 		 FROM transactions t
 		JOIN categories c ON t.category_id = c.id
 		WHERE t.id = $1
@@ -474,4 +484,3 @@ func (r *TransactionRepositoryImpl) generateTransactionNumber(ctx context.Contex
 
 	return fmt.Sprintf("%s-%s-%04d", prefix, dateComp, sequence), nil
 }
-

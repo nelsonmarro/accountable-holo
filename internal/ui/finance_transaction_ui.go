@@ -250,11 +250,6 @@ func (ui *UI) updateTransactionItem(i widget.ListItemID, o fyne.CanvasObject) {
 	}
 
 	voidBtn := actionsContainer.Objects[1].(*widget.Button)
-	if tx.IsVoided {
-		voidBtn.Disable()
-	} else {
-		voidBtn.Enable()
-	}
 	voidBtn.OnTapped = func() {
 		dialogHandler := transaction.NewVoidTransactionDialog(
 			ui.mainWindow,
@@ -267,6 +262,14 @@ func (ui *UI) updateTransactionItem(i widget.ListItemID, o fyne.CanvasObject) {
 		)
 
 		dialogHandler.Show()
+	}
+
+	if tx.IsVoided || tx.VoidsTransactionID != nil {
+		voidBtn.Disable()
+		editBtn.Disable()
+	} else {
+		voidBtn.Enable()
+		editBtn.Enable()
 	}
 }
 
