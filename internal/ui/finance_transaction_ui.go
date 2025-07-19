@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"image/color"
+	"log"
 	"net/url"
 	"path/filepath"
 	"time"
@@ -223,8 +224,8 @@ func (ui *UI) updateTransactionItem(i widget.ListItemID, o fyne.CanvasObject) {
 
 	attachmentLink := rowContainer.Objects[7].(*componets.HoverableHyperlink)
 	if tx.AttachmentPath != nil && *tx.AttachmentPath != "" {
-		fullPath := *tx.AttachmentPath
-		fileName := filepath.Base(fullPath)
+		relativePath := *tx.AttachmentPath
+		fileName := filepath.Base(relativePath)
 
 		attachmentLink.SetText(helpers.PrepareForTruncation(fileName))
 		attachmentLink.SetTooltip(fileName)
@@ -233,6 +234,13 @@ func (ui *UI) updateTransactionItem(i widget.ListItemID, o fyne.CanvasObject) {
 		attachmentLink.SetURL(dummyURL)
 
 		attachmentLink.OnTapped = func() {
+			// Get the full, absolute path from the storage service
+			fullPath, err := ui.Services.StorageService.GetFullPath(relativePath)
+			if err != nil {
+				log.Printf("ERROR: Could not get full path for attachment: %v", err)
+				dialog.ShowError(fmt.Errorf("adjunto no encontrado: %w", err), ui.mainWindow)
+				return
+			}
 			previewDialog := transaction.NewPreviewDialog(ui.mainWindow, fullPath)
 			previewDialog.Show()
 		}
@@ -249,7 +257,7 @@ func (ui *UI) updateTransactionItem(i widget.ListItemID, o fyne.CanvasObject) {
 	voidBtn := actionsContainer.Objects[1].(*widget.Button)
 
 	editBtn.OnTapped = func() {
-		dialogHandler := transaction.NewEditTransactionDialog(
+		dialigHandler := transaction.NewEditTransactionDialog(
 			ui.mainWindow,
 			ui.errorLogger,
 			ui.Services.TxService,
@@ -261,7 +269,7 @@ func (ui *UI) updateTransactionItem(i widget.ListItemID, o fyne.CanvasObject) {
 			ui.selectedAccountID,
 		)
 
-		dialogHandler.Show()
+		dialigHandler.Show()
 	}
 
 	voidBtn.OnTapped = func() {
