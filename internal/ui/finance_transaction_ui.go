@@ -249,7 +249,7 @@ func (ui *UI) updateTransactionItem(i widget.ListItemID, o fyne.CanvasObject) {
 	voidBtn := actionsContainer.Objects[1].(*widget.Button)
 
 	editBtn.OnTapped = func() {
-		dialigHandler := transaction.NewEditTransactionDialog(
+		dialogHandler := transaction.NewEditTransactionDialog(
 			ui.mainWindow,
 			ui.errorLogger,
 			ui.Services.TxService,
@@ -261,7 +261,7 @@ func (ui *UI) updateTransactionItem(i widget.ListItemID, o fyne.CanvasObject) {
 			ui.selectedAccountID,
 		)
 
-		dialigHandler.Show()
+		dialogHandler.Show()
 	}
 
 	voidBtn.OnTapped = func() {
