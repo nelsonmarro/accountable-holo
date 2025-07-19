@@ -1,3 +1,4 @@
+// Package storage provides an implementation of a local file storage service.
 package storage
 
 import (
@@ -21,7 +22,7 @@ func NewLocalStorageService(path string) (*LocalStorageService, error) {
 	}
 
 	// Create the directory if it doesn't exist
-	if err := os.MkdirAll(path, 0oo755); err != nil {
+	if err := os.MkdirAll(path, 0o755); err != nil {
 		return nil, fmt.Errorf("failed to create storage directory: %w", err)
 	}
 
@@ -46,7 +47,7 @@ func (s *LocalStorageService) Save(ctx context.Context, sourcePath, destinationN
 	defer destinationFile.Close()
 
 	// Copy the contents
-	_, err := io.Copy(destinationFile, sourceFile)
+	_, err = io.Copy(destinationFile, sourceFile)
 	if err != nil {
 		return "", fmt.Errorf("failed to copy file contents: %w", err)
 	}
@@ -71,4 +72,3 @@ func (s *LocalStorageService) Delete(ctx context.Context, storagePath string) er
 	}
 	return os.Remove(fullPath)
 }
-

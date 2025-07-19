@@ -41,6 +41,7 @@ func (d *PreviewDialog) Show() {
 	// Check if the image was loaded successfully.
 	if image.Image == nil || image.File == "" {
 		// It's not a previewable image, show a generic icon and label
+		fmt.Printf("File %s is not a valid image, showing generic icon", d.storagePath)
 		fileIcon := widget.NewIcon(theme.FileIcon())
 		fileNameLabel := widget.NewLabel(d.originalName)
 		fileNameLabel.Alignment = fyne.TextAlignCenter
