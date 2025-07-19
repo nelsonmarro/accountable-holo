@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"path/filepath"
 	"strconv"
 	"time"
 
@@ -18,7 +17,7 @@ import (
 	"fyne.io/fyne/v2/widget"
 	"github.com/nelsonmarro/accountable-holo/internal/application/validator"
 	"github.com/nelsonmarro/accountable-holo/internal/domain"
-	"github.com/nelsonmarro/accountable-holo/internal/ui/components/category"
+	"github.com/nelsonmarro/accountable-holo/internal/ui/componets/category"
 )
 
 // EditTransactionDialog holds the state and logic for the 'Edit Transaction' dialog.
@@ -156,7 +155,7 @@ func (d *EditTransactionDialog) showEditForm(tx *domain.Transaction) {
 
 	categoryContainer := container.NewBorder(nil, nil, nil, d.categoryButton, d.categoryLabel)
 	attachmentContainer := container.NewBorder(nil, nil, nil, d.searchFileBtn, d.attachmentLabel)
-	txFormItems := TransactionForm(
+	txFormItems := NewTransactionForm(
 		d.descriptionEntry,
 		d.amountEntry,
 		d.dateEntry,

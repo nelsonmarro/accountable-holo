@@ -6,13 +6,13 @@ import (
 	"image/color"
 	"log"
 	"net/url"
-	"path/filepath"
 	"time"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/canvas"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/dialog"
+	"fyne.io/fyne/v2/storage"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 	"github.com/nelsonmarro/accountable-holo/internal/application/helpers"
@@ -20,6 +20,8 @@ import (
 	"github.com/nelsonmarro/accountable-holo/internal/ui/componets"
 	"github.com/nelsonmarro/accountable-holo/internal/ui/componets/transaction"
 )
+
+// ... (makeTransactionUI and createTransactiontItem remain the same)
 
 func (ui *UI) makeTransactionUI() fyne.CanvasObject {
 	// Title
@@ -224,27 +226,25 @@ func (ui *UI) updateTransactionItem(i widget.ListItemID, o fyne.CanvasObject) {
 
 	attachmentLink := rowContainer.Objects[7].(*componets.HoverableHyperlink)
 	if tx.AttachmentPath != nil && *tx.AttachmentPath != "" {
-		relativePath := *tx.AttachmentPath
-		fileName := filepath.Base(relativePath)
+		uriString := *tx.AttachmentPath
+		fileURI, err := storage.ParseURI(uriString)
+		if err != nil {
+			log.Printf("ERROR: Could not parse attachment URI: %v", err)
+			attachmentLink.Hide()
+		} else {
+			fileName := fileURI.Name()
+			attachmentLink.SetText(helpers.PrepareForTruncation(fileName))
+			attachmentLink.SetTooltip(fileName)
 
-		attachmentLink.SetText(helpers.PrepareForTruncation(fileName))
-		attachmentLink.SetTooltip(fileName)
+			dummyURL, _ := url.Parse("file://")
+			attachmentLink.SetURL(dummyURL)
 
-		dummyURL, _ := url.Parse("file://")
-		attachmentLink.SetURL(dummyURL)
-
-		attachmentLink.OnTapped = func() {
-			// Get the full, absolute path from the storage service
-			fullPath, err := ui.Services.StorageService.GetFullPath(relativePath)
-			if err != nil {
-				log.Printf("ERROR: Could not get full path for attachment: %v", err)
-				dialog.ShowError(fmt.Errorf("adjunto no encontrado: %w", err), ui.mainWindow)
-				return
-			}
-			previewDialog := transaction.NewPreviewDialog(ui.mainWindow, fullPath)
+			attachmentLink.OnTapped = func() {
+							previewDialog := transaction.NewPreviewDialog(ui.mainWindow, fileURI.String())
 			previewDialog.Show()
+			}
+			attachmentLink.Show()
 		}
-		attachmentLink.Show()
 	} else {
 		attachmentLink.SetText("-")
 		attachmentLink.SetTooltip("")

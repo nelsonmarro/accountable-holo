@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+
 	"os"
 
 	"fyne.io/fyne/v2"
@@ -70,11 +71,20 @@ func (s *LocalStorageService) Save(ctx context.Context, source fyne.URI, destina
 	return destinationURI.String(), nil
 }
 
+// GetFullPath returns the full, absolute path for a given URI string.
+func (s *LocalStorageService) GetFullPath(storageURI string) (string, error) {
+	uri, err := storage.ParseURI(storageURI)
+	if err != nil {
+		return "", fmt.Errorf("could not parse URI for GetFullPath: %w", err)
+	}
+	return uri.Path(), nil
+}
+
 // Delete removes a file from the storage directory.
 func (s *LocalStorageService) Delete(ctx context.Context, storageURI string) error {
 	uri, err := storage.ParseURI(storageURI)
 	if err != nil {
 		return fmt.Errorf("could not parse URI for deletion: %w", err)
 	}
-	return storage.Remove(uri)
+	return os.Remove(uri)
 }

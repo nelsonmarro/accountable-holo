@@ -15,7 +15,7 @@ import (
 	"fyne.io/fyne/v2/widget"
 	"github.com/nelsonmarro/accountable-holo/internal/application/validator"
 	"github.com/nelsonmarro/accountable-holo/internal/domain"
-	"github.com/nelsonmarro/accountable-holo/internal/ui/components/category"
+	"github.com/nelsonmarro/accountable-holo/internal/ui/componets/category"
 )
 
 // AddTransactionDialog holds the state and logic for the 'Add Transaction' dialog.
@@ -100,17 +100,18 @@ func NewAddTransactionDialog(
 func (d *AddTransactionDialog) Show() {
 	categoryContainer := container.NewBorder(nil, nil, nil, d.searchCategoryBtn, d.categoryLabel)
 	attachmentContainer := container.NewBorder(nil, nil, nil, d.searchFileBtn, d.attachmentLabel)
-	formDialog := dialog.NewForm("Crear Transacción", "Guardar", "Cancelar",
-		TransactionForm(
+	formItems := NewTransactionForm(
 			d.descriptionEntry,
 			d.amountEntry,
 			d.dateEntry,
 			categoryContainer,
 			attachmentContainer,
-		),
-		d.handleSubmit,
-		d.mainWin,
-	)
+		)
+		formDialog := dialog.NewForm("Crear Transacción", "Guardar", "Cancelar",
+			formItems,
+			d.handleSubmit,
+			d.mainWin,
+		)
 
 	formDialog.Resize(fyne.NewSize(560, 400))
 	formDialog.Show()
