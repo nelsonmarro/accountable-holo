@@ -3,7 +3,6 @@ package ui
 import (
 	"context"
 
-	"fyne.io/fyne/v2"
 	"github.com/nelsonmarro/accountable-holo/internal/domain"
 )
 
@@ -37,10 +36,4 @@ type TransactionService interface {
 	VoidTransaction(ctx context.Context, transactionID int) error
 	CreateTransaction(ctx context.Context, tx *domain.Transaction) error
 	UpdateTransaction(ctx context.Context, tx *domain.Transaction) error
-}
-
-type StorageService interface {
-	Save(ctx context.Context, source fyne.URI, destinationName string) (string, error)
-	GetFullPath(storagePath string) (string, error)
-	Delete(ctx context.Context, storageURI string) error
 }

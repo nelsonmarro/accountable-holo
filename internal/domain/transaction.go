@@ -20,6 +20,7 @@ type Transaction struct {
 	Account  *Account
 	Category *Category
 
-	// Calculated field
-	RunningBalance float64 `db:"-"`
+	// Calculated fields
+	RunningBalance      float64 `db:"-"`
+	AbsoluteAttachPath string    `db:"-"`
 }

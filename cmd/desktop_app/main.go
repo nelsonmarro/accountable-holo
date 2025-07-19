@@ -33,7 +33,7 @@ func main() {
 	a := app.NewWithID("51af2ee4-c61c-4608-a3f1-d8576343af14")
 
 	// ---- Infrastructure (Storage) ----
-	storageService, err := storage.NewLocalStorageService(a)
+	storageService, err := storage.NewLocalStorageService(conf.Storage.LocalPath)
 	if err != nil {
 		log.Fatalf("failed to create storage service: %v", err)
 	}
@@ -50,10 +50,9 @@ func main() {
 
 	// 2. Create UI struct.
 	gui := ui.NewUI(&ui.Services{
-		AccService:     accService,
-		CatService:     catService,
-		TxService:      txService,
-		StorageService: storageService,
+		AccService: accService,
+		CatService: catService,
+		TxService:  txService,
 	})
 
 	// 3. Initialize the UI with the app object.

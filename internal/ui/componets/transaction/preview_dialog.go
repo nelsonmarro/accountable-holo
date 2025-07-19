@@ -38,6 +38,7 @@ func (d *PreviewDialog) Show() {
 	image := canvas.NewImageFromFile(d.storagePath)
 	image.FillMode = canvas.ImageFillContain
 
+	// Use a more reliable check on the image's resource.
 	if image.Resource == nil || image.Resource.Name() == "" {
 		// It's not a previewable image, show a generic icon and label
 		fmt.Printf("File %s is not a valid image, showing generic icon\n", d.storagePath)

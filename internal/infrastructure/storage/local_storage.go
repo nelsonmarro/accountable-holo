@@ -30,14 +30,12 @@ func NewLocalStorageService(path string) (*LocalStorageService, error) {
 
 // Save copies a file from sourcePath to a permanent location within the storagePath.
 func (s *LocalStorageService) Save(ctx context.Context, sourcePath, destinationName string) (string, error) {
-	// Open the source file
 	sourceFile, err := os.Open(sourcePath)
 	if err != nil {
 		return "", fmt.Errorf("failed to open source file: %w", err)
 	}
 	defer sourceFile.Close()
 
-	// Create the destination file
 	destinationPath := filepath.Join(s.storagePath, destinationName)
 	destinationFile, err := os.Create(destinationPath)
 	if err != nil {
@@ -45,26 +43,22 @@ func (s *LocalStorageService) Save(ctx context.Context, sourcePath, destinationN
 	}
 	defer destinationFile.Close()
 
-	// Copy the contents
 	_, err = io.Copy(destinationFile, sourceFile)
 	if err != nil {
 		return "", fmt.Errorf("failed to copy file contents: %w", err)
 	}
 
-	// Return the new, permanent path
+	// Return the path relative to the execution directory
 	return destinationPath, nil
 }
 
 // GetFullPath converts a path stored in the database to a full, absolute path.
 func (s *LocalStorageService) GetFullPath(storagePath string) (string, error) {
-	// The storagePath is already the correct path relative to the application's
-	// root. We just need to convert it to an absolute path for the filesystem.
 	return filepath.Abs(storagePath)
 }
 
 // Delete removes a file from the storage directory.
 func (s *LocalStorageService) Delete(ctx context.Context, storagePath string) error {
-	// Use the corrected GetFullPath to ensure we delete the right file
 	fullPath, err := s.GetFullPath(storagePath)
 	if err != nil {
 		return fmt.Errorf("could not get full path for deletion: %w", err)

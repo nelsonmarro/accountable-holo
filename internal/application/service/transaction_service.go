@@ -33,7 +33,23 @@ func (s *TransactionServiceImpl) GetTransactionByAccountPaginated(ctx context.Co
 	if page > 100 {
 		page = 100 // Limit to 100 pages
 	}
-	return s.repo.GetTransactionsByAccountPaginated(ctx, accountID, page, pageSize, filter...)
+
+	result, err := s.repo.GetTransactionsByAccountPaginated(ctx, accountID, page, pageSize, filter...)
+	if err != nil {
+		return nil, err
+	}
+
+	// Populate the absolute path for the UI
+	for i := range result.Data {
+		if result.Data[i].AttachmentPath != nil {
+			fullPath, err := s.storage.GetFullPath(*result.Data[i].AttachmentPath)
+			if err == nil {
+				result.Data[i].AbsoluteAttachPath = fullPath
+			}
+		}
+	}
+
+	return result, nil
 }
 
 func (s *TransactionServiceImpl) GetTransactionByID(ctx context.Context, id int) (*domain.Transaction, error) {
@@ -43,6 +59,14 @@ func (s *TransactionServiceImpl) GetTransactionByID(ctx context.Context, id int)
 	tx, err := s.repo.GetTransactionByID(ctx, id)
 	if err != nil {
 		return nil, fmt.Errorf("error al obtener la transacción: %w", err)
+	}
+
+	// Populate the absolute path for the UI
+	if tx.AttachmentPath != nil {
+		fullPath, err := s.storage.GetFullPath(*tx.AttachmentPath)
+		if err == nil {
+			tx.AbsoluteAttachPath = fullPath
+		}
 	}
 
 	return tx, nil
