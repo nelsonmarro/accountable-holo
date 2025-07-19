@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"time"
 
+	"fyne.io/fyne/v2/storage"
 	"github.com/nelsonmarro/accountable-holo/internal/application/validator"
 	"github.com/nelsonmarro/accountable-holo/internal/domain"
 )
@@ -62,9 +63,9 @@ func (s *TransactionServiceImpl) CreateTransaction(ctx context.Context, tx *doma
 		return err
 	}
 
-	var sourcePath string
+	var sourceURIString string
 	if tx.AttachmentPath != nil {
-		sourcePath = *tx.AttachmentPath
+		sourceURIString = *tx.AttachmentPath
 	}
 	tx.AttachmentPath = nil // Clear it before initial creation
 
@@ -73,14 +74,19 @@ func (s *TransactionServiceImpl) CreateTransaction(ctx context.Context, tx *doma
 		return fmt.Errorf("error al crear la transacción: %w", err)
 	}
 
-	if sourcePath != "" {
-		destinationName := fmt.Sprintf("tx-%d-%s", tx.ID, filepath.Base(sourcePath))
-		storagePath, err := s.storage.Save(ctx, sourcePath, destinationName)
+	if sourceURIString != "" {
+		sourceURI, err := storage.ParseURI(sourceURIString)
+		if err != nil {
+			return fmt.Errorf("failed to parse source URI: %w", err)
+		}
+
+		destinationName := fmt.Sprintf("tx-%d-%s", tx.ID, sourceURI.Name())
+		storageURI, err := s.storage.Save(ctx, sourceURI, destinationName)
 		if err != nil {
 			return fmt.Errorf("failed to save attachment: %w", err)
 		}
 
-		err = s.repo.UpdateAttachmentPath(ctx, tx.ID, storagePath)
+		err = s.repo.UpdateAttachmentPath(ctx, tx.ID, storageURI)
 		if err != nil {
 			return fmt.Errorf("failed to update transaction with attachment path: %w", err)
 		}
@@ -113,14 +119,20 @@ func (s *TransactionServiceImpl) UpdateTransaction(ctx context.Context, tx *doma
 	}
 
 	if tx.AttachmentPath != nil {
-		sourcePath := *tx.AttachmentPath
-		if _, err := os.Stat(sourcePath); err == nil {
-			destinationName := fmt.Sprintf("tx-%d-%s", tx.ID, filepath.Base(sourcePath))
-			storagePath, err := s.storage.Save(ctx, sourcePath, destinationName)
+		sourceURIString := *tx.AttachmentPath
+		sourceURI, err := storage.ParseURI(sourceURIString)
+		if err != nil {
+			return fmt.Errorf("failed to parse source URI for update: %w", err)
+		}
+
+		// Check if the path is a new file by checking if it's a local file path
+		if _, err := os.Stat(sourceURI.Path()); err == nil {
+			destinationName := fmt.Sprintf("tx-%d-%s", tx.ID, sourceURI.Name())
+			storageURI, err := s.storage.Save(ctx, sourceURI, destinationName)
 			if err != nil {
-				return fmt.Errorf("failed to save attachment: %w", err)
+				return fmt.Errorf("failed to save new attachment: %w", err)
 			}
-			tx.AttachmentPath = &storagePath
+			tx.AttachmentPath = &storageURI
 		}
 	}
 

@@ -1,4 +1,3 @@
-// Package storage provides an implementation of the StorageService interface
 package storage
 
 import (
@@ -6,68 +5,76 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"path/filepath"
+
+	"fyne.io/fyne/v2"
+	"fyne.io/fyne/v2/storage"
 )
 
 // LocalStorageService implements the StorageService interface for saving files locally.
 type LocalStorageService struct {
-	storagePath string
+	app fyne.App
 }
 
-// NewLocalStorageService creates a new LocalStorageService in the user's home directory.
-// It ensures the directory structure ~/.accountable-holo/attachments exists.
-func NewLocalStorageService() (*LocalStorageService, error) {
-	homeDir, err := os.UserHomeDir()
+// NewLocalStorageService creates a new LocalStorageService using Fyne's storage API.
+func NewLocalStorageService(a fyne.App) (*LocalStorageService, error) {
+	// Ensure the attachments directory exists within the app's root storage.
+	attachmentsURI, err := storage.Child(a.Storage().RootURI(), "attachments")
 	if err != nil {
-		return nil, fmt.Errorf("could not get user home directory: %w", err)
+		return nil, fmt.Errorf("could not get attachments directory URI: %w", err)
 	}
-
-	// Construct the cross-platform path: /home/user/accountable-holo/attachments
-	storagePath := filepath.Join(homeDir, "accountable-holo", "attachments")
-
-	// Create the directory structure if it doesn't exist
-	if err := os.MkdirAll(storagePath, 0o755); err != nil {
-		return nil, fmt.Errorf("failed to create storage directory: %w", err)
+	exists, err := storage.Exists(attachmentsURI)
+	if err != nil {
+		return nil, fmt.Errorf("could not check for attachments directory: %w", err)
 	}
-
-	return &LocalStorageService{storagePath: storagePath}, nil
+	if !exists {
+		if err := storage.CreateListable(attachmentsURI); err != nil {
+			return nil, fmt.Errorf("could not create attachments directory: %w", err)
+		}
+	}
+	return &LocalStorageService{app: a}, nil
 }
 
-// Save copies a file from sourcePath to a permanent location within the storagePath.
-func (s *LocalStorageService) Save(ctx context.Context, sourcePath, destinationName string) (string, error) {
-	sourceFile, err := os.Open(sourcePath)
+// Save copies a file from a source URI to a permanent location.
+func (s *LocalStorageService) Save(ctx context.Context, source fyne.URI, destinationName string) (string, error) {
+	// Open the source file for reading
+	sourceFile, err := storage.Reader(source)
 	if err != nil {
-		return "", fmt.Errorf("failed to open source file: %w", err)
+		return "", fmt.Errorf("failed to open source file reader: %w", err)
 	}
 	defer sourceFile.Close()
 
-	destinationPath := filepath.Join(s.storagePath, destinationName)
-	destinationFile, err := os.Create(destinationPath)
+	// Get the path to the app's attachment directory
+	attachmentsURI, err := storage.Child(s.app.Storage().RootURI(), "attachments")
 	if err != nil {
-		return "", fmt.Errorf("failed to create destination file: %w", err)
+		return "", fmt.Errorf("could not get attachments directory URI for saving: %w", err)
+	}
+
+	// Create the destination file for writing
+	destinationURI, err := storage.Child(attachmentsURI, destinationName)
+	if err != nil {
+		return "", fmt.Errorf("could not create destination URI: %w", err)
+	}
+	destinationFile, err := storage.Writer(destinationURI)
+	if err != nil {
+		return "", fmt.Errorf("failed to create destination file writer: %w", err)
 	}
 	defer destinationFile.Close()
 
+	// Copy the contents
 	_, err = io.Copy(destinationFile, sourceFile)
 	if err != nil {
 		return "", fmt.Errorf("failed to copy file contents: %w", err)
 	}
 
-	// Return the path relative to the storage directory for database storage
-	return destinationPath, nil
-}
-
-// GetFullPath converts a path stored in the database to a full, absolute path.
-func (s *LocalStorageService) GetFullPath(storagePath string) (string, error) {
-	// The path from the DB is already absolute, so we just confirm.
-	return filepath.Abs(storagePath)
+	// Return the string representation of the new URI to be stored in the DB
+	return destinationURI.String(), nil
 }
 
 // Delete removes a file from the storage directory.
-func (s *LocalStorageService) Delete(ctx context.Context, storagePath string) error {
-	fullPath, err := s.GetFullPath(storagePath)
+func (s *LocalStorageService) Delete(ctx context.Context, storageURI string) error {
+	uri, err := storage.ParseURI(storageURI)
 	if err != nil {
-		return fmt.Errorf("could not get full path for deletion: %w", err)
+		return fmt.Errorf("could not parse URI for deletion: %w", err)
 	}
-	return os.Remove(fullPath)
+	return storage.Remove(uri)
 }

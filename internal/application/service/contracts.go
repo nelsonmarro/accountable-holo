@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 
+	"fyne.io/fyne/v2"
 	"github.com/nelsonmarro/accountable-holo/internal/domain"
 )
 
@@ -53,7 +54,6 @@ type TransactionRepository interface {
 }
 
 type StorageService interface {
-	Save(ctx context.Context, sourcePath string, destinationName string) (string, error)
-	GetFullPath(storagePath string) (string, error)
-	Delete(ctx context.Context, storagePath string) error
+	Save(ctx context.Context, source fyne.URI, destinationName string) (string, error)
+	Delete(ctx context.Context, storageURI string) error
 }

@@ -28,8 +28,12 @@ func main() {
 	defer pool.Close()
 	log.Println("Connected to the database successfully")
 
+	// ---- UI (Fyne) ----
+	// 1. Create the Fyne App first.
+	a := app.NewWithID("51af2ee4-c61c-4608-a3f1-d8576343af14")
+
 	// ---- Infrastructure (Storage) ----
-	storageService, err := storage.NewLocalStorageService()
+	storageService, err := storage.NewLocalStorageService(a)
 	if err != nil {
 		log.Fatalf("failed to create storage service: %v", err)
 	}
@@ -43,10 +47,6 @@ func main() {
 	accService := service.NewAccountService(accRepo)
 	catService := service.NewCategoryService(catRepo)
 	txService := service.NewTransactionService(txRepo, storageService)
-
-	// ---- UI (Fyne) ----
-	// 1. Create the Fyne App first.
-	a := app.NewWithID("51af2ee4-c61c-4608-a3f1-d8576343af14")
 
 	// 2. Create UI struct.
 	gui := ui.NewUI(&ui.Services{
