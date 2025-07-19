@@ -3,27 +3,30 @@ package transaction
 import (
 	"fmt"
 	"io"
+	"os"
+	"path/filepath"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/canvas"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/dialog"
-	"fyne.io/fyne/v2/storage"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 )
 
 // PreviewDialog holds the state for the attachment preview dialog.
 type PreviewDialog struct {
-	mainWin fyne.Window
-	fileURI fyne.URI
+	mainWin      fyne.Window
+	storagePath  string // The path of the file within our app's storage
+	originalName string // The original name of the file for saving
 }
 
 // NewPreviewDialog creates a new dialog handler for previewing attachments.
-func NewPreviewDialog(win fyne.Window, fileURI fyne.URI) *PreviewDialog {
+func NewPreviewDialog(win fyne.Window, storagePath string) *PreviewDialog {
 	return &PreviewDialog{
-		mainWin: win,
-		fileURI: fileURI,
+		mainWin:      win,
+		storagePath:  storagePath,
+		originalName: filepath.Base(storagePath), // Extract filename from path
 	}
 }
 
@@ -32,14 +35,15 @@ func (d *PreviewDialog) Show() {
 	var content fyne.CanvasObject
 
 	// Attempt to load the file as an image for preview
-	image := canvas.NewImageFromURI(d.fileURI)
+	image := canvas.NewImageFromFile(d.storagePath)
 	image.FillMode = canvas.ImageFillContain
 
 	// Check if the image was loaded successfully.
 	if image.Resource == nil || image.Resource.Name() == "" {
 		// It's not a previewable image, show a generic icon and label
+		fmt.Printf("File %s is not a valid image, showing generic icon\n", d.storagePath)
 		fileIcon := widget.NewIcon(theme.FileIcon())
-		fileNameLabel := widget.NewLabel(d.fileURI.Name())
+		fileNameLabel := widget.NewLabel(d.originalName)
 		fileNameLabel.Alignment = fyne.TextAlignCenter
 		content = container.NewVBox(fileIcon, fileNameLabel)
 	} else {
@@ -53,15 +57,15 @@ func (d *PreviewDialog) Show() {
 	// Create the main dialog content
 	dialogContent := container.NewBorder(
 		nil,
-		container.NewCenter(saveAsBtn),
+		container.NewCenter(saveAsBtn), // Center the button at the bottom
 		nil,
 		nil,
-		content,
+		content, // The image or the icon/label
 	)
 
 	// Create and show the dialog
-	dlg := dialog.NewCustom(d.fileURI.Name(), "Close", dialogContent, d.mainWin)
-	dlg.Resize(fyne.NewSize(400, 300))
+	dlg := dialog.NewCustom(d.originalName, "Close", dialogContent, d.mainWin)
+	dlg.Resize(fyne.NewSize(400, 300)) // Give it a reasonable default size
 	dlg.Show()
 }
 
@@ -73,14 +77,15 @@ func (d *PreviewDialog) handleSaveAs() {
 			return
 		}
 		if writer == nil {
+			// User cancelled
 			return
 		}
 		defer writer.Close()
 
 		// Open the source file from our app's storage
-		sourceFile, err := storage.Reader(d.fileURI)
+		sourceFile, err := os.Open(d.storagePath)
 		if err != nil {
-			dialog.ShowError(fmt.Errorf("failed to open source file reader: %w", err), d.mainWin)
+			dialog.ShowError(fmt.Errorf("failed to open source file: %w", err), d.mainWin)
 			return
 		}
 		defer sourceFile.Close()
@@ -93,6 +98,7 @@ func (d *PreviewDialog) handleSaveAs() {
 		}
 	}, d.mainWin)
 
-	fileSaveDialog.SetFileName(d.fileURI.Name())
+	// Suggest the original filename to the user
+	fileSaveDialog.SetFileName(d.originalName)
 	fileSaveDialog.Show()
 }

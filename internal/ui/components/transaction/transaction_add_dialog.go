@@ -38,7 +38,7 @@ type AddTransactionDialog struct {
 	// Data
 	accountID        int
 	selectedCategory *domain.Category
-	attachmentURI    fyne.URI
+	attachmentPath   string
 }
 
 // NewAddTransactionDialog creates a new dialog handler.
@@ -87,7 +87,7 @@ func NewAddTransactionDialog(
 			if reader == nil {
 				return
 			}
-			d.attachmentURI = reader.URI()
+			d.attachmentPath = reader.URI().Path()
 			d.attachmentLabel.SetText(reader.URI().Name())
 		}, d.mainWin)
 		fileDialog.Show()
@@ -101,17 +101,17 @@ func (d *AddTransactionDialog) Show() {
 	categoryContainer := container.NewBorder(nil, nil, nil, d.searchCategoryBtn, d.categoryLabel)
 	attachmentContainer := container.NewBorder(nil, nil, nil, d.searchFileBtn, d.attachmentLabel)
 	formItems := NewTransactionForm(
-			d.descriptionEntry,
-			d.amountEntry,
-			d.dateEntry,
-			categoryContainer,
-			attachmentContainer,
-		)
-		formDialog := dialog.NewForm("Crear Transacción", "Guardar", "Cancelar",
-			formItems,
-			d.handleSubmit,
-			d.mainWin,
-		)
+		d.descriptionEntry,
+		d.amountEntry,
+		d.dateEntry,
+		categoryContainer,
+		attachmentContainer,
+	)
+	formDialog := dialog.NewForm("Crear Transacción", "Guardar", "Cancelar",
+		formItems,
+		d.handleSubmit,
+		d.mainWin,
+	)
 
 	formDialog.Resize(fyne.NewSize(560, 400))
 	formDialog.Show()
@@ -145,9 +145,8 @@ func (d *AddTransactionDialog) handleSubmit(valid bool) {
 		amount, _ := strconv.ParseFloat(d.amountEntry.Text, 64)
 
 		var attachmentPathPtr *string
-		if d.attachmentURI != nil {
-			uriString := d.attachmentURI.String()
-			attachmentPathPtr = &uriString
+		if d.attachmentPath != "" {
+			attachmentPathPtr = &d.attachmentPath
 		}
 
 		tx := &domain.Transaction{
