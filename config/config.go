@@ -26,11 +26,6 @@ type App struct {
 type Config struct {
 	Database Database `mapstructure:"database"`
 	App      App      `mapstructure:"app"`
-	Storage  Storage  `mapstructure:"storage"`
-}
-
-type Storage struct {
-	LocalPath string `mapstructure:"local_path"`
 }
 
 var (

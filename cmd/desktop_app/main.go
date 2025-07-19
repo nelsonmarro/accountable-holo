@@ -29,7 +29,7 @@ func main() {
 	log.Println("Connected to the database successfully")
 
 	// ---- Infrastructure (Storage) ----
-	storageService, err := storage.NewLocalStorageService(conf.Storage.LocalPath)
+	storageService, err := storage.NewLocalStorageService()
 	if err != nil {
 		log.Fatalf("failed to create storage service: %v", err)
 	}
