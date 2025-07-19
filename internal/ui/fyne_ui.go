@@ -9,7 +9,7 @@ import (
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/widget"
 	"github.com/nelsonmarro/accountable-holo/internal/domain"
-	"github.com/nelsonmarro/accountable-holo/internal/ui/componets"
+	"github.com/nelsonmarro/accountable-holo/internal/ui/components"
 )
 
 type Services struct {

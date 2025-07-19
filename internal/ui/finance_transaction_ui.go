@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"image/color"
+	"net/url"
+	"path/filepath"
 	"time"
 
 	"fyne.io/fyne/v2"
@@ -14,8 +16,8 @@ import (
 	"fyne.io/fyne/v2/widget"
 	"github.com/nelsonmarro/accountable-holo/internal/application/helpers"
 	"github.com/nelsonmarro/accountable-holo/internal/domain"
-	"github.com/nelsonmarro/accountable-holo/internal/ui/componets"
-	"github.com/nelsonmarro/accountable-holo/internal/ui/componets/transaction"
+	"github.com/nelsonmarro/accountable-holo/internal/ui/components"
+	"github.com/nelsonmarro/accountable-holo/internal/ui/components/transaction"
 )
 
 func (ui *UI) makeTransactionUI() fyne.CanvasObject {
@@ -29,10 +31,10 @@ func (ui *UI) makeTransactionUI() fyne.CanvasObject {
 	})
 
 	// Search Bar
-	searchBar := componets.NewSearchBar(ui.filterTransactions)
+	searchBar := components.NewSearchBar(ui.filterTransactions)
 
 	// Pagination and List
-	ui.transactionPaginator = componets.NewPagination(
+	ui.transactionPaginator = components.NewPagination(
 		func() (totalCount int) {
 			if ui.transactions == nil {
 				return 0
@@ -104,7 +106,7 @@ func (ui *UI) makeTransactionUI() fyne.CanvasObject {
 	tableHeader := container.NewBorder(
 		ui.transactionPaginator,
 		nil, nil, nil,
-		container.NewGridWithColumns(8,
+		container.NewGridWithColumns(9,
 			widget.NewLabel("#"),
 			widget.NewLabel("Fecha"),
 			widget.NewLabel("Descripción"),
@@ -112,6 +114,7 @@ func (ui *UI) makeTransactionUI() fyne.CanvasObject {
 			widget.NewLabel("Tipo"),
 			widget.NewLabel("Monto"),
 			widget.NewLabel("Saldo"),
+			widget.NewLabel("Adjunto"),
 			widget.NewLabel("Acciones"),
 		),
 	)
@@ -137,6 +140,9 @@ func (ui *UI) createTransactiontItem() fyne.CanvasObject {
 	voidBtn := widget.NewButtonWithIcon("", theme.CancelIcon(), nil)
 	voidBtn.Importance = widget.DangerImportance
 
+	attachmentLink := components.NewHoverableHyperlink("", nil, ui.mainWindow.Canvas())
+	attachmentLink.Wrapping = fyne.TextWrap(fyne.TextTruncateClip)
+
 	lblTxNumber := widget.NewLabel("template number")
 	lblTxNumber.Wrapping = fyne.TextWrap(fyne.TextTruncateClip)
 
@@ -158,7 +164,7 @@ func (ui *UI) createTransactiontItem() fyne.CanvasObject {
 	lblBalance := widget.NewLabel("$5,250.50")
 	lblBalance.Wrapping = fyne.TextWrap(fyne.TextTruncateClip)
 
-	grid := container.NewGridWithColumns(8,
+	grid := container.NewGridWithColumns(9,
 		lblTxNumber,
 		lblDate,
 		lblDescription,
@@ -166,6 +172,7 @@ func (ui *UI) createTransactiontItem() fyne.CanvasObject {
 		lblType,
 		lblAmount,
 		lblBalance,
+		attachmentLink,
 		container.NewHBox(
 			editBtn,
 			voidBtn,
@@ -185,37 +192,22 @@ func (ui *UI) updateTransactionItem(i widget.ListItemID, o fyne.CanvasObject) {
 	rowContainer := stack.Objects[1].(*fyne.Container)
 
 	if tx.IsVoided {
-		// Semi-transparent background for voided transactions
 		background.FillColor = color.NRGBA{R: 255, G: 0, B: 0, A: 60}
 	} else {
-		// Default background color for active transactions
 		background.FillColor = color.Transparent
 	}
-
-	// Refresh the canvas object to apply the color change
 	background.Refresh()
 
-	tIDLabel := rowContainer.Objects[0].(*widget.Label)
-	tIDLabel.SetText(tx.TransactionNumber)
+	rowContainer.Objects[0].(*widget.Label).SetText(tx.TransactionNumber)
+	rowContainer.Objects[1].(*widget.Label).SetText(tx.TransactionDate.Format("01/02/2006"))
+	rowContainer.Objects[2].(*widget.Label).SetText(helpers.PrepareForTruncation(tx.Description))
 
-	dateLabel := rowContainer.Objects[1].(*widget.Label)
-	dateLabel.SetText(tx.TransactionDate.Format("01/02/2006"))
-
-	descLabel := rowContainer.Objects[2].(*widget.Label)
-	descLabel.SetText(helpers.PrepareForTruncation(tx.Description))
-
-	categoryLabel := rowContainer.Objects[3].(*widget.Label)
 	if tx.Category != nil {
-		categoryLabel.SetText(tx.Category.Name)
+		rowContainer.Objects[3].(*widget.Label).SetText(tx.Category.Name)
+		rowContainer.Objects[4].(*widget.Label).SetText(string(tx.Category.Type))
 	} else {
-		categoryLabel.SetText("-")
-	}
-
-	typeLabel := rowContainer.Objects[4].(*widget.Label)
-	if tx.Category != nil {
-		typeLabel.SetText(string(tx.Category.Type))
-	} else {
-		typeLabel.SetText("-")
+		rowContainer.Objects[3].(*widget.Label).SetText("-")
+		rowContainer.Objects[4].(*widget.Label).SetText("-")
 	}
 
 	amountLabel := rowContainer.Objects[5].(*widget.Label)
@@ -227,11 +219,34 @@ func (ui *UI) updateTransactionItem(i widget.ListItemID, o fyne.CanvasObject) {
 	}
 	amountLabel.SetText(amountText)
 
-	balanceLabel := rowContainer.Objects[6].(*widget.Label)
-	balanceLabel.SetText(fmt.Sprintf("$%.2f", tx.RunningBalance))
+	rowContainer.Objects[6].(*widget.Label).SetText(fmt.Sprintf("$%.2f", tx.RunningBalance))
 
-	actionsContainer := rowContainer.Objects[7].(*fyne.Container)
+	attachmentLink := rowContainer.Objects[7].(*components.HoverableHyperlink)
+	if tx.AttachmentPath != nil && *tx.AttachmentPath != "" {
+		fullPath := *tx.AttachmentPath
+		fileName := filepath.Base(fullPath)
+
+		attachmentLink.SetText(helpers.PrepareForTruncation(fileName))
+		attachmentLink.SetTooltip(fileName)
+
+		dummyURL, _ := url.Parse("file://")
+		attachmentLink.SetURL(dummyURL)
+
+		attachmentLink.OnTapped = func() {
+			previewDialog := transaction.NewPreviewDialog(ui.mainWindow, fullPath)
+			previewDialog.Show()
+		}
+		attachmentLink.Show()
+	} else {
+		attachmentLink.SetText("-")
+		attachmentLink.SetTooltip("")
+		attachmentLink.OnTapped = nil
+		attachmentLink.Hide()
+	}
+
+	actionsContainer := rowContainer.Objects[8].(*fyne.Container)
 	editBtn := actionsContainer.Objects[0].(*widget.Button)
+	voidBtn := actionsContainer.Objects[1].(*widget.Button)
 
 	editBtn.OnTapped = func() {
 		dialigHandler := transaction.NewEditTransactionDialog(
@@ -249,7 +264,6 @@ func (ui *UI) updateTransactionItem(i widget.ListItemID, o fyne.CanvasObject) {
 		dialigHandler.Show()
 	}
 
-	voidBtn := actionsContainer.Objects[1].(*widget.Button)
 	voidBtn.OnTapped = func() {
 		dialogHandler := transaction.NewVoidTransactionDialog(
 			ui.mainWindow,
@@ -304,7 +318,6 @@ func (ui *UI) loadAccountsForTx() {
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
 
-	// Assuming page 1 and a large enough page size to get all accounts
 	result, err := ui.Services.AccService.GetAllAccounts(ctx)
 	if err != nil {
 		dialog.ShowError(err, ui.mainWindow)

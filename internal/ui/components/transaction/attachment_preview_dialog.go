@@ -12,7 +12,6 @@ import (
 	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
-	"fyne.io/fyne/widget"
 )
 
 // PreviewDialog holds the state for the attachment preview dialog.
