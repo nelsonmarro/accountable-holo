@@ -12,7 +12,7 @@ import (
 	"fyne.io/fyne/v2/layout"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
-	"github.com/nelsonmarro/accountable-holo/internal/ui/components/account"
+	"github.com/nelsonmarro/accountable-holo/internal/ui/componets/account"
 )
 
 func (ui *UI) makeAccountTab() fyne.CanvasObject {
