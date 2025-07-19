@@ -4,15 +4,12 @@ import (
 	"context"
 	"fmt"
 	"image/color"
-	"log"
-	"net/url"
 	"time"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/canvas"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/dialog"
-	"fyne.io/fyne/v2/storage"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 	"github.com/nelsonmarro/accountable-holo/internal/application/helpers"
@@ -20,8 +17,6 @@ import (
 	"github.com/nelsonmarro/accountable-holo/internal/ui/componets"
 	"github.com/nelsonmarro/accountable-holo/internal/ui/componets/transaction"
 )
-
-// ... (makeTransactionUI and createTransactiontItem remain the same)
 
 func (ui *UI) makeTransactionUI() fyne.CanvasObject {
 	// Title
@@ -109,7 +104,7 @@ func (ui *UI) makeTransactionUI() fyne.CanvasObject {
 	tableHeader := container.NewBorder(
 		ui.transactionPaginator,
 		nil, nil, nil,
-		container.NewGridWithColumns(9,
+		container.NewGridWithColumns(8,
 			widget.NewLabel("#"),
 			widget.NewLabel("Fecha"),
 			widget.NewLabel("Descripción"),
@@ -117,7 +112,6 @@ func (ui *UI) makeTransactionUI() fyne.CanvasObject {
 			widget.NewLabel("Tipo"),
 			widget.NewLabel("Monto"),
 			widget.NewLabel("Saldo"),
-			widget.NewLabel("Adjunto"),
 			widget.NewLabel("Acciones"),
 		),
 	)
@@ -143,9 +137,6 @@ func (ui *UI) createTransactiontItem() fyne.CanvasObject {
 	voidBtn := widget.NewButtonWithIcon("", theme.CancelIcon(), nil)
 	voidBtn.Importance = widget.DangerImportance
 
-	attachmentLink := componets.NewHoverableHyperlink("", nil, ui.mainWindow.Canvas())
-	attachmentLink.Wrapping = fyne.TextWrap(fyne.TextTruncateClip)
-
 	lblTxNumber := widget.NewLabel("template number")
 	lblTxNumber.Wrapping = fyne.TextWrap(fyne.TextTruncateClip)
 
@@ -167,7 +158,7 @@ func (ui *UI) createTransactiontItem() fyne.CanvasObject {
 	lblBalance := widget.NewLabel("$5,250.50")
 	lblBalance.Wrapping = fyne.TextWrap(fyne.TextTruncateClip)
 
-	grid := container.NewGridWithColumns(9,
+	grid := container.NewGridWithColumns(8,
 		lblTxNumber,
 		lblDate,
 		lblDescription,
@@ -175,7 +166,6 @@ func (ui *UI) createTransactiontItem() fyne.CanvasObject {
 		lblType,
 		lblAmount,
 		lblBalance,
-		attachmentLink,
 		container.NewHBox(
 			editBtn,
 			voidBtn,
@@ -195,22 +185,37 @@ func (ui *UI) updateTransactionItem(i widget.ListItemID, o fyne.CanvasObject) {
 	rowContainer := stack.Objects[1].(*fyne.Container)
 
 	if tx.IsVoided {
+		// Semi-transparent background for voided transactions
 		background.FillColor = color.NRGBA{R: 255, G: 0, B: 0, A: 60}
 	} else {
+		// Default background color for active transactions
 		background.FillColor = color.Transparent
 	}
+
+	// Refresh the canvas object to apply the color change
 	background.Refresh()
 
-	rowContainer.Objects[0].(*widget.Label).SetText(tx.TransactionNumber)
-	rowContainer.Objects[1].(*widget.Label).SetText(tx.TransactionDate.Format("01/02/2006"))
-	rowContainer.Objects[2].(*widget.Label).SetText(helpers.PrepareForTruncation(tx.Description))
+	tIDLabel := rowContainer.Objects[0].(*widget.Label)
+	tIDLabel.SetText(tx.TransactionNumber)
 
+	dateLabel := rowContainer.Objects[1].(*widget.Label)
+	dateLabel.SetText(tx.TransactionDate.Format("01/02/2006"))
+
+	descLabel := rowContainer.Objects[2].(*widget.Label)
+	descLabel.SetText(helpers.PrepareForTruncation(tx.Description))
+
+	categoryLabel := rowContainer.Objects[3].(*widget.Label)
 	if tx.Category != nil {
-		rowContainer.Objects[3].(*widget.Label).SetText(tx.Category.Name)
-		rowContainer.Objects[4].(*widget.Label).SetText(string(tx.Category.Type))
+		categoryLabel.SetText(tx.Category.Name)
 	} else {
-		rowContainer.Objects[3].(*widget.Label).SetText("-")
-		rowContainer.Objects[4].(*widget.Label).SetText("-")
+		categoryLabel.SetText("-")
+	}
+
+	typeLabel := rowContainer.Objects[4].(*widget.Label)
+	if tx.Category != nil {
+		typeLabel.SetText(string(tx.Category.Type))
+	} else {
+		typeLabel.SetText("-")
 	}
 
 	amountLabel := rowContainer.Objects[5].(*widget.Label)
@@ -222,39 +227,11 @@ func (ui *UI) updateTransactionItem(i widget.ListItemID, o fyne.CanvasObject) {
 	}
 	amountLabel.SetText(amountText)
 
-	rowContainer.Objects[6].(*widget.Label).SetText(fmt.Sprintf("$%.2f", tx.RunningBalance))
+	balanceLabel := rowContainer.Objects[6].(*widget.Label)
+	balanceLabel.SetText(fmt.Sprintf("$%.2f", tx.RunningBalance))
 
-	attachmentLink := rowContainer.Objects[7].(*componets.HoverableHyperlink)
-	if tx.AttachmentPath != nil && *tx.AttachmentPath != "" {
-		uriString := *tx.AttachmentPath
-		fileURI, err := storage.ParseURI(uriString)
-		if err != nil {
-			log.Printf("ERROR: Could not parse attachment URI: %v", err)
-			attachmentLink.Hide()
-		} else {
-			fileName := fileURI.Name()
-			attachmentLink.SetText(helpers.PrepareForTruncation(fileName))
-			attachmentLink.SetTooltip(fileName)
-
-			dummyURL, _ := url.Parse("file://")
-			attachmentLink.SetURL(dummyURL)
-
-			attachmentLink.OnTapped = func() {
-							previewDialog := transaction.NewPreviewDialog(ui.mainWindow, fileURI.String())
-			previewDialog.Show()
-			}
-			attachmentLink.Show()
-		}
-	} else {
-		attachmentLink.SetText("-")
-		attachmentLink.SetTooltip("")
-		attachmentLink.OnTapped = nil
-		attachmentLink.Hide()
-	}
-
-	actionsContainer := rowContainer.Objects[8].(*fyne.Container)
+	actionsContainer := rowContainer.Objects[7].(*fyne.Container)
 	editBtn := actionsContainer.Objects[0].(*widget.Button)
-	voidBtn := actionsContainer.Objects[1].(*widget.Button)
 
 	editBtn.OnTapped = func() {
 		dialigHandler := transaction.NewEditTransactionDialog(
@@ -272,6 +249,7 @@ func (ui *UI) updateTransactionItem(i widget.ListItemID, o fyne.CanvasObject) {
 		dialigHandler.Show()
 	}
 
+	voidBtn := actionsContainer.Objects[1].(*widget.Button)
 	voidBtn.OnTapped = func() {
 		dialogHandler := transaction.NewVoidTransactionDialog(
 			ui.mainWindow,
@@ -326,6 +304,7 @@ func (ui *UI) loadAccountsForTx() {
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
 
+	// Assuming page 1 and a large enough page size to get all accounts
 	result, err := ui.Services.AccService.GetAllAccounts(ctx)
 	if err != nil {
 		dialog.ShowError(err, ui.mainWindow)
