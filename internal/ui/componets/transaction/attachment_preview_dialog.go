@@ -1,6 +1,9 @@
 package transaction
 
 import (
+	"fmt"
+	"io"
+	"os"
 	"path/filepath"
 
 	"fyne.io/fyne/v2"
@@ -65,4 +68,35 @@ func (d *PreviewDialog) Show() {
 
 // handleSaveAs is the callback for the "Guardar como" button.
 func (d *PreviewDialog) handleSaveAs() {
+	fileSaveDialog := dialog.NewFileSave(func(writer fyne.URIWriteCloser, err error) {
+		if err != nil {
+			dialog.ShowError(err, d.mainWin)
+			return
+		}
+
+		if writer == nil { // User cancelled the save dialog}
+			return
+		}
+
+		defer writer.Close()
+
+		// Open the source file from our app's storage
+		sourceFile, err := os.Open(d.storagePath)
+		if err != nil {
+			dialog.ShowError(fmt.Errorf("Error al abrir el archivo fuente: %w", err), d.mainWin)
+			return
+		}
+		defer sourceFile.Close()
+
+		// Copy the content to the new file
+		_, err = io.Copy(writer, sourceFile)
+		if err != nil {
+			dialog.ShowError(fmt.Errorf("Error al guardar el archivo: %w", err), d.mainWin)
+			return
+		}
+	}, d.mainWin)
+
+	// Suggest a filename based on the original file name
+	fileSaveDialog.SetFileName(d.originalName)
+	fileSaveDialog.Show()
 }
