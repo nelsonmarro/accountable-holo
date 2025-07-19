@@ -17,7 +17,7 @@ import (
 	"fyne.io/fyne/v2/widget"
 	"github.com/nelsonmarro/accountable-holo/internal/application/validator"
 	"github.com/nelsonmarro/accountable-holo/internal/domain"
-	"github.com/nelsonmarro/accountable-holo/internal/ui/components/category"
+	"github.com/nelsonmarro/accountable-holo/internal/ui/componets/category"
 )
 
 // EditTransactionDialog holds the state and logic for the 'Edit Transaction' dialog.
