@@ -33,24 +33,27 @@ func NewPreviewDialog(win fyne.Window, storagePath string) *PreviewDialog {
 // Show creates and displays the dialog.
 func (d *PreviewDialog) Show() {
 	var content fyne.CanvasObject
+	dialogSize := fyne.NewSize(700, 640)
 
 	// Attempt to load the file as an image for preview
 	image := canvas.NewImageFromFile(d.storagePath)
 	image.FillMode = canvas.ImageFillContain
 
-	if image.File == "" {
+	if image.Aspect() <= 0 {
 		// It's not a previewable image, show a generic icon and label
 		fileIcon := widget.NewIcon(theme.FileIcon())
 		fileNameLabel := widget.NewLabel(d.originalName)
 		fileNameLabel.Alignment = fyne.TextAlignCenter
 		content = container.NewVBox(fileIcon, fileNameLabel)
+		dialogSize.Width = 400
+		dialogSize.Height = 200
 	} else {
 		// It's an image, so use it as the content
 		content = image
 	}
 
 	// Create the "Save As..." button
-	saveAsBtn := widget.NewButton("Save As...", d.handleSaveAs)
+	saveAsBtn := widget.NewButton("Guardar Como", d.handleSaveAs)
 
 	// Create the main dialog content
 	dialogContent := container.NewBorder(
@@ -63,7 +66,7 @@ func (d *PreviewDialog) Show() {
 
 	// Create and show the dialog
 	dlg := dialog.NewCustom(d.originalName, "Close", dialogContent, d.mainWin)
-	dlg.Resize(fyne.NewSize(700, 620)) // Give it a reasonable default size
+	dlg.Resize(dialogSize)
 	dlg.Show()
 }
 
