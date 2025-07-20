@@ -33,7 +33,7 @@ func main() {
 	a := app.NewWithID("51af2ee4-c61c-4608-a3f1-d8576343af14")
 
 	// ---- Infrastructure (Storage) ----
-	storageService, err := storage.NewLocalStorageService(conf.Storage.LocalPath)
+	storageService, err := storage.NewLocalStorageService(conf.Storage.AttachmentPath)
 	if err != nil {
 		log.Fatalf("failed to create storage service: %v", err)
 	}

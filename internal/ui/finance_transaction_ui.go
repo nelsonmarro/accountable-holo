@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"image/color"
-	"log"
 	"net/url"
 	"path/filepath"
 	"time"
@@ -224,8 +223,7 @@ func (ui *UI) updateTransactionItem(i widget.ListItemID, o fyne.CanvasObject) {
 
 	attachmentLink := rowContainer.Objects[7].(*componets.HoverableHyperlink)
 	if tx.AttachmentPath != nil && *tx.AttachmentPath != "" {
-		relativePath := *tx.AttachmentPath
-		fileName := filepath.Base(relativePath)
+		fileName := filepath.Base(*tx.AttachmentPath)
 
 		attachmentLink.SetText(helpers.PrepareForTruncation(fileName))
 		attachmentLink.SetTooltip(fileName)
@@ -234,13 +232,7 @@ func (ui *UI) updateTransactionItem(i widget.ListItemID, o fyne.CanvasObject) {
 		attachmentLink.SetURL(dummyURL)
 
 		attachmentLink.OnTapped = func() {
-			fullPath, err := ui.Services.StorageService.GetFullPath(relativePath)
-			if err != nil {
-				log.Printf("ERROR: Could not get full path for attachment: %v", err)
-				dialog.ShowError(fmt.Errorf("adjunto no encontrado: %w", err), ui.mainWindow)
-				return
-			}
-			previewDialog := transaction.NewPreviewDialog(ui.mainWindow, fullPath)
+			previewDialog := transaction.NewPreviewDialog(ui.mainWindow, tx.AbsoluteAttachPath)
 			previewDialog.Show()
 		}
 		attachmentLink.Show()

@@ -30,7 +30,7 @@ type Config struct {
 }
 
 type Storage struct {
-	LocalPath string `mapstructure:"local_path"`
+	AttachmentPath string `mapstructure:"attachment_path"`
 }
 
 var (

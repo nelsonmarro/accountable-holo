@@ -13,4 +13,4 @@ database:
   timezone: America/Guayaquil
 
 storage:
-  local_path: "attachments"
+  attachment_path: "attachments"

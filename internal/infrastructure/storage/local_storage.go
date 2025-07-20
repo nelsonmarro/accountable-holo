@@ -8,35 +8,32 @@ import (
 	"path/filepath"
 )
 
-// LocalStorageService implements the StorageService interface for saving files locally.
 type LocalStorageService struct {
-	storagePath string
+	basePath string
 }
 
-// NewLocalStorageService creates a new LocalStorageService.
-// It also ensures the base storage directory exists.
-func NewLocalStorageService(path string) (*LocalStorageService, error) {
-	if path == "" {
-		return nil, fmt.Errorf("storage path cannot be empty")
+func NewLocalStorageService(attachmentsDir string) (*LocalStorageService, error) {
+	userConfigDir, err := os.UserConfigDir()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get user config dir: %w", err)
 	}
 
-	// Create the directory if it doesn't exist
-	if err := os.MkdirAll(path, 0755); err != nil {
+	storagePath := filepath.Join(userConfigDir, "accountable-holo", attachmentsDir)
+	if err := os.MkdirAll(storagePath, 0o755); err != nil {
 		return nil, fmt.Errorf("failed to create storage directory: %w", err)
 	}
 
-	return &LocalStorageService{storagePath: path}, nil
+	return &LocalStorageService{basePath: storagePath}, nil
 }
 
-// Save copies a file from sourcePath to a permanent location within the storagePath.
-func (s *LocalStorageService) Save(ctx context.Context, sourcePath, destinationName string) (string, error) {
+func (s *LocalStorageService) Save(ctx context.Context, sourcePath string, destinationName string) (string, error) {
 	sourceFile, err := os.Open(sourcePath)
 	if err != nil {
 		return "", fmt.Errorf("failed to open source file: %w", err)
 	}
 	defer sourceFile.Close()
 
-	destinationPath := filepath.Join(s.storagePath, destinationName)
+	destinationPath := filepath.Join(s.basePath, destinationName)
 	destinationFile, err := os.Create(destinationPath)
 	if err != nil {
 		return "", fmt.Errorf("failed to create destination file: %w", err)
@@ -45,23 +42,25 @@ func (s *LocalStorageService) Save(ctx context.Context, sourcePath, destinationN
 
 	_, err = io.Copy(destinationFile, sourceFile)
 	if err != nil {
-		return "", fmt.Errorf("failed to copy file contents: %w", err)
+		return "", fmt.Errorf("failed to copy file: %w", err)
 	}
 
-	// Return the path relative to the execution directory
-	return destinationPath, nil
+	return destinationName, nil
 }
 
-// GetFullPath converts a path stored in the database to a full, absolute path.
 func (s *LocalStorageService) GetFullPath(storagePath string) (string, error) {
-	return filepath.Abs(storagePath)
+	return filepath.Join(s.basePath, storagePath), nil
 }
 
-// Delete removes a file from the storage directory.
 func (s *LocalStorageService) Delete(ctx context.Context, storagePath string) error {
-	fullPath, err := s.GetFullPath(storagePath)
+	fullPath := filepath.Join(s.basePath, storagePath)
+	err := os.Remove(fullPath)
 	if err != nil {
-		return fmt.Errorf("could not get full path for deletion: %w", err)
+		if os.IsNotExist(err) {
+			return nil // If the file doesn't exist, it's already "deleted".
+		}
+		return fmt.Errorf("failed to delete file: %w", err)
 	}
-	return os.Remove(fullPath)
+	return nil
 }
+

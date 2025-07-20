@@ -8,20 +8,18 @@ import (
 	"path/filepath"
 )
 
-const attachmentsDir = "attachments"
-
 type LocalStorageService struct {
 	basePath string
 }
 
-func NewLocalStorageService() (*LocalStorageService, error) {
+func NewLocalStorageService(attachmentsDir string) (*LocalStorageService, error) {
 	userConfigDir, err := os.UserConfigDir()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get user config dir: %w", err)
 	}
 
 	storagePath := filepath.Join(userConfigDir, "accountable-holo", attachmentsDir)
-	if err := os.MkdirAll(storagePath, 0755); err != nil {
+	if err := os.MkdirAll(storagePath, 0o755); err != nil {
 		return nil, fmt.Errorf("failed to create storage directory: %w", err)
 	}
 

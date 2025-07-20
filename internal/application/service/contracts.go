@@ -54,5 +54,6 @@ type TransactionRepository interface {
 
 type StorageService interface {
 	Save(ctx context.Context, sourcePath string, destinationName string) (string, error)
+	GetFullPath(storagePath string) (string, error)
 	Delete(ctx context.Context, storagePath string) error
 }
