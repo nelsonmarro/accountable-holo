@@ -158,8 +158,7 @@ func (ui *UI) createTransactiontItem() fyne.CanvasObject {
 	lblType := widget.NewLabel("template type")
 	lblType.Wrapping = fyne.TextWrap(fyne.TextTruncateClip)
 
-	lblAmount := widget.NewLabel("$1,200.00")
-	lblAmount.Wrapping = fyne.TextWrap(fyne.TextTruncateClip)
+	txtAmount := canvas.NewText("$1,200.00", color.Black)
 
 	lblBalance := widget.NewLabel("$5,250.50")
 	lblBalance.Wrapping = fyne.TextWrap(fyne.TextTruncateClip)
@@ -170,7 +169,7 @@ func (ui *UI) createTransactiontItem() fyne.CanvasObject {
 		lblDescription,
 		lblCategory,
 		lblType,
-		lblAmount,
+		txtAmount,
 		lblBalance,
 		attachmentLink,
 		container.NewHBox(
@@ -192,7 +191,7 @@ func (ui *UI) updateTransactionItem(i widget.ListItemID, o fyne.CanvasObject) {
 	rowContainer := stack.Objects[1].(*fyne.Container)
 
 	if tx.IsVoided {
-		background.FillColor = color.NRGBA{R: 255, G: 0, B: 0, A: 50}
+		background.FillColor = color.NRGBA{R: 255, G: 0, B: 0, A: 40}
 	} else {
 		background.FillColor = color.Transparent
 	}
@@ -210,14 +209,16 @@ func (ui *UI) updateTransactionItem(i widget.ListItemID, o fyne.CanvasObject) {
 		rowContainer.Objects[4].(*widget.Label).SetText("-")
 	}
 
-	amountLabel := rowContainer.Objects[5].(*widget.Label)
-	amountText := fmt.Sprintf("%.2f", tx.Amount)
+	amountText := rowContainer.Objects[5].(*canvas.Text)
+	amountText.Text = fmt.Sprintf("%.2f", tx.Amount)
 	if tx.Category != nil && tx.Category.Type == domain.Income {
-		amountText = "+ $" + amountText
+		amountText.Text = "+ $" + amountText.Text
+		amountText.Color = color.NRGBA{R: 0, G: 150, B: 0, A: 255} // Dark Green
 	} else {
-		amountText = "- $" + amountText
+		amountText.Text = "- $" + amountText.Text
+		amountText.Color = color.NRGBA{R: 200, G: 0, B: 0, A: 255} // Dark Red
 	}
-	amountLabel.SetText(amountText)
+	amountText.Refresh()
 
 	rowContainer.Objects[6].(*widget.Label).SetText(fmt.Sprintf("$%.2f", tx.RunningBalance))
 
@@ -278,11 +279,11 @@ func (ui *UI) updateTransactionItem(i widget.ListItemID, o fyne.CanvasObject) {
 	}
 
 	if tx.IsVoided || tx.VoidsTransactionID != nil {
-		voidBtn.Disable()
-		editBtn.Disable()
+		voidBtn.Hide()
+		editBtn.Hide()
 	} else {
-		voidBtn.Enable()
-		editBtn.Enable()
+		voidBtn.Show()
+		editBtn.Show()
 	}
 }
 
