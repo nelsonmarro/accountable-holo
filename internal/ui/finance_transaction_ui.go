@@ -192,7 +192,7 @@ func (ui *UI) updateTransactionItem(i widget.ListItemID, o fyne.CanvasObject) {
 	rowContainer := stack.Objects[1].(*fyne.Container)
 
 	if tx.IsVoided {
-		background.FillColor = color.NRGBA{R: 255, G: 0, B: 0, A: 60}
+		background.FillColor = color.NRGBA{R: 255, G: 0, B: 0, A: 50}
 	} else {
 		background.FillColor = color.Transparent
 	}
