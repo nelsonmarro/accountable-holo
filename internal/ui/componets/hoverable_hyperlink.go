@@ -24,7 +24,7 @@ func NewHoverableHyperlink(text string, url *url.URL, canvas fyne.Canvas) *Hover
 	h.ExtendBaseWidget(h) // This is crucial for custom widgets
 	h.SetText(text)
 	h.SetURL(url)
-	h.Resize(h.MinSize().Add(fyne.Size{Width: 10, Height: 5})) // Add some padding for better appearance
+	h.Resize(h.MinSize().Add(fyne.Size{Width: 15, Height: 7})) // Add some padding for better appearance
 	return h
 }
 
