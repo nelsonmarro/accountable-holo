@@ -24,6 +24,7 @@ func NewHoverableHyperlink(text string, url *url.URL, canvas fyne.Canvas) *Hover
 	h.ExtendBaseWidget(h) // This is crucial for custom widgets
 	h.SetText(text)
 	h.SetURL(url)
+	h.Resize(h.MinSize().Add(fyne.Size{Width: 10, Height: 5})) // Add some padding for better appearance
 	return h
 }
 
@@ -34,7 +35,7 @@ func (h *HoverableHyperlink) MouseIn(_ *desktop.MouseEvent) {
 		h.popup = widget.NewPopUp(label, h.canvas)
 		// Position the popup below the hyperlink
 		pos := fyne.CurrentApp().Driver().AbsolutePositionForObject(h)
-		h.popup.ShowAtPosition(pos.Add(fyne.NewPos(0, h.Size().Height)))
+		h.popup.ShowAtPosition(pos.Add(fyne.NewPos(0, h.Size().Height+5)))
 	}
 }
 
