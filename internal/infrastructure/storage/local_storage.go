@@ -1,3 +1,4 @@
+// Package storage provides a local file storage service for saving, retrieving, and deleting files.
 package storage
 
 import (
@@ -13,7 +14,7 @@ type LocalStorageService struct {
 }
 
 func NewLocalStorageService(attachmentsDir string) (*LocalStorageService, error) {
-	userConfigDir, err := os.UserConfigDir()
+	userConfigDir, err := os.UserHomeDir()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get user config dir: %w", err)
 	}
@@ -63,4 +64,3 @@ func (s *LocalStorageService) Delete(ctx context.Context, storagePath string) er
 	}
 	return nil
 }
-

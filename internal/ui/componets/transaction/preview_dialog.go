@@ -10,6 +10,7 @@ import (
 	"fyne.io/fyne/v2/canvas"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/dialog"
+	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 )
 
@@ -37,18 +38,17 @@ func (d *PreviewDialog) Show() {
 	image := canvas.NewImageFromFile(d.storagePath)
 	image.FillMode = canvas.ImageFillContain
 
-	// Use a more reliable check on the image's resource.
-	// if image.Resource == nil || image.Resource.Name() == "" {
-	// 	// It's not a previewable image, show a generic icon and label
-	// 	fmt.Printf("File %s is not a valid image, showing generic icon\n", d.storagePath)
-	// 	fileIcon := widget.NewIcon(theme.FileIcon())
-	// 	fileNameLabel := widget.NewLabel(d.originalName)
-	// 	fileNameLabel.Alignment = fyne.TextAlignCenter
-	// 	content = container.NewVBox(fileIcon, fileNameLabel)
-	// } else {
-	// 	// It's an image, so use it as the content
-	content = image
-	// }
+	if image.Resource == nil || image.Resource.Name() == "" {
+		// It's not a previewable image, show a generic icon and label
+		fmt.Printf("File %s is not a valid image, showing generic icon\n", d.storagePath)
+		fileIcon := widget.NewIcon(theme.FileIcon())
+		fileNameLabel := widget.NewLabel(d.originalName)
+		fileNameLabel.Alignment = fyne.TextAlignCenter
+		content = container.NewVBox(fileIcon, fileNameLabel)
+	} else {
+		// It's an image, so use it as the content
+		content = image
+	}
 
 	// Create the "Save As..." button
 	saveAsBtn := widget.NewButton("Save As...", d.handleSaveAs)
@@ -101,3 +101,4 @@ func (d *PreviewDialog) handleSaveAs() {
 	fileSaveDialog.SetFileName(d.originalName)
 	fileSaveDialog.Show()
 }
+
