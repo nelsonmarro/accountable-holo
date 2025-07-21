@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"time"
 
 	"github.com/nelsonmarro/accountable-holo/internal/domain"
 )
@@ -56,4 +57,8 @@ type StorageService interface {
 	Save(ctx context.Context, sourcePath string, destinationName string) (string, error)
 	GetFullPath(storagePath string) (string, error)
 	Delete(ctx context.Context, storagePath string) error
+}
+
+type ReportService interface {
+	GetFinancialSummary(ctx context.Context, startDate, endDate time.Time) (domain.FinancialSummary, error)
 }
