@@ -44,3 +44,7 @@ func (r *ReportRepositoryImpl) GetFinancialSummary(ctx context.Context, startDat
 
 	return summary, nil
 }
+
+func (r *ReportRepositoryImpl) GetReconciliation(ctx context.Context, accountID int, startDate, endDate time.Time) (*domain.Reconciliation, error) {
+	return nil, nil
+}
