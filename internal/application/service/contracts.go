@@ -59,6 +59,6 @@ type StorageService interface {
 	Delete(ctx context.Context, storagePath string) error
 }
 
-type ReportService interface {
+type ReportRepository interface {
 	GetFinancialSummary(ctx context.Context, startDate, endDate time.Time) (domain.FinancialSummary, error)
 }
