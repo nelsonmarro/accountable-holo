@@ -2,11 +2,13 @@ package persistence
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/nelsonmarro/accountable-holo/internal/domain"
+	"github.com/shopspring/decimal"
 )
 
 // ReportRepositoryImpl implements the ReportRepository interface for generating financial reports.
@@ -46,5 +48,61 @@ func (r *ReportRepositoryImpl) GetFinancialSummary(ctx context.Context, startDat
 }
 
 func (r *ReportRepositoryImpl) GetReconciliation(ctx context.Context, accountID int, startDate, endDate time.Time) (*domain.Reconciliation, error) {
-	return nil, nil
+	query := `
+	WITH initial_balance AS (
+		SELECT COALESCE(SUM(CASE WHEN c.type = 'Ingreso' THEN t.amount ELSE -t.amount END), 0) as balance
+		FROM transactions t
+		JOIN categories c ON c.id = t.category_id
+		WHERE t.account_id = $1 AND t.transaction_date < $2
+	),
+	transactions_in_period AS (
+		SELECT t.*, c.name as category_name, c.type as category_type
+		FROM transactions t
+		JOIN categories c ON c.id = t.category_id
+		WHERE t.account_id = $1 AND t.transaction_date >= $2 AND t.transaction_date <= $3
+	)
+	SELECT 
+		ib.balance as starting_balance,
+		COALESCE(SUM(CASE WHEN tip.category_type = 'Ingreso' THEN tip.amount ELSE -tip.amount END), 0) as net_movement,
+		array_to_json(array_agg(row_to_json(tip)))
+	FROM initial_balance ib
+	LEFT JOIN transactions_in_period tip ON true
+	GROUP BY ib.balance
+	`
+
+	rows, err := r.db.Query(ctx, query, accountID, startDate, endDate)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query for reconciliation: %w", err)
+	}
+	defer rows.Close()
+
+	reconciliation := &domain.Reconciliation{
+		AccountID:    accountID,
+		StartDate:    startDate,
+		EndDate:      endDate,
+		Transactions: []domain.Transaction{},
+	}
+
+	if rows.Next() {
+		var startingBalance float64
+		var netMovement float64
+		var transactionsJSON []byte
+
+		if err := rows.Scan(&startingBalance, &netMovement, &transactionsJSON); err != nil {
+			return nil, fmt.Errorf("failed to scan reconciliation data: %w", err)
+		}
+
+		reconciliation.StartingBalance = decimal.NewFromFloat(startingBalance)
+		reconciliation.CalculatedEndingBalance = decimal.NewFromFloat(startingBalance).Add(decimal.NewFromFloat(netMovement))
+
+		if transactionsJSON != nil {
+			var transactions []domain.Transaction
+			if err := json.Unmarshal(transactionsJSON, &transactions); err != nil {
+				return nil, fmt.Errorf("failed to unmarshal transactions: %w", err)
+			}
+			reconciliation.Transactions = transactions
+		}
+	}
+
+	return reconciliation, nil
 }

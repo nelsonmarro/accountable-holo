@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/nelsonmarro/accountable-holo/internal/domain"
+	"github.com/shopspring/decimal"
 )
 
 // ReportServiceImpl provides methods to generate financial reports.
@@ -22,3 +23,14 @@ func (s *ReportServiceImpl) GenerateFinancialSummary(ctx context.Context, startD
 	return s.repo.GetFinancialSummary(ctx, startDate, endDate)
 }
 
+func (s *ReportServiceImpl) GenerateReconciliation(ctx context.Context, accountID int, startDate, endDate time.Time, endingBalance decimal.Decimal) (*domain.Reconciliation, error) {
+	reconciliation, err := s.repo.GetReconciliation(ctx, accountID, startDate, endDate)
+	if err != nil {
+		return nil, err
+	}
+
+	reconciliation.EndingBalance = endingBalance
+	reconciliation.Difference = reconciliation.CalculatedEndingBalance.Sub(endingBalance)
+
+	return reconciliation, nil
+}

@@ -17,19 +17,16 @@ var editFetchTestCases = []struct {
 	wg                      *sync.WaitGroup
 	ExpectedSuccessFires    bool
 	ExpectedFailureFires    bool
-	mockServiceExpectations func(*mocks.MockAccountService, *sync.WaitGroup)
+	mockServiceExpectations func(*mocks.MockAccountService)
 }{
 	{
 		name:                 "should fire onSuccess callback if service works",
 		wg:                   &sync.WaitGroup{},
 		ExpectedSuccessFires: true,
 		ExpectedFailureFires: false,
-		mockServiceExpectations: func(mockService *mocks.MockAccountService, wg *sync.WaitGroup) {
+		mockServiceExpectations: func(mockService *mocks.MockAccountService) {
 			mockService.On("GetAccountByID", mock.Anything, 1).
-				Return(&domain.Account{}, nil).
-				Run(func(args mock.Arguments) {
-					wg.Done()
-				})
+				Return(&domain.Account{}, nil)
 		},
 	},
 	{
@@ -37,12 +34,9 @@ var editFetchTestCases = []struct {
 		wg:                   &sync.WaitGroup{},
 		ExpectedSuccessFires: false,
 		ExpectedFailureFires: true,
-		mockServiceExpectations: func(mockService *mocks.MockAccountService, wg *sync.WaitGroup) {
+		mockServiceExpectations: func(mockService *mocks.MockAccountService) {
 			mockService.On("GetAccountByID", mock.Anything, 1).
-				Return(&domain.Account{}, errors.New("sql error")).
-				Run(func(args mock.Arguments) {
-					wg.Done()
-				})
+				Return(&domain.Account{}, errors.New("sql error"))
 		},
 	},
 }
@@ -57,19 +51,21 @@ func TestFetchAccount(t *testing.T) {
 			*onSuccessFires = false
 			onSuccessCallback := func(account *domain.Account) {
 				*onSuccessFires = true
+				tc.wg.Done()
 			}
 
 			onFailureFires := new(bool)
 			*onFailureFires = false
 			onFailureCallback := func(err error) {
 				*onFailureFires = true
+				tc.wg.Done()
 			}
 
 			editCallback := func() {}
 
 			d, mockService := setupTestEditDialog(editCallback)
 
-			tc.mockServiceExpectations(mockService, tc.wg)
+			tc.mockServiceExpectations(mockService)
 
 			// Act
 			d.fetchAccount(onSuccessCallback, onFailureCallback)
