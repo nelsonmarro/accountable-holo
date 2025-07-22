@@ -27,7 +27,7 @@ func (ui *UI) makeFilterCard() fyne.CanvasObject {
 	go ui.loadAccountsForSummary()
 
 	generateBtn := widget.NewButtonWithIcon("Generar Resumen", theme.ViewRefreshIcon(), func() {
-		ui.generateSummary()
+		go ui.generateSummary()
 	})
 	generateBtn.Importance = widget.HighImportance
 
@@ -64,9 +64,10 @@ func (ui *UI) loadAccountsForSummary() {
 		ui.summaryAccountSelect.Options = options
 		ui.summaryAccountSelect.SetSelected(options[0])
 		ui.summaryAccountSelect.Refresh()
-		// Trigger initial summary generation
-		ui.generateSummary()
 	})
+
+	// Trigger initial summary generation
+	go ui.generateSummary()
 }
 
 func (ui *UI) generateSummary() {
@@ -91,20 +92,18 @@ func (ui *UI) generateSummary() {
 	}
 
 	// Call the service
-	go func() {
-		summary, err := ui.Services.ReportService.GenerateFinancialSummary(ctx, startDate, endDate, accountID)
-		if err != nil {
-			dialog.ShowError(err, ui.mainWindow)
-			return
-		}
+	summary, err := ui.Services.ReportService.GenerateFinancialSummary(ctx, startDate, endDate, accountID)
+	if err != nil {
+		dialog.ShowError(err, ui.mainWindow)
+		return
+	}
 
-		// Update the UI
-		fyne.Do(func() {
-			updateMetricLabel(ui.summaryTotalIncome, summary.TotalIncome, domain.Income)
-			updateMetricLabel(ui.summaryTotalExpenses, summary.TotalExpenses, domain.Outcome)
-			updateMetricLabel(ui.summaryNetProfitLoss, summary.NetProfitLoss, "")
-		})
-	}()
+	// Update the UI
+	fyne.Do(func() {
+		updateMetricText(ui.summaryTotalIncome, summary.TotalIncome, domain.Income)
+		updateMetricText(ui.summaryTotalExpenses, summary.TotalExpenses, domain.Outcome)
+		updateMetricText(ui.summaryNetProfitLoss, summary.NetProfitLoss, "Net")
+	})
 }
 
 // getDatesForRange translates the selected string into start and end dates.

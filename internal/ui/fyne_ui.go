@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"fyne.io/fyne/v2"
+	"fyne.io/fyne/v2/canvas"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/widget"
 	"github.com/nelsonmarro/accountable-holo/internal/domain"
@@ -47,9 +48,9 @@ type UI struct {
 	// ---- Summary Tab State ----
 	summaryDateRangeSelect *widget.Select
 	summaryAccountSelect   *widget.Select
-	summaryTotalIncome     *widget.Label
-	summaryTotalExpenses   *widget.Label
-	summaryNetProfitLoss   *widget.Label
+	summaryTotalIncome     *canvas.Text
+	summaryTotalExpenses   *canvas.Text
+	summaryNetProfitLoss   *canvas.Text
 
 	// ---- Debug ----
 	infoLogger  *log.Logger

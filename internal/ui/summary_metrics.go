@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"fmt"
 	"image/color"
 
 	"fyne.io/fyne/v2"
@@ -19,13 +20,13 @@ var (
 )
 
 func (ui *UI) makeSummaryCard() fyne.CanvasObject {
-	ui.summaryTotalIncome = newMetricLabel(defaultAmount, domain.Income)
-	ui.summaryTotalExpenses = newMetricLabel(defaultAmount, domain.Outcome)
-	ui.summaryNetProfitLoss = newMetricLabel(defaultAmount, "")
+	ui.summaryTotalIncome = newMetricText(defaultAmount, domain.Income)
+	ui.summaryTotalExpenses = newMetricText(defaultAmount, domain.Outcome)
+	ui.summaryNetProfitLoss = newMetricText(defaultAmount, "Net") // Use a specific type for Net
 
-	incomeCard := widget.NewCard("Ingresos Totales", "", ui.summaryTotalIncome)
-	expensesCard := widget.NewCard("Egresos Totales", "", ui.summaryTotalExpenses)
-	netCard := widget.NewCard("Ganancia/Pérdida Neta", "", ui.summaryNetProfitLoss)
+	incomeCard := widget.NewCard("Ingresos Totales", "", container.NewCenter(ui.summaryTotalIncome))
+	expensesCard := widget.NewCard("Egresos Totales", "", container.NewCenter(ui.summaryTotalExpenses))
+	netCard := widget.NewCard("Ganancia/Pérdida Neta", "", container.NewCenter(ui.summaryNetProfitLoss))
 
 	return container.NewGridWithColumns(3,
 		incomeCard,
@@ -34,48 +35,45 @@ func (ui *UI) makeSummaryCard() fyne.CanvasObject {
 	)
 }
 
-// newMetricLabel creates a new label for displaying a financial metric.
-func newMetricLabel(amount decimal.Decimal, t domain.CategoryType) *widget.Label {
-	label := widget.NewLabel("")
-	updateMetricLabel(label, amount, t)
-	return label
+// newMetricText creates a new canvas.Text for displaying a financial metric.
+func newMetricText(amount decimal.Decimal, t domain.CategoryType) *canvas.Text {
+	text := &canvas.Text{
+		Text:     "",
+		TextSize: 24,
+		TextStyle: fyne.TextStyle{
+			Bold: true,
+		},
+		Alignment: fyne.TextAlignCenter,
+	}
+	updateMetricText(text, amount, t)
+	return text
 }
 
-// updateMetricLabel updates the text and color of a metric label.
-func updateMetricLabel(label *widget.Label, amount decimal.Decimal, t domain.CategoryType) {
-	var textColor color.Color
+// updateMetricText updates the text and color of a metric canvas.Text object.
+func updateMetricText(text *canvas.Text, amount decimal.Decimal, t domain.CategoryType) {
 	var sign string
 
 	switch t {
 	case domain.Income:
-		textColor = positiveColor
+		text.Color = positiveColor
 		sign = "+ $"
 	case domain.Outcome:
-		textColor = negativeColor
+		text.Color = negativeColor
 		sign = "- $"
 	default: // For Net, determine color based on value
 		if amount.IsPositive() {
-			textColor = positiveColor
+			text.Color = positiveColor
 			sign = "+ $"
 		} else if amount.IsNegative() {
-			textColor = negativeColor
+			text.Color = negativeColor
 			sign = "- $"
 			amount = amount.Abs() // Show positive number with negative sign
 		} else {
-			textColor = neutralColor
+			text.Color = neutralColor
 			sign = "$ "
 		}
 	}
 
-	// This is a workaround to apply color since labels don't have a direct color setting
-	// A better approach might be a custom widget, but this is simple.
-	// We create a new RichText object each time.
-	richText := canvas.NewText(sign+amount.StringFixed(2), textColor)
-	richText.TextStyle.Bold = true
-	richText.TextSize = 24
-
-	// This part is tricky as widget.Label doesn't directly support colored text.
-	// For simplicity, we'll just set the text and ignore the color for now.
-	// A real implementation would require a custom widget or a different approach.
-	label.SetText(sign + amount.StringFixed(2))
+	text.Text = fmt.Sprintf("%s%s", sign, amount.StringFixed(2))
+	text.Refresh()
 }
