@@ -75,6 +75,7 @@ func (ui *UI) buildMainUI() {
 		container.NewTabItemWithIcon("Resumen Financiero", reportIcon, widget.NewLabel("Finanzas")),
 		container.NewTabItemWithIcon("Cuentas", accountIcon, ui.makeAccountTab()),
 		container.NewTabItemWithIcon("Transacciones", transactionIcon, ui.makeFinancesTab()),
+		container.NewTabItemWithIcon("Reportes", reportIcon, widget.NewLabel("Reportes")),
 	)
 
 	ui.mainWindow.SetContent(tabs)
