@@ -2,8 +2,10 @@ package ui
 
 import (
 	"context"
+	"time"
 
 	"github.com/nelsonmarro/accountable-holo/internal/domain"
+	"github.com/shopspring/decimal"
 )
 
 type AccountService interface {
@@ -36,4 +38,9 @@ type TransactionService interface {
 	VoidTransaction(ctx context.Context, transactionID int) error
 	CreateTransaction(ctx context.Context, tx *domain.Transaction) error
 	UpdateTransaction(ctx context.Context, tx *domain.Transaction) error
+}
+
+type ReportService interface {
+	GenerateFinancialSummary(ctx context.Context, startDate, endDate time.Time, accountID *int) (domain.FinancialSummary, error)
+	GenerateReconciliation(ctx context.Context, accountID int, startDate, endDate time.Time, endingBalance decimal.Decimal) (*domain.Reconciliation, error)
 }

@@ -12,9 +12,9 @@ import (
 )
 
 var (
-	positiveColor = color.NRGBA{R: 0, G: 150, B: 0, A: 255}   // Dark Green
-	negativeColor = color.NRGBA{R: 200, G: 0, B: 0, A: 255}   // Dark Red
-	neutralColor  = color.Gray{Y: 128}                        // Gray
+	positiveColor = color.NRGBA{R: 0, G: 150, B: 0, A: 255} // Dark Green
+	negativeColor = color.NRGBA{R: 200, G: 0, B: 0, A: 255} // Dark Red
+	neutralColor  = color.Gray{Y: 128}                      // Gray
 	defaultAmount = decimal.NewFromFloat(0.0)
 )
 
@@ -35,14 +35,14 @@ func (ui *UI) makeSummaryCard() fyne.CanvasObject {
 }
 
 // newMetricLabel creates a new label for displaying a financial metric.
-func newMetricLabel(amount decimal.Decimal, t domain.TransactionType) *widget.Label {
+func newMetricLabel(amount decimal.Decimal, t domain.CategoryType) *widget.Label {
 	label := widget.NewLabel("")
 	updateMetricLabel(label, amount, t)
 	return label
 }
 
 // updateMetricLabel updates the text and color of a metric label.
-func updateMetricLabel(label *widget.Label, amount decimal.Decimal, t domain.TransactionType) {
+func updateMetricLabel(label *widget.Label, amount decimal.Decimal, t domain.CategoryType) {
 	var textColor color.Color
 	var sign string
 
