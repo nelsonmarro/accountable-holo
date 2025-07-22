@@ -42,17 +42,20 @@ func main() {
 	accRepo := persistence.NewAccountRepository(pool)
 	catRepo := persistence.NewCategoryRepository(pool)
 	txRepo := persistence.NewTransactionRepository(pool)
+	reportRepo := persistence.NewReportRepository(pool)
 
 	// ---- Application (Services) ----
 	accService := service.NewAccountService(accRepo)
 	catService := service.NewCategoryService(catRepo)
 	txService := service.NewTransactionService(txRepo, storageService)
+	reportService := service.NewReportService(reportRepo)
 
 	// 2. Create UI struct.
 	gui := ui.NewUI(&ui.Services{
-		AccService: accService,
-		CatService: catService,
-		TxService:  txService,
+		AccService:    accService,
+		CatService:    catService,
+		TxService:     txService,
+		ReportService: reportService,
 	})
 
 	// 3. Initialize the UI with the app object.
