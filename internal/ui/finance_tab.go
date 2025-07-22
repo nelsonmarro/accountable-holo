@@ -5,7 +5,7 @@ import (
 	"fyne.io/fyne/v2/container"
 )
 
-func (ui *UI) makeTransactionsTab() fyne.CanvasObject {
+func (ui *UI) makeFinancesTab() fyne.CanvasObject {
 	// UI widgets
 	transactionsTab := container.NewTabItem("Transacciones", ui.makeTransactionUI())
 	categoriesTab := container.NewTabItem("Categorías", ui.makeCategoryUI())

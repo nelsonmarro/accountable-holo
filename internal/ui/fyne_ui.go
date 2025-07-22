@@ -72,9 +72,9 @@ func (ui *UI) buildMainUI() {
 	reportIcon := NewThemeAwareResource(resourceReportstabiconlightPng, resourceReportstabicondarkPng)
 
 	tabs := container.NewAppTabs(
-		container.NewTabItemWithIcon("Finanzas", reportIcon, widget.NewLabel("Finanzas")),
+		container.NewTabItemWithIcon("Resumen Financiero", reportIcon, widget.NewLabel("Finanzas")),
 		container.NewTabItemWithIcon("Cuentas", accountIcon, ui.makeAccountTab()),
-		container.NewTabItemWithIcon("Transacciones", transactionIcon, ui.makeTransactionsTab()),
+		container.NewTabItemWithIcon("Transacciones", transactionIcon, ui.makeFinancesTab()),
 	)
 
 	ui.mainWindow.SetContent(tabs)

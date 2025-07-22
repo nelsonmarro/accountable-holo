@@ -2,14 +2,12 @@ package ui
 
 import (
 	"context"
-	"fmt"
 	"strconv"
 	"time"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/dialog"
-	"fyne.io/fyne/v2/layout"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 	"github.com/nelsonmarro/accountable-holo/internal/ui/componets/account"
@@ -20,16 +18,18 @@ func (ui *UI) makeAccountTab() fyne.CanvasObject {
 	title := widget.NewRichText(&widget.TextSegment{
 		Text: "Cuentas",
 		Style: widget.RichTextStyle{
-			SizeName:  theme.SizeNameHeadingText, // Use the heading size from our custom theme
+			SizeName:  theme.SizeNameHeadingText,
 			Alignment: fyne.TextAlignCenter,
 		},
 	})
 
-	// Pagination and List
+	// List
 	ui.accountList = widget.NewList(
 		func() int {
 			return len(ui.accounts)
-		}, ui.makeListUI, ui.fillListData,
+		},
+		ui.makeAccountListUI,
+		ui.fillAccountListData,
 	)
 	go ui.loadAccounts()
 
@@ -41,17 +41,34 @@ func (ui *UI) makeAccountTab() fyne.CanvasObject {
 			ui.Services.AccService,
 			ui.loadAccounts,
 		)
-
 		dialogHandler.Show()
 	})
 	accountAddBtn.Importance = widget.HighImportance
 
 	// Containers
-	headerArea := container.NewVBox(
+	titleContainer := container.NewVBox(
 		container.NewCenter(title),
-		container.NewHBox(layout.NewSpacer(), accountAddBtn),
+		container.NewBorder(nil, nil, accountAddBtn, nil, nil),
 	)
-	mainContent := container.NewBorder(container.NewPadded(headerArea), nil, nil, nil, ui.accountList)
+
+	tableHeader := container.NewGridWithColumns(5,
+		widget.NewLabel("Nombre"),
+		widget.NewLabel("Número"),
+		widget.NewLabel("Tipo"),
+		widget.NewLabel("Balance Inicial"),
+		widget.NewLabel("Acciones"),
+	)
+
+	tableContainer := container.NewBorder(
+		container.NewPadded(tableHeader), nil, nil, nil,
+		ui.accountList,
+	)
+
+	mainContent := container.NewBorder(
+		container.NewPadded(titleContainer),
+		nil, nil, nil,
+		tableContainer,
+	)
 
 	return mainContent
 }
@@ -73,77 +90,56 @@ func (ui *UI) loadAccounts() {
 	})
 }
 
-func (ui *UI) makeListUI() fyne.CanvasObject {
-	transactionBtn := widget.NewButtonWithIcon("Transacciones", theme.ListIcon(), func() {})
-
-	editBtn := widget.NewButtonWithIcon("Editar", theme.DocumentCreateIcon(), func() {})
+func (ui *UI) makeAccountListUI() fyne.CanvasObject {
+	editBtn := widget.NewButtonWithIcon("", theme.DocumentCreateIcon(), nil)
 	editBtn.Importance = widget.HighImportance
 
-	deleteBtn := widget.NewButtonWithIcon("Eliminar", theme.DeleteIcon(), func() {})
+	deleteBtn := widget.NewButtonWithIcon("", theme.DeleteIcon(), nil)
 	deleteBtn.Importance = widget.DangerImportance
 
-	return container.NewBorder(
-		nil,
-		nil,
-		container.NewVBox(
-			container.NewHBox(
-				widget.NewLabel("nombre de cuenta"),
-				widget.NewLabel("tipo de cuenta"),
-			),
-			container.NewHBox(
-				widget.NewLabel("Balance:"),
-				widget.NewLabel("balance inicial"),
-			),
-		),
-		container.NewPadded(
-			container.NewHBox(
-				transactionBtn,
-				editBtn,
-				deleteBtn,
-			),
+	return container.NewGridWithColumns(5,
+		widget.NewLabel("template name"),
+		widget.NewLabel("template number"),
+		widget.NewLabel("template type"),
+		widget.NewLabel("template balance"),
+		container.NewHBox(
+			editBtn,
+			deleteBtn,
 		),
 	)
 }
 
-func (ui *UI) fillListData(i widget.ListItemID, o fyne.CanvasObject) {
-	borderContainer := o.(*fyne.Container)
-	infoContainer := borderContainer.Objects[0].(*fyne.Container)
-	paddedContainer := borderContainer.Objects[1].(*fyne.Container)
-	buttonsContainer := paddedContainer.Objects[0].(*fyne.Container)
+func (ui *UI) fillAccountListData(i widget.ListItemID, o fyne.CanvasObject) {
+	acc := ui.accounts[i]
+	rowContainer := o.(*fyne.Container)
 
-	cuentaInfoContainer := infoContainer.Objects[0].(*fyne.Container)
-	nameLbl := cuentaInfoContainer.Objects[0].(*widget.Label)
-	nameLbl.SetText(fmt.Sprintf("%s - %s", ui.accounts[i].Name, ui.accounts[i].Number))
+	rowContainer.Objects[0].(*widget.Label).SetText(acc.Name)
+	rowContainer.Objects[1].(*widget.Label).SetText(acc.Number)
+	rowContainer.Objects[2].(*widget.Label).SetText(string(acc.Type))
+	rowContainer.Objects[3].(*widget.Label).SetText(strconv.FormatFloat(acc.InitialBalance, 'f', 2, 64))
 
-	typeLbl := cuentaInfoContainer.Objects[1].(*widget.Label)
-	typeLbl.SetText(fmt.Sprintf("Tipo de Cuenta: %s", string(ui.accounts[i].Type)))
+	actionsContainer := rowContainer.Objects[4].(*fyne.Container)
+	editBtn := actionsContainer.Objects[0].(*widget.Button)
+	deleteBtn := actionsContainer.Objects[1].(*widget.Button)
 
-	cuentaBalanceContainer := infoContainer.Objects[1].(*fyne.Container)
-	balanceLbl := cuentaBalanceContainer.Objects[1].(*widget.Label)
-	balanceText := strconv.FormatFloat(ui.accounts[i].InitialBalance, 'f', 2, 64)
-	balanceLbl.SetText(balanceText)
-
-	deleteBtn := buttonsContainer.Objects[2].(*widget.Button)
-	deleteBtn.OnTapped = func() {
-		// Create an instance of the dialog handler and show it
-		dialogHandler := account.NewDeleteAccountDialog(
-			ui.mainWindow,
-			ui.errorLogger,
-			ui.Services.AccService,
-			ui.loadAccounts,
-			ui.accounts[i].ID, // Pass the specific ID for this row
-		)
-		dialogHandler.Show()
-	}
-
-	editBtn := buttonsContainer.Objects[1].(*widget.Button)
 	editBtn.OnTapped = func() {
 		dialogHandler := account.NewEditAccountDialog(
 			ui.mainWindow,
 			ui.errorLogger,
 			ui.Services.AccService,
 			ui.loadAccounts,
-			ui.accounts[i].ID, // Pass the specific ID for this row
+			acc.ID,
+		)
+		dialogHandler.Show()
+	}
+
+	deleteBtn.OnTapped = func() {
+		dialogHandler := account.NewDeleteAccountDialog(
+			ui.mainWindow,
+			ui.errorLogger,
+			ui.Services.AccService,
+			ui.loadAccounts,
+			acc.ID,
 		)
 		dialogHandler.Show()
 	}
