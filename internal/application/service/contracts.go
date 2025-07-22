@@ -60,6 +60,6 @@ type StorageService interface {
 }
 
 type ReportRepository interface {
-	GetFinancialSummary(ctx context.Context, startDate, endDate time.Time) (domain.FinancialSummary, error)
+	GetFinancialSummary(ctx context.Context, startDate, endDate time.Time, accountID *int) (domain.FinancialSummary, error)
 	GetReconciliation(ctx context.Context, accountID int, startDate, endDate time.Time) (*domain.Reconciliation, error)
 }
