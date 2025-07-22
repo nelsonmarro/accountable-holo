@@ -43,6 +43,13 @@ type UI struct {
 	accountSelector      *widget.Select
 	selectedAccountID    int
 
+	// ---- Summary Tab State ----
+	summaryDateRangeSelect *widget.Select
+	summaryAccountSelect   *widget.Select
+	summaryTotalIncome     *widget.Label
+	summaryTotalExpenses   *widget.Label
+	summaryNetProfitLoss   *widget.Label
+
 	// ---- Debug ----
 	infoLogger  *log.Logger
 	errorLogger *log.Logger
@@ -72,7 +79,7 @@ func (ui *UI) buildMainUI() {
 	reportIcon := NewThemeAwareResource(resourceReportstabiconlightPng, resourceReportstabicondarkPng)
 
 	tabs := container.NewAppTabs(
-		container.NewTabItemWithIcon("Resumen Financiero", reportIcon, widget.NewLabel("Finanzas")),
+		container.NewTabItemWithIcon("Resumen Financiero", reportIcon, ui.makeSummaryTab()),
 		container.NewTabItemWithIcon("Cuentas", accountIcon, ui.makeAccountTab()),
 		container.NewTabItemWithIcon("Transacciones", transactionIcon, ui.makeFinancesTab()),
 		container.NewTabItemWithIcon("Reportes", reportIcon, widget.NewLabel("Reportes")),
