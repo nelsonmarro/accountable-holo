@@ -19,8 +19,8 @@ func NewReportService(repo ReportRepository) *ReportServiceImpl {
 }
 
 // GenerateFinancialSummary generates a financial summary report for the given date range.
-func (s *ReportServiceImpl) GenerateFinancialSummary(ctx context.Context, startDate, endDate time.Time) (domain.FinancialSummary, error) {
-	return s.repo.GetFinancialSummary(ctx, startDate, endDate)
+func (s *ReportServiceImpl) GenerateFinancialSummary(ctx context.Context, startDate, endDate time.Time, accountID *int) (domain.FinancialSummary, error) {
+	return s.repo.GetFinancialSummary(ctx, startDate, endDate, accountID)
 }
 
 func (s *ReportServiceImpl) GenerateReconciliation(ctx context.Context, accountID int, startDate, endDate time.Time, endingBalance decimal.Decimal) (*domain.Reconciliation, error) {

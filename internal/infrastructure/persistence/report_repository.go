@@ -21,8 +21,8 @@ func NewReportRepository(db *pgxpool.Pool) *ReportRepositoryImpl {
 	return &ReportRepositoryImpl{db: db}
 }
 
-// GetFinancialSummary retrieves a financial summary report for the specified date range.
-func (r *ReportRepositoryImpl) GetFinancialSummary(ctx context.Context, startDate, endDate time.Time) (domain.FinancialSummary, error) {
+// GetFinancialSummary retrieves a financial summary report for the specified date range, optionally filtered by account ID.
+func (r *ReportRepositoryImpl) GetFinancialSummary(ctx context.Context, startDate, endDate time.Time, accountID *int) (domain.FinancialSummary, error) {
 	var summary domain.FinancialSummary
 
 	query := `
@@ -30,14 +30,20 @@ func (r *ReportRepositoryImpl) GetFinancialSummary(ctx context.Context, startDat
 		COALESCE(SUM(CASE WHEN c.type = 'Ingreso' THEN t.amount ELSE 0 END), 0) AS total_income,
 		COALESCE(SUM(CASE WHEN c.type = 'Egreso' THEN t.amount ELSE 0 END), 0) AS total_expenses
 	FROM
-	transactions t
+		transactions t
 	JOIN
-	categories c ON t.category_id = c.id
+		categories c ON t.category_id = c.id
 	WHERE
-	t.transaction_date >= $1 AND t.transaction_date <= $2;
-    `
+		t.transaction_date >= $1 AND t.transaction_date <= $2`
 
-	err := r.db.QueryRow(ctx, query, startDate, endDate).Scan(&summary.TotalIncome, &summary.TotalExpenses)
+	args := []interface{}{startDate, endDate}
+
+	if accountID != nil {
+		query += fmt.Sprintf(" AND t.account_id = $%d", len(args)+1)
+		args = append(args, *accountID)
+	}
+
+	err := r.db.QueryRow(ctx, query, args...).Scan(&summary.TotalIncome, &summary.TotalExpenses)
 	if err != nil {
 		return summary, fmt.Errorf("failed to get financial summary: %w", err)
 	}
