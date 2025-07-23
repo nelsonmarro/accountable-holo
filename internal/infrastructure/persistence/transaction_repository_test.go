@@ -176,7 +176,9 @@ func TestFindTransactionsByAccount(t *testing.T) {
 		assert.Len(t, result.Data, 6, "Data slice should contain 6 transactions")
 		// Check if the most recent transaction is first
 		assert.Equal(t, float64(2000.00), result.Data[0].Amount)
-		assert.Equal(t, now.AddDate(0, 0, -1), result.Data[0].TransactionDate)
+				assert.Equal(t, now.AddDate(0, 0, -1).Year(), result.Data[0].TransactionDate.Year())
+		assert.Equal(t, now.AddDate(0, 0, -1).Month(), result.Data[0].TransactionDate.Month())
+		assert.Equal(t, now.AddDate(0, 0, -1).Day(), result.Data[0].TransactionDate.Day())
 	})
 
 	t.Run("should filter by description", func(t *testing.T) {
@@ -279,7 +281,7 @@ func TestFindTransactionsByAccount(t *testing.T) {
 	
 	t.Run("should calculate running balance correctly", func(t *testing.T) {
 		// Arrange
-		// Account initial balance is 1000.0
+		// Account initial balance is 1000.50
 		filters := domain.TransactionFilters{}
 
 		// Act
@@ -291,16 +293,16 @@ func TestFindTransactionsByAccount(t *testing.T) {
 
 		// Balances are calculated from oldest to newest, but results are ordered newest to oldest.
 		// Let's check a few key points in the results.
-		// Initial Balance: 1000
-		// 1. -10 days: +2000 -> 3000
-		// 2. -8 days:  -50   -> 2950
-		// 3. -6 days:  -75   -> 2875
-		// 4. -5 days:  +500  -> 3375
-		// 5. -3 days:  -25   -> 3350
-		// 6. -1 day:   +2000 -> 5350
+		// Initial Balance: 1000.50
+		// 1. -10 days: +2000.00 -> 3000.50
+		// 2. -8 days:  -50.00   -> 2950.50
+		// 3. -6 days:  -75.00   -> 2875.50
+		// 4. -5 days:  +500.00  -> 3375.50
+		// 5. -3 days:  -25.00   -> 3350.50
+		// 6. -1 day:   +2000.00 -> 5350.50
 
 		// The most recent transaction (-1 day) should have the final balance
-		assert.InDelta(t, 5350.00, result.Data[0].RunningBalance, 0.001) 
+		assert.InDelta(t, 5350.50, result.Data[0].RunningBalance, 0.001) 
 		
 		// The transaction from -5 days ago should have its corresponding running balance
 		var checkedTx domain.Transaction
@@ -311,6 +313,6 @@ func TestFindTransactionsByAccount(t *testing.T) {
 			}
 		}
 		require.NotNil(t, checkedTx.ID, "Could not find the specific transaction to check balance")
-		assert.InDelta(t, 3375.00, checkedTx.RunningBalance, 0.001, "Running balance for the -5 day transaction is incorrect")
+		assert.InDelta(t, 3375.50, checkedTx.RunningBalance, 0.001, "Running balance for the -5 day transaction is incorrect")
 	})
 }

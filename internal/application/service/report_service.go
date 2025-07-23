@@ -13,7 +13,7 @@ type ReportServiceImpl struct {
 	repo ReportRepository
 }
 
-// ReportRepository defines the methods required for report generation.
+// NewReportService creates a new instance of ReportServiceImpl with the given repository.
 func NewReportService(repo ReportRepository) *ReportServiceImpl {
 	return &ReportServiceImpl{repo: repo}
 }

@@ -144,8 +144,7 @@ func (r *TransactionRepositoryImpl) GetTransactionsByAccountPaginated(
 	transactions := make([]domain.Transaction, 0, pageSize)
 	for rows.Next() {
 		var tx domain.Transaction
-		var categoryName string
-		var categoryType domain.CategoryType
+		var categoryName, categoryType sql.NullString
 		var attachment sql.NullString
 		var voidedBy sql.NullInt64
 		var voids sql.NullInt64
@@ -182,9 +181,11 @@ func (r *TransactionRepositoryImpl) GetTransactionsByAccountPaginated(
 			tx.VoidsTransactionID = &val
 		}
 
-		tx.Category = &domain.Category{
-			Name: categoryName,
-			Type: categoryType,
+		if categoryName.Valid {
+			tx.Category = &domain.Category{
+				Name: categoryName.String,
+				Type: domain.CategoryType(categoryType.String),
+			}
 		}
 		transactions = append(transactions, tx)
 	}
@@ -277,7 +278,6 @@ func (r *TransactionRepositoryImpl) FindTransactionsByAccount(
 	offset := (page - 1) * pageSize
 	paginationArgs := append(args, limit, offset)
 
-	// Corrected and formatted version of the original query
 	finalQuery := fmt.Sprintf(`
     SELECT
         t.id,
@@ -297,7 +297,7 @@ func (r *TransactionRepositoryImpl) FindTransactionsByAccount(
             SELECT initial_balance FROM accounts WHERE id = t.account_id
         ) + (
             SELECT
-                SELECT COALESCE(SUM(CASE WHEN c_inner.type = 'Ingreso' THEN t_inner.amount ELSE -t_inner.amount END), 0)
+                COALESCE(SUM(CASE WHEN c_inner.type = 'Ingreso' THEN t_inner.amount ELSE -t_inner.amount END), 0)
             FROM
                 transactions AS t_inner
             JOIN
@@ -324,8 +324,7 @@ func (r *TransactionRepositoryImpl) FindTransactionsByAccount(
 	transactions := make([]domain.Transaction, 0, pageSize)
 	for rows.Next() {
 		var tx domain.Transaction
-		var categoryName string
-		var categoryType domain.CategoryType
+		var categoryName, categoryType sql.NullString
 		var attachment sql.NullString
 		var voidedBy sql.NullInt64
 		var voids sql.NullInt64
@@ -359,9 +358,11 @@ func (r *TransactionRepositoryImpl) FindTransactionsByAccount(
 			val := int(voids.Int64)
 			tx.VoidsTransactionID = &val
 		}
-		tx.Category = &domain.Category{
-			Name: categoryName,
-			Type: categoryType,
+		if categoryName.Valid {
+			tx.Category = &domain.Category{
+				Name: categoryName.String,
+				Type: domain.CategoryType(categoryType.String),
+			}
 		}
 		transactions = append(transactions, tx)
 	}
