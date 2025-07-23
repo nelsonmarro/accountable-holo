@@ -277,6 +277,50 @@ func (r *TransactionRepositoryImpl) FindTransactionsByAccount(
 	offset := (page - 1) * pageSize
 	paginationArgs := append(args, limit, offset)
 
+	// Corrected and formatted version of the original query
+	finalQuery := fmt.Sprintf(`
+    SELECT
+        t.id,
+        t.transaction_number,
+        t.description,
+        t.amount,
+        t.transaction_date,
+        t.account_id,
+        t.category_id,
+        t.attachment_path,
+        t.is_voided,
+        t.voided_by_transaction_id,
+        t.voids_transaction_id,
+        c.name AS category_name,
+        c.type AS category_type,
+        (
+            SELECT initial_balance FROM accounts WHERE id = t.account_id
+        ) + (
+            SELECT
+                COALESCE(SUM(CASE WHEN c_inner.type = 'Ingreso' THEN t_inner.amount ELSE -t_inner.amount END), 0)
+            FROM
+                transactions AS t_inner
+            JOIN
+                categories AS c_inner ON t_inner.category_id = c_inner.id
+            WHERE
+                t_inner.account_id = t.account_id AND
+                (t_inner.transaction_date < t.transaction_date OR (t_inner.transaction_date = t.transaction_date AND t_inner.id <= t.id))
+        ) AS running_balance
+    FROM
+        transactions AS t
+    LEFT JOIN
+        categories AS c ON t.category_id = c.id
+    WHERE %s
+    ORDER BY
+        t.transaction_date DESC, t.id DESC
+    LIMIT $%d OFFSET $%d;`, whereCondition, argsCount, argsCount+1)
+
+	rows, err := r.db.Query(ctx, finalQuery, paginationArgs...)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query transactions: %w", err)
+	}
+	defer rows.Close()
+
 	return nil, nil
 }
 
