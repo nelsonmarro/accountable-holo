@@ -54,6 +54,11 @@ type TransactionRepository interface {
 		pageSize int,
 		filters *domain.TransactionFilters,
 	) (*domain.PaginatedResult[domain.Transaction], error)
+	GetTransactionsByDateRange(
+		ctx context.Context,
+		accountID int,
+		startDate, endDate time.Time,
+	) ([]domain.Transaction, error)
 	GetTransactionByID(ctx context.Context, id int) (*domain.Transaction, error)
 	VoidTransaction(ctx context.Context, transactionID int) error
 	UpdateTransaction(ctx context.Context, tx *domain.Transaction) error

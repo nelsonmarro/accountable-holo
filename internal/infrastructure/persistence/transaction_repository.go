@@ -209,6 +209,15 @@ func (r *TransactionRepositoryImpl) FindTransactions(
 	pageSize int,
 	filters *domain.TransactionFilters,
 ) (*domain.PaginatedResult[domain.Transaction], error) {
+	return nil, nil
+}
+
+func (r *TransactionRepositoryImpl) GetTransactionsByDateRange(
+	ctx context.Context,
+	accountID int,
+	startDate, endDate time.Time,
+) ([]domain.Transaction, error) {
+	return nil, nil
 }
 
 func (r *TransactionRepositoryImpl) VoidTransaction(ctx context.Context, transactionID int) error {
