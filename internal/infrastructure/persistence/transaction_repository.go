@@ -209,12 +209,12 @@ func (r *TransactionRepositoryImpl) FindTransactionsByAccount(
 	pageSize int,
 	filters domain.TransactionFilters,
 ) (*domain.PaginatedResult[domain.Transaction], error) {
-	// --- 1. Build the base query and arguments ---
+	// --- Build the base query and arguments ---
 	args := []any{accountID}
 	whereClauses := []string{"t.account_id = $1"}
 	argsCount := 2 // Start from 2 because the first argument is accountID
 
-	// --- 2. Dynamically add WHERE clauses based on filters ---
+	// --- Dynamically add WHERE clauses based on filters ---
 	if filters.Description != nil && *filters.Description != "" {
 		whereClauses = append(whereClauses, fmt.Sprintf("t.description ILIKE $%d", argsCount))
 		args = append(args, "%"+*filters.Description+"%")
@@ -228,8 +228,10 @@ func (r *TransactionRepositoryImpl) FindTransactionsByAccount(
 	}
 
 	if filters.EndDate != nil {
-		whereClauses = append(whereClauses, fmt.Sprintf("t.transaction_date <= $%d", argsCount))
-		args = append(args, *filters.EndDate)
+		endDate := *filters.EndDate
+		nextDay := endDate.Add(24 * time.Hour)
+		whereClauses = append(whereClauses, fmt.Sprintf("t.transaction_date < $%d", argsCount))
+		args = append(args, nextDay)
 		argsCount++
 	}
 
@@ -245,45 +247,35 @@ func (r *TransactionRepositoryImpl) FindTransactionsByAccount(
 		argsCount++
 	}
 
-	// --- 3. Combine the query parts
-	query := baseQuery
-	if len(whereClauses) > 0 {
-		query += " AND " + strings.Join(whereClauses, " AND ")
-	}
-	query += ")"
+	whereCondition := strings.Join(whereClauses, " AND ")
 
-	// --- 4. Get the total count for pagination ---
-	contQuery := "SELECT COUNT(*) FROM FilteredTransactions"
+	// --- Get the total count for pagination ---
+	countQuery := `
+              SELECT COUNT(t.id)
+              FROM transactions t
+              LEFT JOIN categories c ON t.category_id = c.id
+              WHERE ` + whereCondition
+
 	var totalCount int64
-	err := r.db.QueryRow(ctx, query+contQuery, args...).Scan(&totalCount)
+	err := r.db.QueryRow(ctx, countQuery, args...).Scan(&totalCount)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get total transaction count: %w", err)
+		return nil, fmt.Errorf("failed to count transactions: %w",
+			err)
 	}
 
-	// --- 5 Add ordering and pagination ---
-	// We need to calculate running balance on the paginated set
-	finalQuery := query + `
-       , TransactionsWithBalance AS (
-               SELECT
-                       ft.*,
-                       (SELECT COALESCE(SUM(CASE WHEN type = 'income' THEN
-      t2.amount ELSE -t2.amount END), 0)
-                        FROM transactions t2
-                        JOIN categories c2 ON t2.category_id = c2.id
-                        WHERE t2.account_id 1 AND (t2.transaction_date <
-      ft.transaction_date OR (t2.transaction_date =
-      ft.transaction_date AND t2.id <= ft.id))
-                      ) + (SELECT initial_balance FROM accounts WHERE id 1) as
-      running_balance
-              FROM FilteredTransactions ft
-      )
-      SELECT * FROM TransactionsWithBalance
-      ORDER BY transaction_date DESC, id DESC
-      LIMIT ` + fmt.Sprintf("$%d", argsCount) + ` OFFSET ` + fmt.Sprintf("$%d", argCount+1) + `;
-    `
+	if totalCount == 0 {
+		return &domain.PaginatedResult[domain.Transaction]{
+			Data:       []domain.Transaction{},
+			TotalCount: 0,
+			Page:       page,
+			PageSize:   pageSize,
+		}, nil
+	}
 
+	// --- Build the main query for fetching the paginated data ---
+	limit := pageSize
 	offset := (page - 1) * pageSize
-	args = append(args, offset, pageSize)
+	paginationArgs := append(args, limit, offset)
 
 	return nil, nil
 }
