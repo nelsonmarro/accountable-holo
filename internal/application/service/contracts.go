@@ -47,7 +47,7 @@ type TransactionRepository interface {
 		pageSize int,
 		filter ...string,
 	) (*domain.PaginatedResult[domain.Transaction], error)
-	FindTransactions(
+	FindTransactionsByAccount(
 		ctx context.Context,
 		accountID int,
 		page int,

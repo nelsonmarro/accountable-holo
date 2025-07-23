@@ -202,7 +202,7 @@ func (r *TransactionRepositoryImpl) GetTransactionsByAccountPaginated(
 		nil
 }
 
-func (r *TransactionRepositoryImpl) FindTransactions(
+func (r *TransactionRepositoryImpl) FindTransactionsByAccount(
 	ctx context.Context,
 	accountID int,
 	page int,
