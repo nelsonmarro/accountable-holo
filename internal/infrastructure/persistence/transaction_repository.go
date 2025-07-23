@@ -321,7 +321,61 @@ func (r *TransactionRepositoryImpl) FindTransactionsByAccount(
 	}
 	defer rows.Close()
 
-	return nil, nil
+	transactions := make([]domain.Transaction, 0, pageSize)
+	for rows.Next() {
+		var tx domain.Transaction
+		var categoryName string
+		var categoryType domain.CategoryType
+		var attachment sql.NullString
+		var voidedBy sql.NullInt64
+		var voids sql.NullInt64
+		err := rows.Scan(
+			&tx.ID,
+			&tx.TransactionNumber,
+			&tx.Description,
+			&tx.Amount,
+			&tx.TransactionDate,
+			&tx.AccountID,
+			&tx.CategoryID,
+			&attachment,
+			&tx.IsVoided,
+			&voidedBy,
+			&voids,
+			&categoryName,
+			&categoryType,
+			&tx.RunningBalance,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan transaction: %w", err)
+		}
+		if attachment.Valid {
+			tx.AttachmentPath = &attachment.String
+		}
+		if voidedBy.Valid {
+			val := int(voidedBy.Int64)
+			tx.VoidedByTransactionID = &val
+		}
+		if voids.Valid {
+			val := int(voids.Int64)
+			tx.VoidsTransactionID = &val
+		}
+		tx.Category = &domain.Category{
+			Name: categoryName,
+			Type: categoryType,
+		}
+		transactions = append(transactions, tx)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, fmt.Errorf("error iterating over transactions: %w", err)
+	}
+
+	return &domain.PaginatedResult[domain.Transaction]{
+		Data:       transactions,
+		TotalCount: totalCount,
+		Page:       page,
+		PageSize:   pageSize,
+	}, nil
 }
 
 func (r *TransactionRepositoryImpl) GetTransactionsByDateRange(
