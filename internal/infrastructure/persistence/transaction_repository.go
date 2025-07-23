@@ -284,38 +284,28 @@ func (r *TransactionRepositoryImpl) FindTransactionsByAccount(
 	// --- 5 Add ordering and pagination ---
 	// We need to calculate running balance on the paginated set
 	finalQuery := query + `
-              , RankedTransactions AS (
-                      SELECT *,
-                              ROW_NUMBER() OVER (ORDER BY transaction_date DESC, id DESC)
-     as rn
-                      FROM FilteredTransactions
-              )
-              SELECT
-                      rt.id,
-                      rt.description,
-                      rt.amount,
-                      rt.transaction_date,
-                      rt.transaction_number,
-                      rt.attachment_path,
-                      rt.is_voided,
-                      rt.voids_transaction_id,
-                      rt.category_id,
-                      rt.category_name,
-                      rt.category_type,
-                      (SELECT COALESCE(SUM(CASE WHEN type = 'income' THEN
-     t2.amount ELSE -t2.amount END), 0)
-                       FROM transactions t2
-                       JOIN categories c2 ON t2.category_id = c2.id
-                       WHERE t2.account_id 1 AND (t2.transaction_date <
-     rt.transaction_date OR (t2.transaction_date =
-     rt.transaction_date AND t2.id <= rt.id))
+       , TransactionsWithBalance AS (
+               SELECT
+                       ft.*,
+                       (SELECT COALESCE(SUM(CASE WHEN type = 'income' THEN
+      t2.amount ELSE -t2.amount END), 0)
+                        FROM transactions t2
+                        JOIN categories c2 ON t2.category_id = c2.id
+                        WHERE t2.account_id 1 AND (t2.transaction_date <
+      ft.transaction_date OR (t2.transaction_date =
+      ft.transaction_date AND t2.id <= ft.id))
                       ) + (SELECT initial_balance FROM accounts WHERE id 1) as
-     running_balance
-              FROM RankedTransactions rt
-              WHERE rn >` + fmt.Sprintf("%d", argCount) + ` AND rn <= $`
-	+fmt.Sprintf("%d", argCount+1) + `
-              ORDER BY rt.transaction_date DESC, rt.id DESC;
-     `
+      running_balance
+              FROM FilteredTransactions ft
+      )
+      SELECT * FROM TransactionsWithBalance
+      ORDER BY transaction_date DESC, id DESC
+      LIMIT ` + fmt.Sprintf("%d", argCount) + ` OFFSET $` +
+		fmt.Sprintf("%d", argCount+1) + `;
+    `
+
+	offset := (page - 1) * pageSize
+	args = append(args, offset, pageSize)
 
 	return nil, nil
 }
