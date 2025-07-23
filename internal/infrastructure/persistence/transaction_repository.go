@@ -210,29 +210,8 @@ func (r *TransactionRepositoryImpl) FindTransactionsByAccount(
 	filters domain.TransactionFilters,
 ) (*domain.PaginatedResult[domain.Transaction], error) {
 	// --- 1. Build the base query and arguments ---
-
-	baseQuery := `
-              WITH FilteredTransactions AS (
-                      SELECT
-                              t.id,
-                              t.description,
-                              t.amount,
-                              t.transaction_date,
-                              t.transaction_number,
-                              t.attachment_path,
-                              t.is_voided,
-								              t.voided_by_transaction_id,
-                              t.voids_transaction_id,
-                              c.id as category_id,
-                              c.name as category_name,
-              type as category_type
-                      FROM transactions t
-                      LEFT JOIN categories c ON t.category_id = c.id
-                      WHERE t.account_id 1 $
-     `
-
 	args := []any{accountID}
-	whereClauses := []string{}
+	whereClauses := []string{"t.account_id = $1"}
 	argsCount := 2 // Start from 2 because the first argument is accountID
 
 	// --- 2. Dynamically add WHERE clauses based on filters ---
