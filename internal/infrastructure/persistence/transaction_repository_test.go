@@ -69,7 +69,7 @@ func TestUpdateTransaction(t *testing.T) {
 		truncateTables(t)
 		acc := createTestAccount(t, accountRepo)
 		cat := createTestCategory(t, categoryRepo, "Salary", domain.Income)
-		
+
 		// Create a transaction in a past month to avoid future date errors
 		lastMonth := time.Now().AddDate(0, -1, 0)
 		tx := createTestTransaction(t, txRepo, acc.ID, cat.ID, 100.0, lastMonth)
@@ -117,7 +117,7 @@ func TestUpdateTransaction(t *testing.T) {
 		cat := createTestCategory(t, categoryRepo, "Salary", domain.Income)
 		_ = createTestCategory(t, categoryRepo, "Anular Transacción Ingreso", domain.Outcome)
 		tx := createTestTransaction(t, txRepo, acc.ID, cat.ID, 100.0, time.Now())
-		
+
 		// Manually void the transaction for the test
 		_, err := dbPool.Exec(context.Background(), "UPDATE transactions SET is_voided = TRUE WHERE id = $1", tx.ID)
 		require.NoError(t, err)
@@ -148,18 +148,17 @@ func TestFindTransactionsByAccount(t *testing.T) {
 
 	// Create a set of transactions to test against
 	now := time.Now().Truncate(time.Second)
-	createTestTransaction(t, txRepo, acc.ID, catIncome.ID, 2000.00, now.AddDate(0, 0, -10))      // 1
-	createTestTransaction(t, txRepo, acc.ID, catOutcome.ID, 50.00, now.AddDate(0, 0, -8))       // 2
-	createTestTransaction(t, txRepo, acc.ID, catOutcome.ID, 75.00, now.AddDate(0, 0, -6))       // 3 - "Special Groceries"
+	createTestTransaction(t, txRepo, acc.ID, catIncome.ID, 2000.00, now.AddDate(0, 0, -10))              // 1
+	createTestTransaction(t, txRepo, acc.ID, catOutcome.ID, 50.00, now.AddDate(0, 0, -8))                // 2
+	createTestTransaction(t, txRepo, acc.ID, catOutcome.ID, 75.00, now.AddDate(0, 0, -6))                // 3 - "Special Groceries"
 	txToFind := createTestTransaction(t, txRepo, acc.ID, catFreelance.ID, 500.00, now.AddDate(0, 0, -5)) // 4
-	createTestTransaction(t, txRepo, acc.ID, catOutcome.ID, 25.00, now.AddDate(0, 0, -3))       // 5
-	createTestTransaction(t, txRepo, acc.ID, catIncome.ID, 2000.00, now.AddDate(0, 0, -1))      // 6
-	
+	createTestTransaction(t, txRepo, acc.ID, catOutcome.ID, 25.00, now.AddDate(0, 0, -3))                // 5
+	createTestTransaction(t, txRepo, acc.ID, catIncome.ID, 2000.00, now.AddDate(0, 0, -1))               // 6
+
 	// Manually update one description for search testing
 	txToFind.Description = "Special Freelance Project"
 	err := txRepo.UpdateTransaction(ctx, txToFind)
 	require.NoError(t, err)
-
 
 	// --- Test Scenarios ---
 
@@ -176,7 +175,7 @@ func TestFindTransactionsByAccount(t *testing.T) {
 		assert.Len(t, result.Data, 6, "Data slice should contain 6 transactions")
 		// Check if the most recent transaction is first
 		assert.Equal(t, float64(2000.00), result.Data[0].Amount)
-				assert.Equal(t, now.AddDate(0, 0, -1).Year(), result.Data[0].TransactionDate.Year())
+		assert.Equal(t, now.AddDate(0, 0, -1).Year(), result.Data[0].TransactionDate.Year())
 		assert.Equal(t, now.AddDate(0, 0, -1).Month(), result.Data[0].TransactionDate.Month())
 		assert.Equal(t, now.AddDate(0, 0, -1).Day(), result.Data[0].TransactionDate.Day())
 	})
@@ -260,7 +259,7 @@ func TestFindTransactionsByAccount(t *testing.T) {
 		assert.Equal(t, int64(6), result.TotalCount, "Total count should still be 6")
 		assert.Len(t, result.Data, 2, "The second page should have the remaining 2 transactions")
 		// The 5th transaction overall is the first on the second page
-		assert.Equal(t, float64(50.00), result.Data[0].Amount) 
+		assert.Equal(t, float64(50.00), result.Data[0].Amount)
 		// The 6th transaction overall is the second on the second page
 		assert.Equal(t, float64(2000.00), result.Data[1].Amount)
 	})
@@ -278,7 +277,7 @@ func TestFindTransactionsByAccount(t *testing.T) {
 		assert.Equal(t, int64(0), result.TotalCount)
 		assert.Len(t, result.Data, 0)
 	})
-	
+
 	t.Run("should calculate running balance correctly", func(t *testing.T) {
 		// Arrange
 		// Account initial balance is 1000.50
@@ -302,8 +301,8 @@ func TestFindTransactionsByAccount(t *testing.T) {
 		// 6. -1 day:   +2000.00 -> 5350.50
 
 		// The most recent transaction (-1 day) should have the final balance
-		assert.InDelta(t, 5350.50, result.Data[0].RunningBalance, 0.001) 
-		
+		assert.InDelta(t, 5350.50, result.Data[0].RunningBalance, 0.001)
+
 		// The transaction from -5 days ago should have its corresponding running balance
 		var checkedTx domain.Transaction
 		for _, tx := range result.Data {
