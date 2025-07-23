@@ -266,6 +266,57 @@ func (r *TransactionRepositoryImpl) FindTransactionsByAccount(
 		argsCount++
 	}
 
+	// --- 3. Combine the query parts
+	query := baseQuery
+	if len(whereClauses) > 0 {
+		query += " AND " + strings.Join(whereClauses, " AND ")
+	}
+	query += ")"
+
+	// --- 4. Get the total count for pagination ---
+	contQuery := "SELECT COUNT(*) FROM FilteredTransactions"
+	var totalCount int64
+	err := r.db.QueryRow(ctx, query+contQuery, args...).Scan(&totalCount)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get total transaction count: %w", err)
+	}
+
+	// --- 5 Add ordering and pagination ---
+	// We need to calculate running balance on the paginated set
+	finalQuery := query + `
+              , RankedTransactions AS (
+                      SELECT *,
+                              ROW_NUMBER() OVER (ORDER BY transaction_date DESC, id DESC)
+     as rn
+                      FROM FilteredTransactions
+              )
+              SELECT
+                      rt.id,
+                      rt.description,
+                      rt.amount,
+                      rt.transaction_date,
+                      rt.transaction_number,
+                      rt.attachment_path,
+                      rt.is_voided,
+                      rt.voids_transaction_id,
+                      rt.category_id,
+                      rt.category_name,
+                      rt.category_type,
+                      (SELECT COALESCE(SUM(CASE WHEN type = 'income' THEN
+     t2.amount ELSE -t2.amount END), 0)
+                       FROM transactions t2
+                       JOIN categories c2 ON t2.category_id = c2.id
+                       WHERE t2.account_id 1 AND (t2.transaction_date <
+     rt.transaction_date OR (t2.transaction_date =
+     rt.transaction_date AND t2.id <= rt.id))
+                      ) + (SELECT initial_balance FROM accounts WHERE id 1) as
+     running_balance
+              FROM RankedTransactions rt
+              WHERE rn >` + fmt.Sprintf("%d", argCount) + ` AND rn <= $`
+	+fmt.Sprintf("%d", argCount+1) + `
+              ORDER BY rt.transaction_date DESC, rt.id DESC;
+     `
+
 	return nil, nil
 }
 
