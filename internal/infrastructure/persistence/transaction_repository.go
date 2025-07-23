@@ -207,8 +207,65 @@ func (r *TransactionRepositoryImpl) FindTransactionsByAccount(
 	accountID int,
 	page int,
 	pageSize int,
-	filters *domain.TransactionFilters,
+	filters domain.TransactionFilters,
 ) (*domain.PaginatedResult[domain.Transaction], error) {
+	// --- 1. Build the base query and arguments ---
+
+	baseQuery := `
+              WITH FilteredTransactions AS (
+                      SELECT
+                              t.id,
+                              t.description,
+                              t.amount,
+                              t.transaction_date,
+                              t.transaction_number,
+                              t.attachment_path,
+                              t.is_voided,
+								              t.voided_by_transaction_id,
+                              t.voids_transaction_id,
+                              c.id as category_id,
+                              c.name as category_name,
+              type as category_type
+                      FROM transactions t
+                      LEFT JOIN categories c ON t.category_id = c.id
+                      WHERE t.account_id 1 $
+     `
+
+	args := []any{accountID}
+	whereClauses := []string{}
+	argsCount := 2 // Start from 2 because the first argument is accountID
+
+	// --- 2. Dynamically add WHERE clauses based on filters ---
+	if filters.Description != nil && *filters.Description != "" {
+		whereClauses = append(whereClauses, fmt.Sprintf("t.description ILIKE $%d", argsCount))
+		args = append(args, "%"+*filters.Description+"%")
+		argsCount++
+	}
+
+	if filters.StartDate != nil {
+		whereClauses = append(whereClauses, fmt.Sprintf("t.transaction_date >= $%d", argsCount))
+		args = append(args, *filters.StartDate)
+		argsCount++
+	}
+
+	if filters.EndDate != nil {
+		whereClauses = append(whereClauses, fmt.Sprintf("t.transaction_date <= $%d", argsCount))
+		args = append(args, *filters.EndDate)
+		argsCount++
+	}
+
+	if filters.CategoryID != nil {
+		whereClauses = append(whereClauses, fmt.Sprintf("t.category_id = $%d", argsCount))
+		args = append(args, *filters.CategoryID)
+		argsCount++
+	}
+
+	if filters.CategoryType != nil {
+		whereClauses = append(whereClauses, fmt.Sprintf("c.type = $%d", argsCount))
+		args = append(args, *filters.CategoryType)
+		argsCount++
+	}
+
 	return nil, nil
 }
 
@@ -308,7 +365,7 @@ func (r *TransactionRepositoryImpl) VoidTransaction(ctx context.Context, transac
 	voidTransactionQuery := `
 	  insert into transactions
 	    (description, amount, transaction_date, account_id,
-			category_id, voids_transaction_id, created_at, updated_at, transaction_number)
+	  category_id, voids_transaction_id, created_at, updated_at, transaction_number)
 	  	values($1, $2, $3, $4, $5, $6, $7, $8, $9) returning id
 	`
 

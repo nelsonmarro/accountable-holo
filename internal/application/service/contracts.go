@@ -52,7 +52,7 @@ type TransactionRepository interface {
 		accountID int,
 		page int,
 		pageSize int,
-		filters *domain.TransactionFilters,
+		filters domain.TransactionFilters,
 	) (*domain.PaginatedResult[domain.Transaction], error)
 	GetTransactionsByDateRange(
 		ctx context.Context,
