@@ -194,12 +194,21 @@ func (r *TransactionRepositoryImpl) GetTransactionsByAccountPaginated(
 	}
 
 	return &domain.PaginatedResult[domain.Transaction]{
-		Data:       transactions,
-		TotalCount: totalCount,
-		Page:       page,
-		PageSize:   pageSize,
-	},
-	nil
+			Data:       transactions,
+			TotalCount: totalCount,
+			Page:       page,
+			PageSize:   pageSize,
+		},
+		nil
+}
+
+func (r *TransactionRepositoryImpl) FindTransactions(
+	ctx context.Context,
+	accountID int,
+	page int,
+	pageSize int,
+	filters *domain.TransactionFilters,
+) (*domain.PaginatedResult[domain.Transaction], error) {
 }
 
 func (r *TransactionRepositoryImpl) VoidTransaction(ctx context.Context, transactionID int) error {

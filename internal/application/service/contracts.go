@@ -47,6 +47,13 @@ type TransactionRepository interface {
 		pageSize int,
 		filter ...string,
 	) (*domain.PaginatedResult[domain.Transaction], error)
+	FindTransactions(
+		ctx context.Context,
+		accountID int,
+		page int,
+		pageSize int,
+		filters *domain.TransactionFilters,
+	) (*domain.PaginatedResult[domain.Transaction], error)
 	GetTransactionByID(ctx context.Context, id int) (*domain.Transaction, error)
 	VoidTransaction(ctx context.Context, transactionID int) error
 	UpdateTransaction(ctx context.Context, tx *domain.Transaction) error
