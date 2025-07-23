@@ -297,7 +297,7 @@ func (r *TransactionRepositoryImpl) FindTransactionsByAccount(
             SELECT initial_balance FROM accounts WHERE id = t.account_id
         ) + (
             SELECT
-                COALESCE(SUM(CASE WHEN c_inner.type = 'Ingreso' THEN t_inner.amount ELSE -t_inner.amount END), 0)
+                SELECT COALESCE(SUM(CASE WHEN c_inner.type = 'Ingreso' THEN t_inner.amount ELSE -t_inner.amount END), 0)
             FROM
                 transactions AS t_inner
             JOIN
