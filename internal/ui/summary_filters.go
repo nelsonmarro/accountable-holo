@@ -19,6 +19,7 @@ var dateRangeOptions = []string{
 	"Este Año",
 }
 
+// makeFilterCard creates a card with filters for generating financial summaries.
 func (ui *UI) makeFilterCard() fyne.CanvasObject {
 	ui.summaryDateRangeSelect = widget.NewSelect(dateRangeOptions, nil)
 	ui.summaryDateRangeSelect.SetSelected(dateRangeOptions[0]) // Default to "This Month"
@@ -45,6 +46,7 @@ func (ui *UI) makeFilterCard() fyne.CanvasObject {
 	)
 }
 
+// loadAccountsForSummary fetches all accounts and populates the account selection dropdown.
 func (ui *UI) loadAccountsForSummary() {
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()

@@ -19,6 +19,7 @@ var (
 	defaultAmount = decimal.NewFromFloat(0.0)
 )
 
+// makeSummaryCard creates a card with financial metrics for the summary dashboard.
 func (ui *UI) makeSummaryCard() fyne.CanvasObject {
 	ui.summaryTotalIncome = newMetricText(defaultAmount, domain.Income)
 	ui.summaryTotalExpenses = newMetricText(defaultAmount, domain.Outcome)
