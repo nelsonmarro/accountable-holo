@@ -52,6 +52,16 @@ func (s *TransactionServiceImpl) GetTransactionByAccountPaginated(ctx context.Co
 	return result, nil
 }
 
+func (s *TransactionServiceImpl) FindTransactionsByAccount(
+	ctx context.Context,
+	accountID int,
+	page int,
+	pageSize int,
+	filters domain.TransactionFilters,
+) (*domain.PaginatedResult[domain.Transaction], error) {
+	return s.repo.FindTransactionsByAccount(ctx, accountID, page, pageSize, filters)
+}
+
 func (s *TransactionServiceImpl) GetTransactionByID(ctx context.Context, id int) (*domain.Transaction, error) {
 	if id <= 0 {
 		return nil, fmt.Errorf("ID de transacción inválido: %d", id)
