@@ -300,8 +300,7 @@ func (r *TransactionRepositoryImpl) FindTransactionsByAccount(
       )
       SELECT * FROM TransactionsWithBalance
       ORDER BY transaction_date DESC, id DESC
-      LIMIT ` + fmt.Sprintf("%d", argCount) + ` OFFSET $` +
-		fmt.Sprintf("%d", argCount+1) + `;
+      LIMIT ` + fmt.Sprintf("$%d", argsCount) + ` OFFSET ` + fmt.Sprintf("$%d", argCount+1) + `;
     `
 
 	offset := (page - 1) * pageSize
