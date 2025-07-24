@@ -59,6 +59,10 @@ type TransactionRepository interface {
 		accountID int,
 		startDate, endDate time.Time,
 	) ([]domain.Transaction, error)
+	FindAllTransactionsByAccount(ctx context.Context,
+		accountID int,
+		filters domain.TransactionFilters,
+	) ([]domain.Transaction, error)
 	GetTransactionByID(ctx context.Context, id int) (*domain.Transaction, error)
 	VoidTransaction(ctx context.Context, transactionID int) error
 	UpdateTransaction(ctx context.Context, tx *domain.Transaction) error

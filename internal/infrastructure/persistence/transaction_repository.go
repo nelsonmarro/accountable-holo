@@ -379,6 +379,149 @@ func (r *TransactionRepositoryImpl) FindTransactionsByAccount(
 	}, nil
 }
 
+func (r *TransactionRepositoryImpl) FindAllTransactionsByAccount(
+	ctx context.Context,
+	accountID int,
+	page int,
+	pageSize int,
+	filters domain.TransactionFilters,
+) ([]domain.Transaction, error) {
+	// --- Build the base query and arguments ---
+	args := []any{accountID}
+	whereClauses := []string{"t.account_id = $1"}
+	argsCount := 2 // Start from 2 because the first argument is accountID
+
+	// --- Dynamically add WHERE clauses based on filters ---
+	if filters.Description != nil && *filters.Description != "" {
+		whereClauses = append(whereClauses, fmt.Sprintf("t.description ILIKE $%d", argsCount))
+		args = append(args, "%"+*filters.Description+"%")
+		argsCount++
+	}
+
+	if filters.StartDate != nil {
+		whereClauses = append(whereClauses, fmt.Sprintf("t.transaction_date >= $%d", argsCount))
+		args = append(args, *filters.StartDate)
+		argsCount++
+	}
+
+	if filters.EndDate != nil {
+		endDate := *filters.EndDate
+		nextDay := endDate.Add(24 * time.Hour)
+		whereClauses = append(whereClauses, fmt.Sprintf("t.transaction_date < $%d", argsCount))
+		args = append(args, nextDay)
+		argsCount++
+	}
+
+	if filters.CategoryID != nil {
+		whereClauses = append(whereClauses, fmt.Sprintf("t.category_id = $%d", argsCount))
+		args = append(args, *filters.CategoryID)
+		argsCount++
+	}
+
+	if filters.CategoryType != nil {
+		whereClauses = append(whereClauses, fmt.Sprintf("c.type = $%d", argsCount))
+		args = append(args, *filters.CategoryType)
+		argsCount++
+	}
+
+	whereCondition := strings.Join(whereClauses, " AND ")
+
+	// --- Build the main query for fetching the paginated data ---
+	finalQuery := fmt.Sprintf(`
+    SELECT
+        t.id,
+        t.transaction_number,
+        t.description,
+        t.amount,
+        t.transaction_date,
+        t.account_id,
+        t.category_id,
+        t.attachment_path,
+        t.is_voided,
+        t.voided_by_transaction_id,
+        t.voids_transaction_id,
+        c.name AS category_name,
+        c.type AS category_type,
+        (
+            SELECT initial_balance FROM accounts WHERE id = t.account_id
+        ) + (
+            SELECT
+                COALESCE(SUM(CASE WHEN c_inner.type = 'Ingreso' THEN t_inner.amount ELSE -t_inner.amount END), 0)
+            FROM
+                transactions AS t_inner
+            JOIN
+                categories AS c_inner ON t_inner.category_id = c_inner.id
+            WHERE
+                t_inner.account_id = t.account_id AND
+                (t_inner.transaction_date < t.transaction_date OR (t_inner.transaction_date = t.transaction_date AND t_inner.id <= t.id))
+        ) AS running_balance
+    FROM
+        transactions AS t
+    LEFT JOIN
+        categories AS c ON t.category_id = c.id
+    WHERE %s
+    ORDER BY
+        t.transaction_date DESC, t.id DESC;`, whereCondition)
+
+	rows, err := r.db.Query(ctx, finalQuery, args...)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query transactions: %w", err)
+	}
+	defer rows.Close()
+
+	transactions := make([]domain.Transaction, 0, pageSize)
+	for rows.Next() {
+		var tx domain.Transaction
+		var categoryName, categoryType sql.NullString
+		var attachment sql.NullString
+		var voidedBy sql.NullInt64
+		var voids sql.NullInt64
+		err := rows.Scan(
+			&tx.ID,
+			&tx.TransactionNumber,
+			&tx.Description,
+			&tx.Amount,
+			&tx.TransactionDate,
+			&tx.AccountID,
+			&tx.CategoryID,
+			&attachment,
+			&tx.IsVoided,
+			&voidedBy,
+			&voids,
+			&categoryName,
+			&categoryType,
+			&tx.RunningBalance,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan transaction: %w", err)
+		}
+		if attachment.Valid {
+			tx.AttachmentPath = &attachment.String
+		}
+		if voidedBy.Valid {
+			val := int(voidedBy.Int64)
+			tx.VoidedByTransactionID = &val
+		}
+		if voids.Valid {
+			val := int(voids.Int64)
+			tx.VoidsTransactionID = &val
+		}
+		if categoryName.Valid {
+			tx.Category = &domain.Category{
+				Name: categoryName.String,
+				Type: domain.CategoryType(categoryType.String),
+			}
+		}
+		transactions = append(transactions, tx)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, fmt.Errorf("error iterating over transactions: %w", err)
+	}
+
+	return transactions, rows.Err()
+}
+
 func (r *TransactionRepositoryImpl) GetTransactionsByDateRange(
 	ctx context.Context,
 	accountID int,

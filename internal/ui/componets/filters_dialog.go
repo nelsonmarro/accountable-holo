@@ -76,12 +76,12 @@ func NewFiltersDialog(parentWindow fyne.Window, allCategories []domain.Category,
 	return rd
 }
 
-func (rd *ReportDialog) Show() {
+func (rd *FiltersDialog) Show() {
 	rd.dialog.Resize(fyne.NewSize(480, 380))
 	rd.dialog.Show()
 }
 
-func (rd *ReportDialog) buildFilters() domain.TransactionFilters {
+func (rd *FiltersDialog) buildFilters() domain.TransactionFilters {
 	filters := domain.TransactionFilters{}
 
 	if !rd.startDateEntry.Date.IsZero() {
