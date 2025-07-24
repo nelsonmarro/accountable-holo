@@ -848,5 +848,103 @@ func (r *TransactionRepositoryImpl) buildQueryConditions(
 	filters domain.TransactionFilters,
 	accountID *int,
 ) (string, []any) {
-	return "", nil
+	// --- Build the base query and arguments ---
+	args := []any{}
+	whereClauses := []string{}
+	argsCount := 1
+
+	// --- Dynamically add WHERE clauses based on filters ---
+	if accountID != nil {
+		whereClauses = append(whereClauses, fmt.Sprintf("t.account_id = $%d", argsCount))
+		args = append(args, *accountID)
+		argsCount++
+	}
+
+	if filters.Description != nil && *filters.Description != "" {
+		whereClauses = append(whereClauses, fmt.Sprintf("t.description ILIKE $%d", argsCount))
+		args = append(args, "%"+*filters.Description+"%")
+		argsCount++
+	}
+
+	if filters.StartDate != nil {
+		whereClauses = append(whereClauses, fmt.Sprintf("t.transaction_date >= $%d", argsCount))
+		args = append(args, *filters.StartDate)
+		argsCount++
+	}
+
+	if filters.EndDate != nil {
+		endDate := *filters.EndDate
+		nextDay := endDate.Add(24 * time.Hour)
+		whereClauses = append(whereClauses, fmt.Sprintf("t.transaction_date < $%d", argsCount))
+		args = append(args, nextDay)
+		argsCount++
+	}
+
+	if filters.CategoryID != nil {
+		whereClauses = append(whereClauses, fmt.Sprintf("t.category_id = $%d", argsCount))
+		args = append(args, *filters.CategoryID)
+		argsCount++
+	}
+
+	if filters.CategoryType != nil {
+		whereClauses = append(whereClauses, fmt.Sprintf("c.type = $%d", argsCount))
+		args = append(args, *filters.CategoryType)
+		argsCount++
+	}
+
+	if len(whereClauses) > 0 {
+		return "1 = 1", []any{}
+	}
+
+	return strings.Join(whereClauses, " AND "), args
+}
+
+func (r *TransactionRepositoryImpl) scanTransactions(rows pgx.Rows) ([]domain.Transaction, error) {
+	transactions := make([]domain.Transaction, 0)
+	for rows.Next() {
+		var tx domain.Transaction
+		var categoryName, categoryType sql.NullString
+		var attachment sql.NullString
+		var voidedBy sql.NullInt64
+		var voids sql.NullInt64
+		err := rows.Scan(
+			&tx.ID,
+			&tx.TransactionNumber,
+			&tx.Description,
+			&tx.Amount,
+			&tx.TransactionDate,
+			&tx.AccountID,
+			&tx.CategoryID,
+			&attachment,
+			&tx.IsVoided,
+			&voidedBy,
+			&voids,
+			&categoryName,
+			&categoryType,
+			&tx.RunningBalance,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan transaction: %w", err)
+		}
+		if attachment.Valid {
+			tx.AttachmentPath = &attachment.String
+		}
+		if voidedBy.Valid {
+			val := int(voidedBy.Int64)
+			tx.VoidedByTransactionID = &val
+		}
+		if voids.Valid {
+			val := int(voids.Int64)
+			tx.VoidsTransactionID = &val
+		}
+		if categoryName.Valid {
+			tx.Category = &domain.Category{
+				Name: categoryName.String,
+				Type: domain.CategoryType(categoryType.String),
+			}
+		}
+		transactions = append(transactions, tx)
+	}
+
+	return nil, nil
 }
