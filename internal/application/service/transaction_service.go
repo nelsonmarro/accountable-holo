@@ -90,7 +90,22 @@ func (s *TransactionServiceImpl) FindAllTransactionsByAccount(
 	accountID int,
 	filters domain.TransactionFilters,
 ) ([]domain.Transaction, error) {
-	return s.repo.FindAllTransactionsByAccount(ctx, accountID, filters)
+	transactions, err := s.repo.FindAllTransactionsByAccount(ctx, accountID, filters)
+	if err != nil {
+		return nil, err
+	}
+
+	// Populate the absolute path for the UI
+	for i := range transactions {
+		if transactions[i].AttachmentPath != nil && *transactions[i].AttachmentPath != "" {
+			fullPath, err := s.storage.GetFullPath(*transactions[i].AttachmentPath)
+			if err == nil {
+				transactions[i].AbsoluteAttachPath = fullPath
+			}
+		}
+	}
+
+	return transactions, nil
 }
 
 func (s *TransactionServiceImpl) GetTransactionByID(ctx context.Context, id int) (*domain.Transaction, error) {
@@ -194,8 +209,4 @@ func (s *TransactionServiceImpl) UpdateTransaction(ctx context.Context, tx *doma
 		return fmt.Errorf("error al actualizar la transacción: %w", err)
 	}
 	return nil
-}
-
-func (s *TransactionServiceImpl) UpdateAttachmentPath(ctx context.Context, transactionID int, attachmentPath string) error {
-	return s.repo.UpdateAttachmentPath(ctx, transactionID, attachmentPath)
 }

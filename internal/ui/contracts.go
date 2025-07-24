@@ -70,7 +70,6 @@ type TransactionService interface {
 	GetTransactionByID(ctx context.Context, id int) (*domain.Transaction, error)
 	VoidTransaction(ctx context.Context, transactionID int) error
 	UpdateTransaction(ctx context.Context, tx *domain.Transaction) error
-	UpdateAttachmentPath(ctx context.Context, transactionID int, attachmentPath string) error
 }
 
 type StorageService interface {
