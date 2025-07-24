@@ -20,46 +20,6 @@ func NewTransactionService(repo TransactionRepository, storage StorageService) *
 	return &TransactionServiceImpl{repo: repo, storage: storage}
 }
 
-func (s *TransactionServiceImpl) GetTransactionsByAccountPaginated(ctx context.Context, accountID, page, pageSize int, filter ...string) (*domain.PaginatedResult[domain.Transaction], error) {
-	if accountID <= 0 {
-		return nil, fmt.Errorf("ID de cuenta inválido: %d", accountID)
-	}
-	if page < 1 {
-		page = 1
-	}
-	if pageSize < 1 {
-		pageSize = 10 // Default page size
-	}
-	if page > 100 {
-		page = 100 // Limit to 100 pages
-	}
-
-	result, err := s.repo.GetTransactionsByAccountPaginated(ctx, accountID, page, pageSize, filter...)
-	if err != nil {
-		return nil, err
-	}
-
-	// Populate the absolute path for the UI
-	for i := range result.Data {
-		if result.Data[i].AttachmentPath != nil && *result.Data[i].AttachmentPath != "" {
-			fullPath, err := s.storage.GetFullPath(*result.Data[i].AttachmentPath)
-			if err == nil {
-				result.Data[i].AbsoluteAttachPath = fullPath
-			}
-		}
-	}
-
-	return result, nil
-}
-
-func (s *TransactionServiceImpl) GetTransactionsByDateRange(
-	ctx context.Context,
-	accountID int,
-	startDate, endDate time.Time,
-) ([]domain.Transaction, error) {
-	return s.repo.GetTransactionsByDateRange(ctx, accountID, startDate, endDate)
-}
-
 func (s *TransactionServiceImpl) FindTransactionsByAccount(
 	ctx context.Context,
 	accountID int,

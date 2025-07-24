@@ -39,13 +39,6 @@ type CategoryService interface {
 
 type TransactionService interface {
 	CreateTransaction(ctx context.Context, transaction *domain.Transaction) error
-	GetTransactionsByAccountPaginated(
-		ctx context.Context,
-		accountID,
-		page,
-		pageSize int,
-		filter ...string,
-	) (*domain.PaginatedResult[domain.Transaction], error)
 
 	FindTransactionsByAccount(
 		ctx context.Context,
@@ -54,12 +47,6 @@ type TransactionService interface {
 		pageSize int,
 		filters domain.TransactionFilters,
 	) (*domain.PaginatedResult[domain.Transaction], error)
-
-	GetTransactionsByDateRange(
-		ctx context.Context,
-		accountID int,
-		startDate, endDate time.Time,
-	) ([]domain.Transaction, error)
 
 	FindAllTransactionsByAccount(
 		ctx context.Context,
