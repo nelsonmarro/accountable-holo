@@ -45,7 +45,14 @@ func NewReportDialog(parentWindow fyne.Window, allCategories []domain.Category, 
 	rd.typeSelect = widget.NewSelectEntry([]string{"All", string(domain.Income), string(domain.Outcome)})
 	rd.typeSelect.SetText("All") // Default to "All"
 
-	// --- Build the form ---
+	// --- Create form items ---
+	formItems := []*widget.FormItem{
+		{Text: "Fecha de Inicio", Widget: rd.startDateEntry},
+		{Text: "Fecha de Fin", Widget: rd.endDateEntry},
+		{Text: "Categoria", Widget: rd.categorySelect},
+		{Text: "Tipo de Transacción", Widget: rd.typeSelect},
+		{Text: "Descripción", Widget: rd.descriptionEntry},
+	}
 
 	return rd
 }
