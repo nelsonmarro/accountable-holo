@@ -94,7 +94,7 @@ func (ui *UI) generateSummary() {
 	}
 
 	// Call the service
-	summary, err := ui.Services.ReportService.GenerateFinancialSummary(ctx, startDate, endDate, accountID)
+	summary, err := ui.Services.ReportService.GetFinancialSummary(ctx, startDate, endDate, accountID)
 	if err != nil {
 		dialog.ShowError(err, ui.mainWindow)
 		return

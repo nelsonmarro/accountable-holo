@@ -2,18 +2,12 @@
 package ui
 
 import (
-	"context"
-	"fmt"
 	"log"
 	"os"
-	"path/filepath"
-	"strings"
-	"time"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/canvas"
 	"fyne.io/fyne/v2/container"
-	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/widget"
 	"github.com/nelsonmarro/accountable-holo/internal/domain"
 	"github.com/nelsonmarro/accountable-holo/internal/ui/componets"
@@ -64,46 +58,6 @@ type UI struct {
 	errorLogger *log.Logger
 }
 
-func (ui *UI) generateReport(format string) {
-	if ui.selectedAccountID == 0 {
-		dialog.ShowInformation("Generar Reporte", "Por favor, seleccione una cuenta para generar el reporte.", ui.mainWindow)
-		return
-	}
-
-	progress := dialog.NewProgressInfinite("Generando Reporte", "Por favor espere...", ui.mainWindow)
-	progress.Show()
-
-	go func() {
-		defer progress.Hide()
-
-		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second) // Increased timeout for report generation
-		defer cancel()
-
-		// Get the currently filtered transactions
-		transactions, err := ui.Services.TxService.FindAllTransactionsByAccount(ctx, ui.selectedAccountID, ui.currentTransactionFilters)
-		if err != nil {
-			ui.errorLogger.Printf("Error fetching transactions for report: %v", err)
-			dialog.ShowError(fmt.Errorf("Error al obtener transacciones para el reporte: %v", err), ui.mainWindow)
-			return
-		}
-
-		// Determine output path (e.g., user's documents directory or a temp directory)
-		// For now, let's use a temporary file.
-		outputPath := filepath.Join(os.TempDir(), fmt.Sprintf("report_%s.%s", time.Now().Format("20060102150405"), strings.ToLower(format)))
-
-		err = ui.Services.ReportService.GenerateReportFile(ctx, format, transactions, outputPath)
-		if err != nil {
-			ui.errorLogger.Printf("Error generating report file: %v", err)
-			dialog.ShowError(fmt.Errorf("Error al generar el archivo de reporte: %v", err), ui.mainWindow)
-			return
-		}
-
-		ui.infoLogger.Printf("Report generated successfully at: %s", outputPath)
-		dialog.ShowInformation("Reporte Generado", fmt.Sprintf("Reporte en formato %s generado exitosamente en:\n%s", format, outputPath), ui.mainWindow)
-	}()
-}
-
-// NewUI is the constructor for the UI struct.
 func NewUI(services *Services) *UI {
 	return &UI{
 		Services:    services,
