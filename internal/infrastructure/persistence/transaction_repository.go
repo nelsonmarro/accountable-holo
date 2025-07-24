@@ -843,3 +843,10 @@ func (r *TransactionRepositoryImpl) generateTransactionNumber(ctx context.Contex
 
 	return fmt.Sprintf("%s-%s-%04d", prefix, dateComp, sequence), nil
 }
+
+func (r *TransactionRepositoryImpl) buildQueryConditions(
+	filters domain.TransactionFilters,
+	accountID *int,
+) (string, []any) {
+	return "", nil
+}
