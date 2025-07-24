@@ -75,3 +75,11 @@ func NewReportDialog(parentWindow fyne.Window, allCategories []domain.Category, 
 
 	return rd
 }
+
+func (rd *ReportDialog) Show() {
+	rd.dialog.Resize(fyne.NewSize(480, 380))
+	rd.dialog.Show()
+}
+
+func (rd *ReportDialog) buildFilters() domain.TransactionFilters {
+}
