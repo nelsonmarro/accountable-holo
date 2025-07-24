@@ -96,7 +96,7 @@ func (ui *UI) makeTransactionUI() fyne.CanvasObject {
 		})
 		filtersDialog.Show()
 	})
-	advancedFiltersBtn.Importance = widget.SuccessImportance
+	advancedFiltersBtn.Importance = widget.HighImportance
 
 	generateReportBtn := widget.NewButton("Generar Reporte", func() {
 		reportDialog := componets.NewReportDialog(ui.mainWindow, func(format string) {})
