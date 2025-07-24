@@ -82,4 +82,16 @@ func (rd *ReportDialog) Show() {
 }
 
 func (rd *ReportDialog) buildFilters() domain.TransactionFilters {
+	filters := domain.TransactionFilters{}
+
+	if !rd.startDateEntry.Date.IsZero() {
+		filters.StartDate = rd.startDateEntry.Date
+	}
+	if !rd.endDateEntry.Date.IsZero() {
+		filters.EndDate = rd.endDateEntry.Date
+	}
+
+	if rd.descriptionEntry.Text != "" {
+		filters.Description = &rd.descriptionEntry.Text
+	}
 }
