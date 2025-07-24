@@ -633,7 +633,7 @@ func (r *TransactionRepositoryImpl) buildQueryConditions(
 		argsCount++
 	}
 
-	if len(whereClauses) > 0 {
+	if len(whereClauses) == 0 {
 		return "1 = 1", []any{}
 	}
 

@@ -315,3 +315,115 @@ func TestFindTransactionsByAccount(t *testing.T) {
 		assert.InDelta(t, 3375.50, checkedTx.RunningBalance, 0.001, "Running balance for the -5 day transaction is incorrect")
 	})
 }
+
+func TestFindAllTransactionsByAccount(t *testing.T) {
+	// Setup Repositories
+	accountRepo := NewAccountRepository(dbPool)
+	categoryRepo := NewCategoryRepository(dbPool)
+	txRepo := NewTransactionRepository(dbPool)
+	ctx := context.Background()
+
+	// --- Test Data Setup ---
+	truncateTables(t) // Clear database before test
+	acc := createTestAccount(t, accountRepo)
+	catIncome := createTestCategory(t, categoryRepo, "Salary", domain.Income)
+	catOutcome := createTestCategory(t, categoryRepo, "Groceries", domain.Outcome)
+	catFreelance := createTestCategory(t, categoryRepo, "Freelance Work", domain.Income)
+
+	// Create a set of transactions to test against
+	now := time.Now().Truncate(time.Second)
+	createTestTransaction(t, txRepo, acc.ID, catIncome.ID, 2000.00, now.AddDate(0, 0, -10))
+	createTestTransaction(t, txRepo, acc.ID, catOutcome.ID, 50.00, now.AddDate(0, 0, -8))
+	txToFind := createTestTransaction(t, txRepo, acc.ID, catFreelance.ID, 500.00, now.AddDate(0, 0, -5))
+	createTestTransaction(t, txRepo, acc.ID, catOutcome.ID, 25.00, now.AddDate(0, 0, -3))
+	createTestTransaction(t, txRepo, acc.ID, catIncome.ID, 2000.00, now.AddDate(0, 0, -1))
+
+	// Manually update one description for search testing
+	txToFind.Description = "Special Freelance Project"
+	err := txRepo.UpdateTransaction(ctx, txToFind)
+	require.NoError(t, err)
+
+	// --- Test Scenarios ---
+
+	t.Run("should fetch all transactions with no filters", func(t *testing.T) {
+		// Arrange
+		filters := domain.TransactionFilters{}
+
+		// Act
+		result, err := txRepo.FindAllTransactionsByAccount(ctx, acc.ID, filters)
+
+		// Assert
+		require.NoError(t, err)
+		assert.Len(t, result, 5, "Should find all 5 transactions")
+	})
+
+	t.Run("should filter by description", func(t *testing.T) {
+		// Arrange
+		desc := "Special Freelance"
+		filters := domain.TransactionFilters{Description: &desc}
+
+		// Act
+		result, err := txRepo.FindAllTransactionsByAccount(ctx, acc.ID, filters)
+
+		// Assert
+		require.NoError(t, err)
+		assert.Len(t, result, 1)
+		assert.Equal(t, txToFind.ID, result[0].ID)
+	})
+
+	t.Run("should filter by date range", func(t *testing.T) {
+		// Arrange
+		startDate := now.AddDate(0, 0, -8)
+		endDate := now.AddDate(0, 0, -3)
+		filters := domain.TransactionFilters{StartDate: &startDate, EndDate: &endDate}
+
+		// Act
+		result, err := txRepo.FindAllTransactionsByAccount(ctx, acc.ID, filters)
+
+		// Assert
+		require.NoError(t, err)
+		assert.Len(t, result, 3, "Should find 3 transactions in the date range")
+	})
+
+	t.Run("should filter by category", func(t *testing.T) {
+		// Arrange
+		filters := domain.TransactionFilters{CategoryID: &catOutcome.ID}
+
+		// Act
+		result, err := txRepo.FindAllTransactionsByAccount(ctx, acc.ID, filters)
+
+		// Assert
+		require.NoError(t, err)
+		assert.Len(t, result, 2, "Should find both 'Groceries' transactions")
+	})
+
+	t.Run("should filter by transaction type", func(t *testing.T) {
+		// Arrange
+		incomeType := domain.Income
+		filters := domain.TransactionFilters{CategoryType: &incomeType}
+
+		// Act
+		result, err := txRepo.FindAllTransactionsByAccount(ctx, acc.ID, filters)
+
+		// Assert
+		require.NoError(t, err)
+		assert.Len(t, result, 3, "Should find all 3 income transactions")
+		for _, tx := range result {
+			require.NotNil(t, tx.Category)
+			assert.Equal(t, domain.Income, tx.Category.Type)
+		}
+	})
+
+	t.Run("should return no results for filters that don't match", func(t *testing.T) {
+		// Arrange
+		desc := "NonExistent"
+		filters := domain.TransactionFilters{Description: &desc}
+
+		// Act
+		result, err := txRepo.FindAllTransactionsByAccount(ctx, acc.ID, filters)
+
+		// Assert
+		require.NoError(t, err)
+		assert.Len(t, result, 0)
+	})
+}
