@@ -68,6 +68,11 @@ type TransactionRepository interface {
 		filters domain.TransactionFilters,
 	) ([]domain.Transaction, error)
 
+	FindAllTransactions(
+		ctx context.Context,
+		filters domain.TransactionFilters,
+	) ([]domain.Transaction, error)
+
 	GetTransactionByID(ctx context.Context, id int) (*domain.Transaction, error)
 	VoidTransaction(ctx context.Context, transactionID int) error
 	UpdateTransaction(ctx context.Context, tx *domain.Transaction) error

@@ -30,7 +30,15 @@ func (s *ReportServiceImpl) GetFinancialSummary(ctx context.Context, startDate, 
 		EndDate:   &endDate,
 	}
 
-	transactions, err := s.transactionRepo.FindAllTransactionsByAccount(ctx, *accountID, filters) // Removed page and pageSize
+	var transactions []domain.Transaction
+	var err error
+
+	if accountID != nil {
+		transactions, err = s.transactionRepo.FindAllTransactionsByAccount(ctx, *accountID, filters)
+	} else {
+		transactions, err = s.transactionRepo.FindAllTransactions(ctx, filters)
+	}
+
 	if err != nil {
 		return domain.FinancialSummary{}, err
 	}
