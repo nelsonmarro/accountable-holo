@@ -96,11 +96,13 @@ func (ui *UI) makeTransactionUI() fyne.CanvasObject {
 		})
 		filtersDialog.Show()
 	})
+	advancedFiltersBtn.Importance = widget.SuccessImportance
 
 	generateReportBtn := widget.NewButton("Generar Reporte", func() {
 		reportDialog := componets.NewReportDialog(ui.mainWindow, func(format string) {})
 		reportDialog.Show()
 	})
+	generateReportBtn.Importance = widget.SuccessImportance
 
 	topBar := container.NewBorder(nil, nil, txAddBtn, container.NewHBox(advancedFiltersBtn, generateReportBtn), searchBar)
 	filters := container.NewBorder(
