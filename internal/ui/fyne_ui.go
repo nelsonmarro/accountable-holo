@@ -15,16 +15,15 @@ import (
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/widget"
-	"github.com/nelsonmarro/accountable-holo/internal/application/service"
 	"github.com/nelsonmarro/accountable-holo/internal/domain"
 	"github.com/nelsonmarro/accountable-holo/internal/ui/componets"
 )
 
 type Services struct {
-	AccService    service.AccountAppService
-	CatService    service.CategoryAppService
-	TxService     service.TransactionAppService
-	ReportService service.ReportAppService
+	AccService    AccountService
+	CatService    CategoryService
+	TxService     TransactionService
+	ReportService ReportService
 }
 
 // The UI struct holds the dependencies and state for the Fyne UI.
@@ -45,13 +44,13 @@ type UI struct {
 	categories        *domain.PaginatedResult[domain.Category]
 	categoryFilter    string
 
-	transactionList      *widget.List
-	transactionPaginator *componets.Pagination
-	transactions         *domain.PaginatedResult[domain.Transaction]
-	transactionFilter    string
+	transactionList           *widget.List
+	transactionPaginator      *componets.Pagination
+	transactions              *domain.PaginatedResult[domain.Transaction]
+	transactionFilter         string
 	currentTransactionFilters domain.TransactionFilters
-	accountSelector      *widget.Select
-	selectedAccountID    int
+	accountSelector           *widget.Select
+	selectedAccountID         int
 
 	// ---- Summary Tab State ----
 	summaryDateRangeSelect *widget.Select
@@ -78,30 +77,30 @@ func (ui *UI) generateReport(format string) {
 		defer progress.Hide()
 
 		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second) // Increased timeout for report generation
-        defer cancel()
+		defer cancel()
 
-        // Get the currently filtered transactions
-        transactions, err := ui.Services.TxService.FindAllTransactionsByAccount(ctx, ui.selectedAccountID, ui.currentTransactionFilters)
-        if err != nil {
-            ui.errorLogger.Printf("Error fetching transactions for report: %v", err)
-            dialog.ShowError(fmt.Errorf("Error al obtener transacciones para el reporte: %v", err), ui.mainWindow)
-            return
-        }
+		// Get the currently filtered transactions
+		transactions, err := ui.Services.TxService.FindAllTransactionsByAccount(ctx, ui.selectedAccountID, ui.currentTransactionFilters)
+		if err != nil {
+			ui.errorLogger.Printf("Error fetching transactions for report: %v", err)
+			dialog.ShowError(fmt.Errorf("Error al obtener transacciones para el reporte: %v", err), ui.mainWindow)
+			return
+		}
 
-        // Determine output path (e.g., user's documents directory or a temp directory)
-        // For now, let's use a temporary file.
-        outputPath := filepath.Join(os.TempDir(), fmt.Sprintf("report_%s.%s", time.Now().Format("20060102150405"), strings.ToLower(format)))
+		// Determine output path (e.g., user's documents directory or a temp directory)
+		// For now, let's use a temporary file.
+		outputPath := filepath.Join(os.TempDir(), fmt.Sprintf("report_%s.%s", time.Now().Format("20060102150405"), strings.ToLower(format)))
 
-        err = ui.Services.ReportService.GenerateReportFile(ctx, format, transactions, outputPath)
-        if err != nil {
-            ui.errorLogger.Printf("Error generating report file: %v", err)
-            dialog.ShowError(fmt.Errorf("Error al generar el archivo de reporte: %v", err), ui.mainWindow)
-            return
-        }
+		err = ui.Services.ReportService.GenerateReportFile(ctx, format, transactions, outputPath)
+		if err != nil {
+			ui.errorLogger.Printf("Error generating report file: %v", err)
+			dialog.ShowError(fmt.Errorf("Error al generar el archivo de reporte: %v", err), ui.mainWindow)
+			return
+		}
 
-        ui.infoLogger.Printf("Report generated successfully at: %s", outputPath)
-        dialog.ShowInformation("Reporte Generado", fmt.Sprintf("Reporte en formato %s generado exitosamente en:\n%s", format, outputPath), ui.mainWindow)
-    }()
+		ui.infoLogger.Printf("Report generated successfully at: %s", outputPath)
+		dialog.ShowInformation("Reporte Generado", fmt.Sprintf("Reporte en formato %s generado exitosamente en:\n%s", format, outputPath), ui.mainWindow)
+	}()
 }
 
 // NewUI is the constructor for the UI struct.

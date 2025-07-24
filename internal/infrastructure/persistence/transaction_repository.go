@@ -467,7 +467,7 @@ func (r *TransactionRepositoryImpl) FindAllTransactionsByAccount(
 	}
 	defer rows.Close()
 
-	transactions := make([]domain.Transaction, 0, pageSize)
+	transactions := make([]domain.Transaction, 0)
 	for rows.Next() {
 		var tx domain.Transaction
 		var categoryName, categoryType sql.NullString
