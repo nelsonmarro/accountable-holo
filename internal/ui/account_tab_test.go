@@ -110,32 +110,30 @@ func TestFillListData(t *testing.T) {
 	}
 
 	// Create a template canvas object, just like Fyne would.
-	listItemUI := ui.makeListUI()
+	listItemUI := ui.makeAccountListUI()
 
 	// Act
 	// Simulate Fyne calling this function for the first item in the list (ID 101).
-	ui.fillListData(0, listItemUI)
+	ui.fillAccountListData(0, listItemUI)
 
 	// Assert
 	// We need to "drill down" into the container hierarchy to find the widgets.
 	borderContainer := listItemUI.(*fyne.Container)
-	infoContainer := borderContainer.Objects[0].(*fyne.Container)
-	buttonsPaddedContainer := borderContainer.Objects[1].(*fyne.Container)
-	buttonsContainer := buttonsPaddedContainer.Objects[0].(*fyne.Container)
 
 	// Assert Labels are set correctly
-	nameLbl := infoContainer.Objects[0].(*fyne.Container).Objects[0].(*widget.Label)
+	nameLbl := borderContainer.Objects[0].(*widget.Label)
 	assert.Equal(t, "Test Checking - 22", nameLbl.Text)
 
-	typeLbl := infoContainer.Objects[0].(*fyne.Container).Objects[1].(*widget.Label)
+	typeLbl := borderContainer.Objects[2].(*widget.Label)
 	assert.Equal(t, "Tipo de Cuenta: Corriente", typeLbl.Text)
 
-	balanceLbl := infoContainer.Objects[1].(*fyne.Container).Objects[1].(*widget.Label)
+	balanceLbl := borderContainer.Objects[3].(*widget.Label)
 	assert.Equal(t, "1234.56", balanceLbl.Text)
 
 	// Assert that the buttons have an OnTapped handler assigned.
-	editBtn := buttonsContainer.Objects[1].(*widget.Button)
-	deleteBtn := buttonsContainer.Objects[2].(*widget.Button)
+	actionsContainer := borderContainer.Objects[4].(*fyne.Container)
+	editBtn := actionsContainer.Objects[0].(*widget.Button)
+	deleteBtn := actionsContainer.Objects[1].(*widget.Button)
 
 	assert.NotNil(t, editBtn.OnTapped, "Edit button should have an OnTapped handler")
 	assert.NotNil(t, deleteBtn.OnTapped, "Delete button should have an OnTapped handler")

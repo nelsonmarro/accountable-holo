@@ -2,6 +2,7 @@ package ui
 
 import (
 	"context"
+	"fmt"
 	"strconv"
 	"time"
 
@@ -113,9 +114,9 @@ func (ui *UI) fillAccountListData(i widget.ListItemID, o fyne.CanvasObject) {
 	acc := ui.accounts[i]
 	rowContainer := o.(*fyne.Container)
 
-	rowContainer.Objects[0].(*widget.Label).SetText(acc.Name)
+	rowContainer.Objects[0].(*widget.Label).SetText(fmt.Sprintf("%s - %s", acc.Name, acc.Number))
 	rowContainer.Objects[1].(*widget.Label).SetText(acc.Number)
-	rowContainer.Objects[2].(*widget.Label).SetText(string(acc.Type))
+	rowContainer.Objects[2].(*widget.Label).SetText(fmt.Sprintf("Tipo de Cuenta: %s", string(acc.Type)))
 	rowContainer.Objects[3].(*widget.Label).SetText(strconv.FormatFloat(acc.InitialBalance, 'f', 2, 64))
 
 	actionsContainer := rowContainer.Objects[4].(*fyne.Container)

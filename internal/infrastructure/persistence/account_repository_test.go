@@ -4,6 +4,7 @@ package persistence
 
 import (
 	"context"
+	"fmt"
 	"testing"
 	"time"
 
@@ -15,8 +16,8 @@ import (
 // Helper function to create a test account to avoid repetition
 func createTestAccount(t *testing.T, repo *AccountRepositoryImpl) *domain.Account {
 	acc := &domain.Account{
-		Name:           "Test Bank Account",
-		Number:         "12345",
+		Name:           fmt.Sprintf("Test Bank Account %d", time.Now().UnixNano()),
+		Number:         fmt.Sprintf("12345%d", time.Now().UnixNano()),
 		Type:           domain.SavingAccount,
 		InitialBalance: 1000.50,
 	}
@@ -27,15 +28,15 @@ func createTestAccount(t *testing.T, repo *AccountRepositoryImpl) *domain.Accoun
 
 func createTestAccounts(t *testing.T, repo *AccountRepositoryImpl) []*domain.Account {
 	acc1 := &domain.Account{
-		Name:           "Test Bank Account 1",
-		Number:         "12345",
+		Name:           fmt.Sprintf("Test Bank Account 1 %d", time.Now().UnixNano()),
+		Number:         fmt.Sprintf("12345%d", time.Now().UnixNano()),
 		Type:           domain.SavingAccount,
 		InitialBalance: 1000.50,
 	}
 
 	acc2 := &domain.Account{
-		Name:           "Test Bank Account 2",
-		Number:         "67890",
+		Name:           fmt.Sprintf("Test Bank Account 2 %d", time.Now().UnixNano()+1),
+		Number:         fmt.Sprintf("67890%d", time.Now().UnixNano()+1),
 		Type:           domain.OrdinaryAccount,
 		InitialBalance: 1000.50,
 	}
@@ -53,8 +54,8 @@ func TestCreateAccount(t *testing.T) {
 	truncateTables(t)
 	ctx := context.Background()
 	acc := &domain.Account{
-		Name:           "Savings Account",
-		Number:         "54321",
+		Name:           fmt.Sprintf("Savings Account %d", time.Now().UnixNano()),
+		Number:         fmt.Sprintf("54321%d", time.Now().UnixNano()),
 		Type:           domain.AccountType("savings"),
 		InitialBalance: 50.25,
 	}
@@ -157,22 +158,22 @@ func TestUpdateAccount(t *testing.T) {
 func TestAccountExistsForCreate(t *testing.T) {
 	truncateTables(t)
 	ctx := context.Background()
-	_ = createTestAccount(t, testRepo)
+	createdAcc := createTestAccount(t, testRepo) // This creates an account with a unique name and number
 
 	t.Run("should return true for when creating and name exists on other account", func(t *testing.T) {
-		exists, err := testRepo.AccountExists(ctx, "Test Bank Account", "943345", 0)
+		exists, err := testRepo.AccountExists(ctx, createdAcc.Name, fmt.Sprintf("943345%d", time.Now().UnixNano()), 0)
 		require.NoError(t, err)
 		assert.True(t, exists)
 	})
 
 	t.Run("should return true for when updating and number exists on other account", func(t *testing.T) {
-		exists, err := testRepo.AccountExists(ctx, "Other Account", "12345", 0)
+		exists, err := testRepo.AccountExists(ctx, fmt.Sprintf("Other Account %d", time.Now().UnixNano()), createdAcc.Number, 0)
 		require.NoError(t, err)
 		assert.True(t, exists)
 	})
 
 	t.Run("should return false when updating and no other accounts has the same name or number", func(t *testing.T) {
-		exists, err := testRepo.AccountExists(ctx, "Non-Existent Account", "00000", 0)
+		exists, err := testRepo.AccountExists(ctx, fmt.Sprintf("Non-Existent Account %d", time.Now().UnixNano()), fmt.Sprintf("00000%d", time.Now().UnixNano()), 0)
 		// Since we expect a false, an error here would be a problem
 		require.NoError(t, err)
 		assert.False(t, exists)
@@ -185,19 +186,19 @@ func TestAccountExistsForUpdate(t *testing.T) {
 	accounts := createTestAccounts(t, testRepo)
 
 	t.Run("should return true for when updating and name exists on other account", func(t *testing.T) {
-		exists, err := testRepo.AccountExists(ctx, "Test Bank Account 2", accounts[0].Number, accounts[0].ID)
+		exists, err := testRepo.AccountExists(ctx, accounts[1].Name, accounts[0].Number, accounts[0].ID)
 		require.NoError(t, err)
 		assert.True(t, exists)
 	})
 
 	t.Run("should return true for when updating and number exists on other account", func(t *testing.T) {
-		exists, err := testRepo.AccountExists(ctx, "Test Banck Account 3", "67890", accounts[0].ID)
+		exists, err := testRepo.AccountExists(ctx, accounts[0].Name, accounts[1].Number, accounts[0].ID)
 		require.NoError(t, err)
 		assert.True(t, exists)
 	})
 
 	t.Run("should return false when updating and no other accounts has the same name or number", func(t *testing.T) {
-		exists, err := testRepo.AccountExists(ctx, "Non-Existent Account", "00000", accounts[0].ID)
+		exists, err := testRepo.AccountExists(ctx, fmt.Sprintf("Non-Existent Account %d", time.Now().UnixNano()), fmt.Sprintf("00000%d", time.Now().UnixNano()), accounts[0].ID)
 		// Since we expect a false, an error here would be a problem
 		require.NoError(t, err)
 		assert.False(t, exists)
