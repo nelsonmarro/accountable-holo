@@ -54,5 +54,24 @@ func NewReportDialog(parentWindow fyne.Window, allCategories []domain.Category, 
 		{Text: "Descripción", Widget: rd.descriptionEntry},
 	}
 
+	// Create the formDialog
+	callback := func(confirmed bool) {
+		if !confirmed {
+			return
+		}
+
+		filters := rd.buildFilters()
+		rd.applyCallback(filters)
+	}
+
+	rd.dialog = dialog.NewForm(
+		"Filtros Avanzadps",
+		"Applicar",
+		"Cancelar",
+		formItems,
+		callback,
+		rd.parentWindow,
+	)
+
 	return rd
 }
