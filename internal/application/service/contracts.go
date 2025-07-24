@@ -7,7 +7,7 @@ import (
 	"github.com/nelsonmarro/accountable-holo/internal/domain"
 )
 
-type AccountRepository interface {
+type AccountService interface {
 	GetAllAccounts(ctx context.Context) ([]domain.Account, error)
 	GetAccountByID(ctx context.Context, id int) (*domain.Account, error)
 	AccountExists(ctx context.Context, name, number string, id int) (bool, error)
@@ -16,7 +16,7 @@ type AccountRepository interface {
 	DeleteAccount(ctx context.Context, id int) error
 }
 
-type CategoryRepository interface {
+type CategoryService interface {
 	GetPaginatedCategories(
 		ctx context.Context,
 		page,
@@ -38,7 +38,7 @@ type CategoryRepository interface {
 	DeleteCategory(ctx context.Context, id int) error
 }
 
-type TransactionRepository interface {
+type TransactionService interface {
 	CreateTransaction(ctx context.Context, transaction *domain.Transaction) error
 	GetTransactionsByAccountPaginated(
 		ctx context.Context,

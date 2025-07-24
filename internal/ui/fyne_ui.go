@@ -15,15 +15,16 @@ import (
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/widget"
+	"github.com/nelsonmarro/accountable-holo/internal/application/service"
 	"github.com/nelsonmarro/accountable-holo/internal/domain"
 	"github.com/nelsonmarro/accountable-holo/internal/ui/componets"
 )
 
 type Services struct {
-	AccService    AccountService
-	CatService    CategoryService
-	TxService     TransactionService
-	ReportService ReportService
+	AccService    service.AccountService
+	CatService    service.CategoryService
+	TxService     service.TransactionService
+	ReportService service.ReportService
 }
 
 // The UI struct holds the dependencies and state for the Fyne UI.

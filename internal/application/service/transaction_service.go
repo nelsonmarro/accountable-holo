@@ -12,11 +12,11 @@ import (
 )
 
 type TransactionServiceImpl struct {
-	repo    TransactionRepository
+	repo    TransactionService
 	storage StorageService
 }
 
-func NewTransactionService(repo TransactionRepository, storage StorageService) *TransactionServiceImpl {
+func NewTransactionService(repo TransactionService, storage StorageService) *TransactionServiceImpl {
 	return &TransactionServiceImpl{repo: repo, storage: storage}
 }
 

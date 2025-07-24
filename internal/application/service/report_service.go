@@ -7,19 +7,20 @@ import (
 
 	"github.com/nelsonmarro/accountable-holo/internal/application/report"
 	"github.com/nelsonmarro/accountable-holo/internal/domain"
+	"github.com/nelsonmarro/accountable-holo/internal/infrastructure/persistence"
 	"github.com/shopspring/decimal"
 )
 
 // ReportServiceImpl provides methods to generate financial reports.
 type ReportServiceImpl struct {
-	repo            ReportRepository
-	transactionRepo TransactionRepository
+	repo            persistence.ReportRepositoryImpl
+	transactionRepo TransactionService
 	csvGenerator    report.ReportGenerator
 	pdfGenerator    report.ReportGenerator
 }
 
 // NewReportService creates a new instance of ReportServiceImpl with the given repository.
-func NewReportService(repo ReportRepository, transactionRepo TransactionRepository, csvGenerator report.ReportGenerator, pdfGenerator report.ReportGenerator) *ReportServiceImpl {
+func NewReportService(repo persistence.ReportRepositoryImpl, transactionRepo TransactionService, csvGenerator report.ReportGenerator, pdfGenerator report.ReportGenerator) *ReportServiceImpl {
 	return &ReportServiceImpl{repo: repo, transactionRepo: transactionRepo, csvGenerator: csvGenerator, pdfGenerator: pdfGenerator}
 }
 
@@ -30,7 +31,7 @@ func (s *ReportServiceImpl) GenerateFinancialSummary(ctx context.Context, startD
 		EndDate:   &endDate,
 	}
 
-	transactions, err := s.transactionRepo.FindAllTransactionsByAccount(ctx, *accountID, 1, 1000000, filters) // Assuming a large enough page size for all transactions
+	transactions, err := s.transactionRepo.FindAllTransactionsByAccount(ctx, *accountID, filters) // Removed page and pageSize
 	if err != nil {
 		return domain.FinancialSummary{}, err
 	}
