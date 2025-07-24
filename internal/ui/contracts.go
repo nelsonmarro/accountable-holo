@@ -7,16 +7,15 @@ import (
 	"github.com/nelsonmarro/accountable-holo/internal/domain"
 )
 
-type AccountRepository interface {
+type AccountService interface {
 	GetAllAccounts(ctx context.Context) ([]domain.Account, error)
 	GetAccountByID(ctx context.Context, id int) (*domain.Account, error)
-	AccountExists(ctx context.Context, name, number string, id int) (bool, error)
-	CreateAccount(ctx context.Context, acc *domain.Account) error
+	CreateNewAccount(ctx context.Context, acc *domain.Account) error
 	UpdateAccount(ctx context.Context, acc *domain.Account) error
 	DeleteAccount(ctx context.Context, id int) error
 }
 
-type CategoryRepository interface {
+type CategoryService interface {
 	GetPaginatedCategories(
 		ctx context.Context,
 		page,
@@ -32,13 +31,12 @@ type CategoryRepository interface {
 
 	GetAllCategories(ctx context.Context) ([]domain.Category, error)
 	GetCategoryByID(ctx context.Context, id int) (*domain.Category, error)
-	CategoryExists(ctx context.Context, name string, id int) (bool, error)
 	CreateCategory(ctx context.Context, category *domain.Category) error
 	UpdateCategory(ctx context.Context, category *domain.Category) error
 	DeleteCategory(ctx context.Context, id int) error
 }
 
-type TransactionRepository interface {
+type TransactionService interface {
 	CreateTransaction(ctx context.Context, transaction *domain.Transaction) error
 	GetTransactionsByAccountPaginated(
 		ctx context.Context,
@@ -80,7 +78,7 @@ type StorageService interface {
 	Delete(ctx context.Context, storagePath string) error
 }
 
-type ReportRepository interface {
+type ReportService interface {
 	GetFinancialSummary(ctx context.Context, startDate, endDate time.Time, accountID *int) (domain.FinancialSummary, error)
 	GetReconciliation(ctx context.Context, accountID int, startDate, endDate time.Time) (*domain.Reconciliation, error)
 }

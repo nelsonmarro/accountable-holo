@@ -98,7 +98,7 @@ func (ui *UI) makeTransactionUI() fyne.CanvasObject {
 	})
 
 	generateReportBtn := widget.NewButton("Generar Reporte", func() {
-		reportDialog := componets.NewReportDialog(ui.mainWindow, ui.generateReport)
+		reportDialog := componets.NewReportDialog(ui.mainWindow, func(format string) {})
 		reportDialog.Show()
 	})
 
@@ -350,12 +350,12 @@ func (ui *UI) loadAccountsForTx() {
 		accountNames[i] = acc.Name
 	}
 
+	ui.accountSelector.Options = accountNames
+	if len(ui.accounts) > 0 {
+		ui.selectedAccountID = ui.accounts[0].ID
+		ui.accountSelector.SetSelected(ui.accounts[0].Name)
+	}
 	fyne.Do(func() {
-		ui.accountSelector.Options = accountNames
-		if len(ui.accounts) > 0 {
-			ui.selectedAccountID = ui.accounts[0].ID
-			ui.accountSelector.SetSelected(ui.accounts[0].Name)
-		}
 		ui.accountSelector.Refresh()
 	})
 	go ui.loadTransactions(1, ui.transactionPaginator.GetPageSize())
