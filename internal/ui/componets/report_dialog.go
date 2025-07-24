@@ -65,8 +65,8 @@ func NewReportDialog(parentWindow fyne.Window, allCategories []domain.Category, 
 	}
 
 	rd.dialog = dialog.NewForm(
-		"Filtros Avanzadps",
-		"Applicar",
+		"Filtros Avanzados",
+		"Aplicar",
 		"Cancelar",
 		formItems,
 		callback,
@@ -94,4 +94,22 @@ func (rd *ReportDialog) buildFilters() domain.TransactionFilters {
 	if rd.descriptionEntry.Text != "" {
 		filters.Description = &rd.descriptionEntry.Text
 	}
+
+	selectedType := rd.typeSelect.Text
+	if selectedType == string(domain.Income) || selectedType == string(domain.Outcome) {
+		ct := domain.CategoryType(selectedType)
+		filters.CategoryType = &ct
+	}
+
+	selectedCatName := rd.categorySelect.Text
+	if selectedCatName != "All" && selectedCatName != "" {
+		for _, cat := range rd.allCategories {
+			if cat.Name == selectedCatName {
+				filters.CategoryID = &cat.ID
+				break
+			}
+		}
+	}
+
+	return filters
 }
