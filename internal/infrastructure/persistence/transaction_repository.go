@@ -382,8 +382,6 @@ func (r *TransactionRepositoryImpl) FindTransactionsByAccount(
 func (r *TransactionRepositoryImpl) FindAllTransactionsByAccount(
 	ctx context.Context,
 	accountID int,
-	page int,
-	pageSize int,
 	filters domain.TransactionFilters,
 ) ([]domain.Transaction, error) {
 	// --- Build the base query and arguments ---
