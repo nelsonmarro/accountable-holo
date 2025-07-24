@@ -31,5 +31,21 @@ func NewReportDialog(parentWindow fyne.Window, allCategories []domain.Category, 
 	rd.endDateEntry = widget.NewDateEntry()
 	rd.descriptionEntry = widget.NewEntry()
 	rd.descriptionEntry.SetPlaceHolder("Filter by description")
+
+	// Setup category selection
+	categoryNames := []string{"All"}
+	for _, cat := range allCategories {
+		categoryNames = append(categoryNames, cat.Name)
+	}
+
+	rd.categorySelect = widget.NewSelectEntry(categoryNames)
+	rd.categorySelect.SetText("All")
+
+	// Setup type selection
+	rd.typeSelect = widget.NewSelectEntry([]string{"All", string(domain.Income), string(domain.Outcome)})
+	rd.typeSelect.SetText("All") // Default to "All"
+
+	// --- Build the form ---
+
 	return rd
 }
