@@ -2,8 +2,10 @@ package service
 
 import (
 	"context"
+	"fmt"
 	"time"
 
+	"github.com/nelsonmarro/accountable-holo/internal/application/report"
 	"github.com/nelsonmarro/accountable-holo/internal/domain"
 	"github.com/shopspring/decimal"
 )
@@ -12,11 +14,13 @@ import (
 type ReportServiceImpl struct {
 	repo            ReportRepository
 	transactionRepo TransactionRepository
+	csvGenerator    report.ReportGenerator
+	pdfGenerator    report.ReportGenerator
 }
 
 // NewReportService creates a new instance of ReportServiceImpl with the given repository.
-func NewReportService(repo ReportRepository, transactionRepo TransactionRepository) *ReportServiceImpl {
-	return &ReportServiceImpl{repo: repo, transactionRepo: transactionRepo}
+func NewReportService(repo ReportRepository, transactionRepo TransactionRepository, csvGenerator report.ReportGenerator, pdfGenerator report.ReportGenerator) *ReportServiceImpl {
+	return &ReportServiceImpl{repo: repo, transactionRepo: transactionRepo, csvGenerator: csvGenerator, pdfGenerator: pdfGenerator}
 }
 
 // GenerateFinancialSummary generates a financial summary report for the given date range.
@@ -51,6 +55,17 @@ func (s *ReportServiceImpl) GenerateFinancialSummary(ctx context.Context, startD
 		TotalExpenses: totalExpenses,
 		NetProfitLoss: netProfitLoss,
 	}, nil
+}
+
+func (s *ReportServiceImpl) GenerateReportFile(ctx context.Context, format string, transactions []domain.Transaction, outputPath string) error {
+	switch format {
+	case "CSV":
+		return s.csvGenerator.Generate(ctx, transactions, outputPath)
+	case "PDF":
+		return s.pdfGenerator.Generate(ctx, transactions, outputPath)
+	default:
+		return fmt.Errorf("unsupported report format: %s", format)
+	}
 }
 
 func (s *ReportServiceImpl) GenerateReconciliation(ctx context.Context, accountID int, startDate, endDate time.Time, endingBalance decimal.Decimal) (*domain.Reconciliation, error) {

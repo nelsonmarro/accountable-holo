@@ -88,7 +88,21 @@ func (ui *UI) makeTransactionUI() fyne.CanvasObject {
 	txAddBtn.Importance = widget.HighImportance
 
 	// Containers
-	topBar := container.NewBorder(nil, nil, txAddBtn, nil, searchBar)
+	advancedFiltersBtn := widget.NewButton("Filtros Avanzados", func() {
+		// TODO: Pass actual categories
+		filtersDialog := componets.NewFiltersDialog(ui.mainWindow, []domain.Category{}, func(filters domain.TransactionFilters) {
+			ui.currentTransactionFilters = filters
+			ui.loadTransactions(1, ui.transactionPaginator.GetPageSize())
+		})
+		filtersDialog.Show()
+	})
+
+	generateReportBtn := widget.NewButton("Generar Reporte", func() {
+		reportDialog := componets.NewReportDialog(ui.mainWindow, ui.generateReport)
+		reportDialog.Show()
+	})
+
+	topBar := container.NewBorder(nil, nil, txAddBtn, container.NewHBox(advancedFiltersBtn, generateReportBtn), searchBar)
 	filters := container.NewBorder(
 		nil,
 		nil,
@@ -295,7 +309,13 @@ func (ui *UI) loadTransactions(page int, pageSize int) {
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
 
-	result, err := ui.Services.TxService.GetTransactionByAccountPaginated(ctx, ui.selectedAccountID, page, pageSize, ui.transactionFilter)
+	// Apply the search bar filter to the current advanced filters
+	filters := ui.currentTransactionFilters
+	if ui.transactionFilter != "" {
+		filters.Description = &ui.transactionFilter
+	}
+
+	result, err := ui.Services.TxService.FindTransactionsByAccount(ctx, ui.selectedAccountID, page, pageSize, filters)
 	if err != nil {
 		dialog.ShowError(err, ui.mainWindow)
 		return

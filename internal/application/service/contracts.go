@@ -75,7 +75,8 @@ type StorageService interface {
 	Delete(ctx context.Context, storagePath string) error
 }
 
-type ReportRepository interface {
+type ReportService interface {
 	GetFinancialSummary(ctx context.Context, startDate, endDate time.Time, accountID *int) (domain.FinancialSummary, error)
 	GetReconciliation(ctx context.Context, accountID int, startDate, endDate time.Time) (*domain.Reconciliation, error)
+	GenerateReportFile(ctx context.Context, format string, transactions []domain.Transaction, outputPath string) error
 }

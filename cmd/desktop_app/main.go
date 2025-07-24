@@ -7,6 +7,7 @@ import (
 
 	"fyne.io/fyne/v2/app"
 	"github.com/nelsonmarro/accountable-holo/config"
+	"github.com/nelsonmarro/accountable-holo/internal/application/report"
 	"github.com/nelsonmarro/accountable-holo/internal/application/service"
 	"github.com/nelsonmarro/accountable-holo/internal/infrastructure/database"
 	persistence "github.com/nelsonmarro/accountable-holo/internal/infrastructure/persistence"
@@ -44,11 +45,15 @@ func main() {
 	txRepo := persistence.NewTransactionRepository(pool)
 	reportRepo := persistence.NewReportRepository(pool)
 
+	// ---- Application (Report Generators) ----
+	csvGen := report.NewCSVReportGenerator()
+	pdfGen := report.NewPDFReportGenerator()
+
 	// ---- Application (Services) ----
 	accService := service.NewAccountService(accRepo)
 	catService := service.NewCategoryService(catRepo)
 	txService := service.NewTransactionService(txRepo, storageService)
-	reportService := service.NewReportService(reportRepo)
+	reportService := service.NewReportService(reportRepo, txRepo, csvGen, pdfGen)
 
 	// 2. Create UI struct.
 	gui := ui.NewUI(&ui.Services{
