@@ -21,10 +21,10 @@ import (
 )
 
 type Services struct {
-	AccService    service.AccountService
-	CatService    service.CategoryService
-	TxService     service.TransactionService
-	ReportService service.ReportService
+	AccService    service.AccountAppService
+	CatService    service.CategoryAppService
+	TxService     service.TransactionAppService
+	ReportService service.ReportAppService
 }
 
 // The UI struct holds the dependencies and state for the Fyne UI.

@@ -84,4 +84,3 @@ func (s *AccountServiceImpl) DeleteAccount(ctx context.Context, id int) error {
 
 	return nil
 }
-

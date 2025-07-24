@@ -7,20 +7,19 @@ import (
 
 	"github.com/nelsonmarro/accountable-holo/internal/application/report"
 	"github.com/nelsonmarro/accountable-holo/internal/domain"
-	"github.com/nelsonmarro/accountable-holo/internal/infrastructure/persistence"
 	"github.com/shopspring/decimal"
 )
 
 // ReportServiceImpl provides methods to generate financial reports.
 type ReportServiceImpl struct {
-	repo            persistence.ReportRepositoryImpl
-	transactionRepo TransactionService
+	repo            ReportRepository
+	transactionRepo TransactionRepository
 	csvGenerator    report.ReportGenerator
 	pdfGenerator    report.ReportGenerator
 }
 
 // NewReportService creates a new instance of ReportServiceImpl with the given repository.
-func NewReportService(repo persistence.ReportRepositoryImpl, transactionRepo TransactionService, csvGenerator report.ReportGenerator, pdfGenerator report.ReportGenerator) *ReportServiceImpl {
+func NewReportService(repo ReportRepository, transactionRepo TransactionRepository, csvGenerator report.ReportGenerator, pdfGenerator report.ReportGenerator) *ReportServiceImpl {
 	return &ReportServiceImpl{repo: repo, transactionRepo: transactionRepo, csvGenerator: csvGenerator, pdfGenerator: pdfGenerator}
 }
 

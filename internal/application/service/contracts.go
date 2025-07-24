@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/nelsonmarro/accountable-holo/internal/domain"
+	"github.com/shopspring/decimal"
 )
 
 type AccountService interface {
@@ -16,7 +17,7 @@ type AccountService interface {
 	DeleteAccount(ctx context.Context, id int) error
 }
 
-type CategoryService interface {
+type CategoryRepository interface {
 	GetPaginatedCategories(
 		ctx context.Context,
 		page,
@@ -75,8 +76,47 @@ type StorageService interface {
 	Delete(ctx context.Context, storagePath string) error
 }
 
-type ReportService interface {
+type ReportRepository interface {
 	GetFinancialSummary(ctx context.Context, startDate, endDate time.Time, accountID *int) (domain.FinancialSummary, error)
 	GetReconciliation(ctx context.Context, accountID int, startDate, endDate time.Time) (*domain.Reconciliation, error)
+	GenerateReportFile(ctx context.Context, format string, transactions []domain.Transaction, outputPath string) error
+}
+
+// AccountAppService defines the interface for account-related application services.
+type AccountAppService interface {
+	CreateNewAccount(ctx context.Context, acc *domain.Account) error
+	GetAllAccounts(ctx context.Context) ([]domain.Account, error)
+	GetAccountByID(ctx context.Context, id int) (*domain.Account, error)
+	UpdateAccount(ctx context.Context, acc *domain.Account) error
+	DeleteAccount(ctx context.Context, id int) error
+}
+
+// CategoryAppService defines the interface for category-related application services.
+type CategoryAppService interface {
+	GetAllCategories(ctx context.Context) ([]domain.Category, error)
+	GetPaginatedCategories(ctx context.Context, page, pageSize int, filter ...string) (*domain.PaginatedResult[domain.Category], error)
+	GetSelectablePaginatedCategories(ctx context.Context, page, pageSize int, filter ...string) (*domain.PaginatedResult[domain.Category], error)
+	GetCategoryByID(ctx context.Context, id int) (*domain.Category, error)
+	CreateCategory(ctx context.Context, category *domain.Category) error
+	UpdateCategory(ctx context.Context, category *domain.Category) error
+	DeleteCategory(ctx context.Context, id int) error
+}
+
+// TransactionAppService defines the interface for transaction-related application services.
+type TransactionAppService interface {
+	CreateTransaction(ctx context.Context, transaction *domain.Transaction) error
+	GetTransactionsByAccountPaginated(ctx context.Context, accountID, page, pageSize int, filter ...string) (*domain.PaginatedResult[domain.Transaction], error)
+	FindTransactionsByAccount(ctx context.Context, accountID int, page int, pageSize int, filters domain.TransactionFilters) (*domain.PaginatedResult[domain.Transaction], error)
+	FindAllTransactionsByAccount(ctx context.Context, accountID int, filters domain.TransactionFilters) ([]domain.Transaction, error)
+	GetTransactionByID(ctx context.Context, id int) (*domain.Transaction, error)
+	VoidTransaction(ctx context.Context, transactionID int) error
+	UpdateTransaction(ctx context.Context, tx *domain.Transaction) error
+	UpdateAttachmentPath(ctx context.Context, transactionID int, attachmentPath string) error
+}
+
+// ReportAppService defines the interface for report-related application services.
+type ReportAppService interface {
+	GenerateFinancialSummary(ctx context.Context, startDate, endDate time.Time, accountID *int) (domain.FinancialSummary, error)
+	GenerateReconciliation(ctx context.Context, accountID int, startDate, endDate time.Time, endingBalance decimal.Decimal) (*domain.Reconciliation, error)
 	GenerateReportFile(ctx context.Context, format string, transactions []domain.Transaction, outputPath string) error
 }
