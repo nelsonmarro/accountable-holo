@@ -41,7 +41,7 @@ func (s *TransactionServiceImpl) GetTransactionsByAccountPaginated(ctx context.C
 
 	// Populate the absolute path for the UI
 	for i := range result.Data {
-		if result.Data[i].AttachmentPath != nil {
+		if result.Data[i].AttachmentPath != nil && *result.Data[i].AttachmentPath != "" {
 			fullPath, err := s.storage.GetFullPath(*result.Data[i].AttachmentPath)
 			if err == nil {
 				result.Data[i].AbsoluteAttachPath = fullPath
@@ -67,7 +67,22 @@ func (s *TransactionServiceImpl) FindTransactionsByAccount(
 	pageSize int,
 	filters domain.TransactionFilters,
 ) (*domain.PaginatedResult[domain.Transaction], error) {
-	return s.repo.FindTransactionsByAccount(ctx, accountID, page, pageSize, filters)
+	result, err := s.repo.FindTransactionsByAccount(ctx, accountID, page, pageSize, filters)
+	if err != nil {
+		return nil, err
+	}
+
+	// Populate the absolute path for the UI
+	for i := range result.Data {
+		if result.Data[i].AttachmentPath != nil && *result.Data[i].AttachmentPath != "" {
+			fullPath, err := s.storage.GetFullPath(*result.Data[i].AttachmentPath)
+			if err == nil {
+				result.Data[i].AbsoluteAttachPath = fullPath
+			}
+		}
+	}
+
+	return result, nil
 }
 
 func (s *TransactionServiceImpl) FindAllTransactionsByAccount(
@@ -88,7 +103,7 @@ func (s *TransactionServiceImpl) GetTransactionByID(ctx context.Context, id int)
 	}
 
 	// Populate the absolute path for the UI
-	if tx.AttachmentPath != nil {
+	if tx.AttachmentPath != nil && *tx.AttachmentPath != "" {
 		fullPath, err := s.storage.GetFullPath(*tx.AttachmentPath)
 		if err == nil {
 			tx.AbsoluteAttachPath = fullPath
