@@ -809,6 +809,15 @@ func (r *TransactionRepositoryImpl) UpdateTransaction(ctx context.Context, tx *d
 	return dbTx.Commit(ctx)
 }
 
+func (r *TransactionRepositoryImpl) UpdateAttachmentPath(ctx context.Context, transactionID int, attachmentPath string) error {
+	query := `UPDATE transactions SET attachment_path = $1, updated_at = $2 WHERE id = $3`
+	_, err := r.db.Exec(ctx, query, attachmentPath, time.Now(), transactionID)
+	if err != nil {
+		return fmt.Errorf("failed to update attachment path: %w", err)
+	}
+	return nil
+}
+
 func (r *TransactionRepositoryImpl) generateTransactionNumber(ctx context.Context, tx pgx.Tx, catType domain.CategoryType, catName string, date time.Time) (string, error) {
 	var prefix string
 	if catType == domain.Income {
@@ -833,13 +842,4 @@ func (r *TransactionRepositoryImpl) generateTransactionNumber(ctx context.Contex
 	}
 
 	return fmt.Sprintf("%s-%s-%04d", prefix, dateComp, sequence), nil
-}
-
-func (r *TransactionRepositoryImpl) UpdateAttachmentPath(ctx context.Context, transactionID int, attachmentPath string) error {
-	query := `UPDATE transactions SET attachment_path = $1, updated_at = $2 WHERE id = $3`
-	_, err := r.db.Exec(ctx, query, attachmentPath, time.Now(), transactionID)
-	if err != nil {
-		return fmt.Errorf("failed to update attachment path: %w", err)
-	}
-	return nil
 }
