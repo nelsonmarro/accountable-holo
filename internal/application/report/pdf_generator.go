@@ -1,3 +1,4 @@
+// Package report provides report generation.
 package report
 
 import (

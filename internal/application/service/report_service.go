@@ -23,8 +23,8 @@ func NewReportService(repo ReportRepository, transactionRepo TransactionReposito
 	return &ReportServiceImpl{repo: repo, transactionRepo: transactionRepo, csvGenerator: csvGenerator, pdfGenerator: pdfGenerator}
 }
 
-// GenerateFinancialSummary generates a financial summary report for the given date range.
-func (s *ReportServiceImpl) GenerateFinancialSummary(ctx context.Context, startDate, endDate time.Time, accountID *int) (domain.FinancialSummary, error) {
+// GetFinancialSummary retrieves the financial summary for a given account within a date range.
+func (s *ReportServiceImpl) GetFinancialSummary(ctx context.Context, startDate, endDate time.Time, accountID *int) (domain.FinancialSummary, error) {
 	filters := domain.TransactionFilters{
 		StartDate: &startDate,
 		EndDate:   &endDate,
@@ -40,9 +40,10 @@ func (s *ReportServiceImpl) GenerateFinancialSummary(ctx context.Context, startD
 
 	for _, tx := range transactions {
 		if tx.Category != nil {
-			if tx.Category.Type == domain.Income {
+			switch tx.Category.Type {
+			case domain.Income:
 				totalIncome = totalIncome.Add(decimal.NewFromFloat(tx.Amount))
-			} else if tx.Category.Type == domain.Outcome {
+			case domain.Outcome:
 				totalExpenses = totalExpenses.Add(decimal.NewFromFloat(tx.Amount))
 			}
 		}
@@ -68,7 +69,7 @@ func (s *ReportServiceImpl) GenerateReportFile(ctx context.Context, format strin
 	}
 }
 
-func (s *ReportServiceImpl) GenerateReconciliation(ctx context.Context, accountID int, startDate, endDate time.Time, endingBalance decimal.Decimal) (*domain.Reconciliation, error) {
+func (s *ReportServiceImpl) GetReconciliation(ctx context.Context, accountID int, startDate, endDate time.Time, endingBalance decimal.Decimal) (*domain.Reconciliation, error) {
 	reconciliation, err := s.repo.GetReconciliation(ctx, accountID, startDate, endDate)
 	if err != nil {
 		return nil, err

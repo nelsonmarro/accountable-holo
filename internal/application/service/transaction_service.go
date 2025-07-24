@@ -20,7 +20,7 @@ func NewTransactionService(repo TransactionRepository, storage StorageService) *
 	return &TransactionServiceImpl{repo: repo, storage: storage}
 }
 
-func (s *TransactionServiceImpl) GetTransactionByAccountPaginated(ctx context.Context, accountID, page, pageSize int, filter ...string) (*domain.PaginatedResult[domain.Transaction], error) {
+func (s *TransactionServiceImpl) GetTransactionsByAccountPaginated(ctx context.Context, accountID, page, pageSize int, filter ...string) (*domain.PaginatedResult[domain.Transaction], error) {
 	if accountID <= 0 {
 		return nil, fmt.Errorf("ID de cuenta inválido: %d", accountID)
 	}
@@ -52,6 +52,14 @@ func (s *TransactionServiceImpl) GetTransactionByAccountPaginated(ctx context.Co
 	return result, nil
 }
 
+func (s *TransactionServiceImpl) GetTransactionsByDateRange(
+	ctx context.Context,
+	accountID int,
+	startDate, endDate time.Time,
+) ([]domain.Transaction, error) {
+	return s.repo.GetTransactionsByDateRange(ctx, accountID, startDate, endDate)
+}
+
 func (s *TransactionServiceImpl) FindTransactionsByAccount(
 	ctx context.Context,
 	accountID int,
@@ -60,6 +68,14 @@ func (s *TransactionServiceImpl) FindTransactionsByAccount(
 	filters domain.TransactionFilters,
 ) (*domain.PaginatedResult[domain.Transaction], error) {
 	return s.repo.FindTransactionsByAccount(ctx, accountID, page, pageSize, filters)
+}
+
+func (s *TransactionServiceImpl) FindAllTransactionsByAccount(
+	ctx context.Context,
+	accountID int,
+	filters domain.TransactionFilters,
+) ([]domain.Transaction, error) {
+	return s.repo.FindAllTransactionsByAccount(ctx, accountID, filters)
 }
 
 func (s *TransactionServiceImpl) GetTransactionByID(ctx context.Context, id int) (*domain.Transaction, error) {
@@ -163,4 +179,8 @@ func (s *TransactionServiceImpl) UpdateTransaction(ctx context.Context, tx *doma
 		return fmt.Errorf("error al actualizar la transacción: %w", err)
 	}
 	return nil
+}
+
+func (s *TransactionServiceImpl) UpdateAttachmentPath(ctx context.Context, transactionID int, attachmentPath string) error {
+	return s.repo.UpdateAttachmentPath(ctx, transactionID, attachmentPath)
 }
