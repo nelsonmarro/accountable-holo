@@ -8,7 +8,8 @@ import (
 	"github.com/shopspring/decimal"
 )
 
-type AccountService interface {
+// Repository Interfaces (Contracts for Persistence Layer)
+type AccountRepository interface {
 	GetAllAccounts(ctx context.Context) ([]domain.Account, error)
 	GetAccountByID(ctx context.Context, id int) (*domain.Account, error)
 	AccountExists(ctx context.Context, name, number string, id int) (bool, error)
@@ -39,7 +40,7 @@ type CategoryRepository interface {
 	DeleteCategory(ctx context.Context, id int) error
 }
 
-type TransactionService interface {
+type TransactionRepository interface {
 	CreateTransaction(ctx context.Context, transaction *domain.Transaction) error
 	GetTransactionsByAccountPaginated(
 		ctx context.Context,
@@ -82,7 +83,7 @@ type ReportRepository interface {
 	GenerateReportFile(ctx context.Context, format string, transactions []domain.Transaction, outputPath string) error
 }
 
-// AccountAppService defines the interface for account-related application services.
+// Application Service Interfaces (Contracts for UI Layer)
 type AccountAppService interface {
 	CreateNewAccount(ctx context.Context, acc *domain.Account) error
 	GetAllAccounts(ctx context.Context) ([]domain.Account, error)
@@ -91,7 +92,6 @@ type AccountAppService interface {
 	DeleteAccount(ctx context.Context, id int) error
 }
 
-// CategoryAppService defines the interface for category-related application services.
 type CategoryAppService interface {
 	GetAllCategories(ctx context.Context) ([]domain.Category, error)
 	GetPaginatedCategories(ctx context.Context, page, pageSize int, filter ...string) (*domain.PaginatedResult[domain.Category], error)
@@ -102,7 +102,6 @@ type CategoryAppService interface {
 	DeleteCategory(ctx context.Context, id int) error
 }
 
-// TransactionAppService defines the interface for transaction-related application services.
 type TransactionAppService interface {
 	CreateTransaction(ctx context.Context, transaction *domain.Transaction) error
 	GetTransactionsByAccountPaginated(ctx context.Context, accountID, page, pageSize int, filter ...string) (*domain.PaginatedResult[domain.Transaction], error)
@@ -114,7 +113,6 @@ type TransactionAppService interface {
 	UpdateAttachmentPath(ctx context.Context, transactionID int, attachmentPath string) error
 }
 
-// ReportAppService defines the interface for report-related application services.
 type ReportAppService interface {
 	GenerateFinancialSummary(ctx context.Context, startDate, endDate time.Time, accountID *int) (domain.FinancialSummary, error)
 	GenerateReconciliation(ctx context.Context, accountID int, startDate, endDate time.Time, endingBalance decimal.Decimal) (*domain.Reconciliation, error)
