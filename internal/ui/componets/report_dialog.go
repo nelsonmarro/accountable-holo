@@ -18,3 +18,18 @@ type ReportDialog struct {
 	applyCallback    func(filters domain.TransactionFilters)
 	dialog           dialog.Dialog
 }
+
+func NewReportDialog(parentWindow fyne.Window, allCategories []domain.Category, applyCallback func(filters domain.TransactionFilters)) *ReportDialog {
+	rd := &ReportDialog{
+		parentWindow:  parentWindow,
+		allCategories: allCategories,
+		applyCallback: applyCallback,
+	}
+
+	// Instantiate the dialog components
+	rd.startDateEntry = widget.NewDateEntry()
+	rd.endDateEntry = widget.NewDateEntry()
+	rd.descriptionEntry = widget.NewEntry()
+	rd.descriptionEntry.SetPlaceHolder("Filter by description")
+	return rd
+}
