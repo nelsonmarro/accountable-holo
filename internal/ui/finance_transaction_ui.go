@@ -114,7 +114,24 @@ func (ui *UI) makeTransactionUI() fyne.CanvasObject {
 					progress.Show()
 				})
 
+				ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+				defer cancel()
+
 				// Get all transactions with the current filters
+				transactions, err := ui.Services.TxService.FindAllTransactionsByAccount(
+					ctx,
+					ui.selectedAccountID,
+					ui.currentTransactionFilters,
+				)
+				if err != nil {
+					fyne.Do(func() {
+						progress.Hide()
+						dialog.ShowError(err, ui.mainWindow)
+					})
+					return
+				}
+
+				// Generate the report
 			}()
 		})
 		reportDialog.Show()
