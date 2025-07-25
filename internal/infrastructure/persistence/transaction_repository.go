@@ -163,9 +163,10 @@ func (r *TransactionRepositoryImpl) FindAllTransactionsByAccount(
 	ctx context.Context,
 	accountID int,
 	filters domain.TransactionFilters,
+	searchString *string,
 ) ([]domain.Transaction, error) {
 	// --- Build the base query and arguments ---
-	whereCondition, args := r.buildQueryConditions(filters, &accountID)
+	whereCondition, args := r.buildQueryConditions(filters, searchString, &accountID)
 	// --- Build the main query for fetching the paginated data ---
 	finalQuery := fmt.Sprintf(`
     SELECT
@@ -587,6 +588,7 @@ func (r *TransactionRepositoryImpl) generateTransactionNumber(ctx context.Contex
 
 func (r *TransactionRepositoryImpl) buildQueryConditions(
 	filters domain.TransactionFilters,
+	searchString *string,
 	accountID *int,
 ) (string, []any) {
 	// --- Build the base query and arguments ---
@@ -631,6 +633,11 @@ func (r *TransactionRepositoryImpl) buildQueryConditions(
 		whereClauses = append(whereClauses, fmt.Sprintf("c.type = $%d", argsCount))
 		args = append(args, *filters.CategoryType)
 		argsCount++
+	}
+
+	if searchString != nil && *searchString != "" {
+		whereClauses = append(whereClauses, fmt.Sprintf())("t.description ILIKE $%d OR c.name ILIKE $%d", argsCount, argsCount))
+		args = append(args, "%"+*searchString+"%", "%"+*searchString+"%")
 	}
 
 	if len(whereClauses) == 0 {
