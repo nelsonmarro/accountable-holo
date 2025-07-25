@@ -106,7 +106,16 @@ func (ui *UI) makeTransactionUI() fyne.CanvasObject {
 
 	// Report Buttom
 	generateReportBtn := widget.NewButton("Generar Reporte", func() {
-		reportDialog := componets.NewReportDialog(ui.mainWindow, func(format string) {
+		reportDialog := componets.NewReportDialog(ui.mainWindow, func(format string, outputPath string) {
+			go func() {
+				// Show progess dialog
+				progress := dialog.NewCustomWithoutButtons("Generando Reporte...", widget.NewProgressBarInfinite(), ui.mainWindow)
+				fyne.Do(func() {
+					progress.Show()
+				})
+
+				// Get all transactions with the current filters
+			}()
 		})
 		reportDialog.Show()
 	})
