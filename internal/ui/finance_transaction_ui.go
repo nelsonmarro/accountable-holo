@@ -115,6 +115,7 @@ func (ui *UI) makeTransactionUI() fyne.CanvasObject {
 	reloadDataBtn := widget.NewButtonWithIcon("Recargar Datos", theme.ViewRefreshIcon(), func() {
 		ui.currentTransactionFilters = domain.TransactionFilters{} // Reset filters
 		ui.transactionSearchText = ""                              // Reset search text
+		searchBar.SetText("")
 		go ui.loadTransactions(1, ui.transactionPaginator.GetPageSize())
 	})
 	reloadDataBtn.Importance = widget.SuccessImportance

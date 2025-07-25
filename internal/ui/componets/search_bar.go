@@ -11,6 +11,7 @@ import (
 // SearchBar is a custom widget for filtering data.
 type SearchBar struct {
 	widget.BaseWidget
+	entry     *widget.Entry
 	OnChanged func(string)
 }
 
@@ -19,6 +20,7 @@ func NewSearchBar(onChanged func(string)) *SearchBar {
 	s := &SearchBar{
 		OnChanged: onChanged,
 	}
+	s.entry = widget.NewEntry()
 	s.ExtendBaseWidget(s)
 	return s
 }
@@ -27,23 +29,26 @@ func NewSearchBar(onChanged func(string)) *SearchBar {
 func (s *SearchBar) CreateRenderer() fyne.WidgetRenderer {
 	s.ExtendBaseWidget(s)
 
-	entry := widget.NewEntry()
-	entry.SetPlaceHolder("Search...")
-	entry.OnChanged = s.OnChanged
+	s.entry.SetPlaceHolder("Search...")
+	s.entry.OnChanged = s.OnChanged
 
 	icon := widget.NewIcon(theme.SearchIcon())
 
 	// Use a border layout to place the icon on the left of the entry
-	content := container.NewBorder(nil, nil, icon, nil, entry)
+	content := container.NewBorder(nil, nil, icon, nil, s.entry)
 
 	r := &searchBarRenderer{
 		widget:  s,
-		entry:   entry,
+		entry:   s.entry,
 		icon:    icon,
 		content: content,
 	}
 
 	return r
+}
+
+func (s *SearchBar) SetText(text string) {
+	s.entry.SetText(text)
 }
 
 // searchBarRenderer is the renderer for the SearchBar widget.
