@@ -451,7 +451,7 @@ func TestFindAllTransactions(t *testing.T) {
 	ctx := context.Background()
 
 	// --- Test Data Setup ---
-	truncateTables(t) // Clear database before test
+	truncateTables(t)                         // Clear database before test
 	acc1 := createTestAccount(t, accountRepo) // acc1
 	acc2 := createTestAccount(t, accountRepo) // acc2
 	catIncome := createTestCategory(t, categoryRepo, "Salary", domain.Income)

@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/nelsonmarro/accountable-holo/internal/application/report"
 	"github.com/nelsonmarro/accountable-holo/internal/domain"
 	"github.com/shopspring/decimal"
 )
@@ -14,17 +13,31 @@ import (
 type ReportServiceImpl struct {
 	repo            ReportRepository
 	transactionRepo TransactionRepository
-	csvGenerator    report.ReportGenerator
-	pdfGenerator    report.ReportGenerator
+	csvGenerator    ReportGenerator
+	pdfGenerator    ReportGenerator
 }
 
 // NewReportService creates a new instance of ReportServiceImpl with the given repository.
-func NewReportService(repo ReportRepository, transactionRepo TransactionRepository, csvGenerator report.ReportGenerator, pdfGenerator report.ReportGenerator) *ReportServiceImpl {
-	return &ReportServiceImpl{repo: repo, transactionRepo: transactionRepo, csvGenerator: csvGenerator, pdfGenerator: pdfGenerator}
+func NewReportService(
+	repo ReportRepository,
+	transactionRepo TransactionRepository,
+	csvGenerator ReportGenerator,
+	pdfGenerator ReportGenerator,
+) *ReportServiceImpl {
+	return &ReportServiceImpl{
+		repo:            repo,
+		transactionRepo: transactionRepo,
+		csvGenerator:    csvGenerator,
+		pdfGenerator:    pdfGenerator,
+	}
 }
 
 // GetFinancialSummary retrieves the financial summary for a given account within a date range.
-func (s *ReportServiceImpl) GetFinancialSummary(ctx context.Context, startDate, endDate time.Time, accountID *int) (domain.FinancialSummary, error) {
+func (s *ReportServiceImpl) GetFinancialSummary(
+	ctx context.Context,
+	startDate, endDate time.Time,
+	accountID *int,
+) (domain.FinancialSummary, error) {
 	filters := domain.TransactionFilters{
 		StartDate: &startDate,
 		EndDate:   &endDate,

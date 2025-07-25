@@ -106,7 +106,8 @@ func (ui *UI) makeTransactionUI() fyne.CanvasObject {
 
 	// Report Buttom
 	generateReportBtn := widget.NewButton("Generar Reporte", func() {
-		reportDialog := componets.NewReportDialog(ui.mainWindow, func(format string) {})
+		reportDialog := componets.NewReportDialog(ui.mainWindow, func(format string) {
+		})
 		reportDialog.Show()
 	})
 	generateReportBtn.Importance = widget.SuccessImportance

@@ -128,3 +128,4 @@ func TestBuildQueryConditions(t *testing.T) {
 		assert.Equal(t, expectedArgs, args)
 	})
 }
+
