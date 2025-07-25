@@ -41,7 +41,7 @@ type UI struct {
 	transactionList           *widget.List
 	transactionPaginator      *componets.Pagination
 	transactions              *domain.PaginatedResult[domain.Transaction]
-	transactionFilter         string
+	transactionSearchText     string
 	currentTransactionFilters domain.TransactionFilters
 	accountSelector           *widget.Select
 	selectedAccountID         int

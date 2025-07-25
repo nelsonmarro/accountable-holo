@@ -326,13 +326,15 @@ func (ui *UI) loadTransactions(page int, pageSize int) {
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
 
-	// Apply the search bar filter to the current advanced filters
 	filters := ui.currentTransactionFilters
-	if ui.transactionFilter != "" {
-		filters.Description = &ui.transactionFilter
-	}
 
-	result, err := ui.Services.TxService.FindTransactionsByAccount(ctx, ui.selectedAccountID, page, pageSize, filters)
+	result, err := ui.Services.TxService.FindTransactionsByAccount(
+		ctx,
+		ui.selectedAccountID,
+		page,
+		pageSize,
+		filters,
+		&ui.transactionSearchText)
 	if err != nil {
 		dialog.ShowError(err, ui.mainWindow)
 		return
@@ -347,7 +349,7 @@ func (ui *UI) loadTransactions(page int, pageSize int) {
 }
 
 func (ui *UI) filterTransactions(filter string) {
-	ui.transactionFilter = filter
+	ui.transactionSearchText = filter
 	ui.loadTransactions(1, ui.transactionPaginator.GetPageSize())
 }
 

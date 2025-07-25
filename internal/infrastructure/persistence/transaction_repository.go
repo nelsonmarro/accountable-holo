@@ -636,12 +636,30 @@ func (r *TransactionRepositoryImpl) buildQueryConditions(
 	}
 
 	if searchString != nil && *searchString != "" {
-		whereClauses = append(whereClauses, fmt.Sprintf(`
-			(t.description ILIKE $%d OR t.transaction_number ILIKE $%d OR t.amount = $%d OR c.type ILIKE $%d OR c.name ILIKE $%d)
-			`,
-			argsCount))
-		args = append(args, "%"+*searchString+"%")
+		searchPattern := "%" + *searchString + "%"
+		searchClauses := []string{}
+
+		searchClauses = append(searchClauses, fmt.Sprintf("t.description ILIKE $%d", argsCount))
+		args = append(args, searchPattern)
 		argsCount++
+
+		searchClauses = append(searchClauses, fmt.Sprintf("t.transaction_number ILIKE $%d", argsCount))
+		args = append(args, searchPattern)
+		argsCount++
+
+		searchClauses = append(searchClauses, fmt.Sprintf("CAST(t.amount AS TEXT) ILIKE $%d", argsCount))
+		args = append(args, searchPattern)
+		argsCount++
+
+		searchClauses = append(searchClauses, fmt.Sprintf("c.type ILIKE $%d", argsCount))
+		args = append(args, searchPattern)
+		argsCount++
+
+		searchClauses = append(searchClauses, fmt.Sprintf("c.name ILIKE $%d", argsCount))
+		args = append(args, searchPattern)
+		argsCount++
+
+		whereClauses = append(whereClauses, "("+strings.Join(searchClauses, " OR ")+")")
 	}
 
 	if len(whereClauses) == 0 {
