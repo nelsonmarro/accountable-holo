@@ -107,10 +107,10 @@ func (rd *FiltersDialog) Show() {
 func (rd *FiltersDialog) buildFilters() domain.TransactionFilters {
 	filters := domain.TransactionFilters{}
 
-	if !rd.startDateEntry.Date.IsZero() {
+	if rd.startDateEntry.Date != nil {
 		filters.StartDate = rd.startDateEntry.Date
 	}
-	if !rd.endDateEntry.Date.IsZero() {
+	if rd.endDateEntry.Date != nil {
 		filters.EndDate = rd.endDateEntry.Date
 	}
 
