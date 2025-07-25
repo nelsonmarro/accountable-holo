@@ -14,7 +14,7 @@ type FiltersDialog struct {
 	categorySelect   *widget.SelectEntry
 	typeSelect       *widget.SelectEntry
 	descriptionEntry *widget.Entry
-	allCategories    []domain.Category
+	catService       CategoryService
 	applyCallback    func(filters domain.TransactionFilters)
 	dialog           dialog.Dialog
 }
