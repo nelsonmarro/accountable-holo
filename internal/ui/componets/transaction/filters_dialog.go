@@ -77,6 +77,7 @@ func (rd *FiltersDialog) Show() {
 		{Text: "Tipo de Transacción", Widget: rd.typeSelect},
 		{Text: "Descripción", Widget: rd.descriptionEntry},
 	}
+	form := widget.NewForm(formItems...)
 
 	// Create the formDialog
 	callback := func(confirmed bool) {
@@ -88,11 +89,11 @@ func (rd *FiltersDialog) Show() {
 		rd.applyCallback(filters)
 	}
 
-	rd.dialog = dialog.NewForm(
+	rd.dialog = dialog.NewCustomConfirm(
 		"Filtros Avanzados",
 		"Aplicar",
 		"Cancelar",
-		formItems,
+		form,
 		callback,
 		rd.parentWindow,
 	)
