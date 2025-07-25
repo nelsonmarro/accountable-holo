@@ -9,10 +9,6 @@ import (
 	"github.com/nelsonmarro/accountable-holo/internal/domain"
 )
 
-type ReportGenerator interface {
-	Generate(ctx context.Context, transactions []domain.Transaction, outputPath string) error
-}
-
 type CSVReportGenerator struct{}
 
 func NewCSVReportGenerator() *CSVReportGenerator {
