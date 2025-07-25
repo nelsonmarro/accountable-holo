@@ -1,4 +1,4 @@
-package componets
+package transaction
 
 import (
 	"log"
@@ -40,7 +40,6 @@ func NewFiltersDialog(
 		logger:        logger,
 	}
 	// Instantiate the dialog components
-
 	rd.categoryLabel = widget.NewLabel("Categoría")
 	rd.startDateEntry = widget.NewDateEntry()
 	rd.endDateEntry = widget.NewDateEntry()
@@ -59,6 +58,11 @@ func NewFiltersDialog(
 		)
 		searchDialog.Show()
 	})
+
+	return rd
+}
+
+func (rd *FiltersDialog) Show() {
 	categoryContainer := container.NewBorder(nil, nil, nil, rd.searchCategoryBtn, rd.categoryLabel)
 
 	// Setup type selection
@@ -93,10 +97,6 @@ func NewFiltersDialog(
 		rd.parentWindow,
 	)
 
-	return rd
-}
-
-func (rd *FiltersDialog) Show() {
 	rd.dialog.Resize(fyne.NewSize(480, 380))
 	rd.dialog.Show()
 }
@@ -121,14 +121,8 @@ func (rd *FiltersDialog) buildFilters() domain.TransactionFilters {
 		filters.CategoryType = &ct
 	}
 
-	selectedCatName := rd.categorySelect.Text
-	if selectedCatName != "All" && selectedCatName != "" {
-		for _, cat := range rd.allCategories {
-			if cat.Name == selectedCatName {
-				filters.CategoryID = &cat.ID
-				break
-			}
-		}
+	if rd.selectedCategory != nil {
+		filters.CategoryID = &rd.selectedCategory.ID
 	}
 
 	return filters
