@@ -107,32 +107,7 @@ func (ui *UI) makeTransactionUI() fyne.CanvasObject {
 	// Report Buttom
 	generateReportBtn := widget.NewButton("Generar Reporte", func() {
 		reportDialog := componets.NewReportDialog(ui.mainWindow, func(format string, outputPath string) {
-			go func() {
-				// Show progess dialog
-				progress := dialog.NewCustomWithoutButtons("Generando Reporte...", widget.NewProgressBarInfinite(), ui.mainWindow)
-				fyne.Do(func() {
-					progress.Show()
-				})
-
-				ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
-				defer cancel()
-
-				// Get all transactions with the current filters
-				transactions, err := ui.Services.TxService.FindAllTransactionsByAccount(
-					ctx,
-					ui.selectedAccountID,
-					ui.currentTransactionFilters,
-				)
-				if err != nil {
-					fyne.Do(func() {
-						progress.Hide()
-						dialog.ShowError(err, ui.mainWindow)
-					})
-					return
-				}
-
-				// Generate the report
-			}()
+			go ui.generateReportFile(format, outputPath)
 		})
 		reportDialog.Show()
 	})
@@ -407,4 +382,42 @@ func (ui *UI) loadAccountsForTx() {
 		ui.accountSelector.Refresh()
 	})
 	go ui.loadTransactions(1, ui.transactionPaginator.GetPageSize())
+}
+
+func (ui *UI) generateReportFile(format string, outputPath string) {
+	// Show progess dialog
+	progress := dialog.NewCustomWithoutButtons("Generando Reporte...", widget.NewProgressBarInfinite(), ui.mainWindow)
+	fyne.Do(func() {
+		progress.Show()
+	})
+
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cancel()
+
+	// Get all transactions with the current filters
+	transactions, err := ui.Services.TxService.FindAllTransactionsByAccount(
+		ctx,
+		ui.selectedAccountID,
+		ui.currentTransactionFilters,
+	)
+	if err != nil {
+		fyne.Do(func() {
+			progress.Hide()
+			dialog.ShowError(err, ui.mainWindow)
+		})
+		return
+	}
+
+	// Generate the report
+	err = ui.Services.ReportService.GenerateReportFile(ctx, format, transactions, outputPath)
+	if err != nil {
+		fyne.Do(func() {
+			progress.Hide()
+			dialog.ShowError(err, ui.mainWindow)
+		})
+	}
+
+	fyne.Do(func() {
+		progress.Hide()
+	})
 }
