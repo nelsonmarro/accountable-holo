@@ -1,49 +1,65 @@
 package componets
 
 import (
+	"log"
+
 	"fyne.io/fyne/v2"
+	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/dialog"
+	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 	"github.com/nelsonmarro/accountable-holo/internal/domain"
+	"github.com/nelsonmarro/accountable-holo/internal/ui/componets/category"
 )
 
 type FiltersDialog struct {
-	parentWindow     fyne.Window
-	startDateEntry   *widget.DateEntry
-	endDateEntry     *widget.DateEntry
-	categorySelect   *widget.SelectEntry
-	typeSelect       *widget.SelectEntry
-	descriptionEntry *widget.Entry
-	catService       CategoryService
-	applyCallback    func(filters domain.TransactionFilters)
-	dialog           dialog.Dialog
+	catService        CategoryService
+	parentWindow      fyne.Window
+	startDateEntry    *widget.DateEntry
+	endDateEntry      *widget.DateEntry
+	categoryLabel     *widget.Label
+	searchCategoryBtn *widget.Button
+	selectedCategory  *domain.Category
+	typeSelect        *widget.SelectEntry
+	descriptionEntry  *widget.Entry
+	applyCallback     func(filters domain.TransactionFilters)
+	dialog            dialog.Dialog
+	logger            *log.Logger
 }
 
 func NewFiltersDialog(
 	parentWindow fyne.Window,
-	allCategories []domain.Category,
+	catService CategoryService,
 	applyCallback func(filters domain.TransactionFilters),
+	logger *log.Logger,
 ) *FiltersDialog {
 	rd := &FiltersDialog{
 		parentWindow:  parentWindow,
-		allCategories: allCategories,
+		catService:    catService,
 		applyCallback: applyCallback,
+		logger:        logger,
 	}
-
 	// Instantiate the dialog components
+
+	rd.categoryLabel = widget.NewLabel("Categoría")
 	rd.startDateEntry = widget.NewDateEntry()
 	rd.endDateEntry = widget.NewDateEntry()
 	rd.descriptionEntry = widget.NewEntry()
 	rd.descriptionEntry.SetPlaceHolder("Filter by description")
 
-	// Setup category selection
-	categoryNames := []string{"All"}
-	for _, cat := range allCategories {
-		categoryNames = append(categoryNames, cat.Name)
-	}
-
-	rd.categorySelect = widget.NewSelectEntry(categoryNames)
-	rd.categorySelect.SetText("All")
+	rd.searchCategoryBtn = widget.NewButtonWithIcon("", theme.SearchIcon(), func() {
+		searchDialog := category.NewCategorySearchDialog(
+			rd.parentWindow,
+			rd.logger,
+			rd.catService,
+			func(cat *domain.Category) {
+				rd.selectedCategory = cat
+				rd.categoryLabel.SetText(cat.Name)
+			},
+		)
+		searchDialog.Show()
+	})
+	categoryContainer := container.NewBorder(nil, nil, nil, rd.searchCategoryBtn, rd.categoryLabel)
 
 	// Setup type selection
 	rd.typeSelect = widget.NewSelectEntry([]string{"All", string(domain.Income), string(domain.Outcome)})
@@ -53,7 +69,7 @@ func NewFiltersDialog(
 	formItems := []*widget.FormItem{
 		{Text: "Fecha de Inicio", Widget: rd.startDateEntry},
 		{Text: "Fecha de Fin", Widget: rd.endDateEntry},
-		{Text: "Categoria", Widget: rd.categorySelect},
+		{Text: "Categoria", Widget: categoryContainer},
 		{Text: "Tipo de Transacción", Widget: rd.typeSelect},
 		{Text: "Descripción", Widget: rd.descriptionEntry},
 	}
