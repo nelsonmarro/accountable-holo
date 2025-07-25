@@ -167,7 +167,7 @@ func TestFindTransactionsByAccount(t *testing.T) {
 		filters := domain.TransactionFilters{}
 
 		// Act
-		result, err := txRepo.FindTransactionsByAccount(ctx, acc.ID, 1, 10, filters)
+		result, err := txRepo.FindTransactionsByAccount(ctx, acc.ID, 1, 10, filters, nil)
 
 		// Assert
 		require.NoError(t, err)
@@ -186,7 +186,7 @@ func TestFindTransactionsByAccount(t *testing.T) {
 		filters := domain.TransactionFilters{Description: &desc}
 
 		// Act
-		result, err := txRepo.FindTransactionsByAccount(ctx, acc.ID, 1, 10, filters)
+		result, err := txRepo.FindTransactionsByAccount(ctx, acc.ID, 1, 10, filters, nil)
 
 		// Assert
 		require.NoError(t, err)
@@ -203,7 +203,7 @@ func TestFindTransactionsByAccount(t *testing.T) {
 		filters := domain.TransactionFilters{StartDate: &startDate, EndDate: &endDate}
 
 		// Act
-		result, err := txRepo.FindTransactionsByAccount(ctx, acc.ID, 1, 10, filters)
+		result, err := txRepo.FindTransactionsByAccount(ctx, acc.ID, 1, 10, filters, nil)
 
 		// Assert
 		require.NoError(t, err)
@@ -218,7 +218,7 @@ func TestFindTransactionsByAccount(t *testing.T) {
 		filters := domain.TransactionFilters{CategoryID: &catOutcome.ID}
 
 		// Act
-		result, err := txRepo.FindTransactionsByAccount(ctx, acc.ID, 1, 10, filters)
+		result, err := txRepo.FindTransactionsByAccount(ctx, acc.ID, 1, 10, filters, nil)
 
 		// Assert
 		require.NoError(t, err)
@@ -235,7 +235,7 @@ func TestFindTransactionsByAccount(t *testing.T) {
 		filters := domain.TransactionFilters{CategoryType: &incomeType}
 
 		// Act
-		result, err := txRepo.FindTransactionsByAccount(ctx, acc.ID, 1, 10, filters)
+		result, err := txRepo.FindTransactionsByAccount(ctx, acc.ID, 1, 10, filters, nil)
 
 		// Assert
 		require.NoError(t, err)
@@ -252,7 +252,7 @@ func TestFindTransactionsByAccount(t *testing.T) {
 		filters := domain.TransactionFilters{}
 
 		// Act: Get the second page, with 4 items per page
-		result, err := txRepo.FindTransactionsByAccount(ctx, acc.ID, 2, 4, filters)
+		result, err := txRepo.FindTransactionsByAccount(ctx, acc.ID, 2, 4, filters, nil)
 
 		// Assert
 		require.NoError(t, err)
@@ -270,7 +270,7 @@ func TestFindTransactionsByAccount(t *testing.T) {
 		filters := domain.TransactionFilters{Description: &desc}
 
 		// Act
-		result, err := txRepo.FindTransactionsByAccount(ctx, acc.ID, 1, 10, filters)
+		result, err := txRepo.FindTransactionsByAccount(ctx, acc.ID, 1, 10, filters, nil)
 
 		// Assert
 		require.NoError(t, err)
@@ -284,7 +284,7 @@ func TestFindTransactionsByAccount(t *testing.T) {
 		filters := domain.TransactionFilters{}
 
 		// Act
-		result, err := txRepo.FindTransactionsByAccount(ctx, acc.ID, 1, 10, filters)
+		result, err := txRepo.FindTransactionsByAccount(ctx, acc.ID, 1, 10, filters, nil)
 
 		// Assert
 		require.NoError(t, err)
@@ -313,6 +313,21 @@ func TestFindTransactionsByAccount(t *testing.T) {
 		}
 		require.NotNil(t, checkedTx.ID, "Could not find the specific transaction to check balance")
 		assert.InDelta(t, 3375.50, checkedTx.RunningBalance, 0.001, "Running balance for the -5 day transaction is incorrect")
+	})
+
+	t.Run("should filter by search string", func(t *testing.T) {
+		// Arrange
+		search := "Special"
+		filters := domain.TransactionFilters{}
+
+		// Act
+		result, err := txRepo.FindTransactionsByAccount(ctx, acc.ID, 1, 10, filters, &search)
+
+		// Assert
+		require.NoError(t, err)
+		assert.Equal(t, int64(1), result.TotalCount)
+		assert.Len(t, result.Data, 1)
+		assert.Equal(t, txToFind.ID, result.Data[0].ID)
 	})
 }
 
