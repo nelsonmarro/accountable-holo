@@ -33,18 +33,25 @@ func NewFiltersDialog(
 	applyCallback func(filters domain.TransactionFilters),
 	logger *log.Logger,
 ) *FiltersDialog {
-	rd := &FiltersDialog{
+	return &FiltersDialog{
 		parentWindow:  parentWindow,
 		catService:    catService,
 		applyCallback: applyCallback,
 		logger:        logger,
 	}
-	// Instantiate the dialog components
-	rd.categoryLabel = widget.NewLabel("Categoría")
+}
+
+func (rd *FiltersDialog) Show() {
 	rd.startDateEntry = widget.NewDateEntry()
+	rd.startDateEntry.SetDate(nil)
+
 	rd.endDateEntry = widget.NewDateEntry()
+	rd.endDateEntry.SetDate(nil)
+
 	rd.descriptionEntry = widget.NewEntry()
 	rd.descriptionEntry.SetPlaceHolder("Filter by description")
+
+	rd.categoryLabel = widget.NewLabel("Categoría")
 
 	rd.searchCategoryBtn = widget.NewButtonWithIcon("", theme.SearchIcon(), func() {
 		searchDialog := category.NewCategorySearchDialog(
@@ -58,11 +65,6 @@ func NewFiltersDialog(
 		)
 		searchDialog.Show()
 	})
-
-	return rd
-}
-
-func (rd *FiltersDialog) Show() {
 	categoryContainer := container.NewBorder(nil, nil, nil, rd.searchCategoryBtn, rd.categoryLabel)
 
 	// Setup type selection
