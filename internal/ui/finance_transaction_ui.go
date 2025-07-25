@@ -87,23 +87,31 @@ func (ui *UI) makeTransactionUI() fyne.CanvasObject {
 	})
 	txAddBtn.Importance = widget.HighImportance
 
-	// Containers
+	// Filtres Buttom
 	advancedFiltersBtn := widget.NewButton("Filtros Avanzados", func() {
-		// TODO: Pass actual categories
-		filtersDialog := componets.NewFiltersDialog(ui.mainWindow, []domain.Category{}, func(filters domain.TransactionFilters) {
-			ui.currentTransactionFilters = filters
-			ui.loadTransactions(1, ui.transactionPaginator.GetPageSize())
-		})
+		filtersDialog := transaction.NewFiltersDialog(
+			ui.mainWindow,
+			ui.Services.CatService,
+			func(filters domain.TransactionFilters,
+			) {
+				ui.currentTransactionFilters = filters
+				ui.loadTransactions(1, ui.transactionPaginator.GetPageSize())
+			},
+			ui.errorLogger,
+		)
+
 		filtersDialog.Show()
 	})
 	advancedFiltersBtn.Importance = widget.HighImportance
 
+	// Report Buttom
 	generateReportBtn := widget.NewButton("Generar Reporte", func() {
 		reportDialog := componets.NewReportDialog(ui.mainWindow, func(format string) {})
 		reportDialog.Show()
 	})
 	generateReportBtn.Importance = widget.SuccessImportance
 
+	// Containers
 	topBar := container.NewBorder(nil, nil, txAddBtn, container.NewHBox(advancedFiltersBtn, generateReportBtn), searchBar)
 	filters := container.NewBorder(
 		nil,
