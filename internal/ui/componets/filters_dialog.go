@@ -19,7 +19,11 @@ type FiltersDialog struct {
 	dialog           dialog.Dialog
 }
 
-func NewFiltersDialog(parentWindow fyne.Window, allCategories []domain.Category, applyCallback func(filters domain.TransactionFilters)) *FiltersDialog {
+func NewFiltersDialog(
+	parentWindow fyne.Window,
+	allCategories []domain.Category,
+	applyCallback func(filters domain.TransactionFilters),
+) *FiltersDialog {
 	rd := &FiltersDialog{
 		parentWindow:  parentWindow,
 		allCategories: allCategories,
