@@ -46,6 +46,7 @@ type TransactionRepository interface {
 		page int,
 		pageSize int,
 		filters domain.TransactionFilters,
+		searchString *string,
 	) (*domain.PaginatedResult[domain.Transaction], error)
 
 	FindAllTransactionsByAccount(

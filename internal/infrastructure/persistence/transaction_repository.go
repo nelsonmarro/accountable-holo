@@ -70,9 +70,10 @@ func (r *TransactionRepositoryImpl) FindTransactionsByAccount(
 	page int,
 	pageSize int,
 	filters domain.TransactionFilters,
+	searchString *string,
 ) (*domain.PaginatedResult[domain.Transaction], error) {
 	// --- Build the base query and arguments ---
-	whereCondition, args := r.buildQueryConditions(filters, &accountID)
+	whereCondition, args := r.buildQueryConditions(filters, searchString, &accountID)
 
 	// --- Get the total count for pagination ---
 	countQuery := `
@@ -163,10 +164,9 @@ func (r *TransactionRepositoryImpl) FindAllTransactionsByAccount(
 	ctx context.Context,
 	accountID int,
 	filters domain.TransactionFilters,
-	searchString *string,
 ) ([]domain.Transaction, error) {
 	// --- Build the base query and arguments ---
-	whereCondition, args := r.buildQueryConditions(filters, searchString, &accountID)
+	whereCondition, args := r.buildQueryConditions(filters, nil, &accountID)
 	// --- Build the main query for fetching the paginated data ---
 	finalQuery := fmt.Sprintf(`
     SELECT
@@ -218,7 +218,7 @@ func (r *TransactionRepositoryImpl) FindAllTransactions(
 	filters domain.TransactionFilters,
 ) ([]domain.Transaction, error) {
 	// --- Build the base query and arguments ---
-	whereCondition, args := r.buildQueryConditions(filters, nil)
+	whereCondition, args := r.buildQueryConditions(filters, nil, nil)
 
 	// --- Build the main query for fetching the paginated data ---
 	finalQuery := fmt.Sprintf(`
@@ -636,8 +636,12 @@ func (r *TransactionRepositoryImpl) buildQueryConditions(
 	}
 
 	if searchString != nil && *searchString != "" {
-		whereClauses = append(whereClauses, fmt.Sprintf())("t.description ILIKE $%d OR c.name ILIKE $%d", argsCount, argsCount))
-		args = append(args, "%"+*searchString+"%", "%"+*searchString+"%")
+		whereClauses = append(whereClauses, fmt.Sprintf(`
+			(t.description ILIKE $%d OR t.transaction_number ILIKE $%d OR t.amount = $%d OR c.type ILIKE $%d OR c.name ILIKE $%d)
+			`,
+			argsCount))
+		args = append(args, "%"+*searchString+"%")
+		argsCount++
 	}
 
 	if len(whereClauses) == 0 {

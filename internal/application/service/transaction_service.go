@@ -26,8 +26,9 @@ func (s *TransactionServiceImpl) FindTransactionsByAccount(
 	page int,
 	pageSize int,
 	filters domain.TransactionFilters,
+	searchString *string,
 ) (*domain.PaginatedResult[domain.Transaction], error) {
-	result, err := s.repo.FindTransactionsByAccount(ctx, accountID, page, pageSize, filters)
+	result, err := s.repo.FindTransactionsByAccount(ctx, accountID, page, pageSize, filters, searchString)
 	if err != nil {
 		return nil, err
 	}
