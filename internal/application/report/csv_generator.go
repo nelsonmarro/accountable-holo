@@ -25,7 +25,7 @@ func (g *CSVReportGenerator) Generate(ctx context.Context, transactions []domain
 	writer := csv.NewWriter(file)
 	defer writer.Flush()
 
-	header := []string{"ID", "Transaction Number", "Description", "Amount", "Transaction Date", "Account ID", "Category ID", "Category Name", "Category Type", "Running Balance"}
+	header := []string{"Número de Transacción", "Descripción", "Monto", "Fecha de Transacción", "Nombre de Categoría", "Tipo de Categoría", "Saldo Acumulado"}
 	if err := writer.Write(header); err != nil {
 		return fmt.Errorf("failed to write CSV header: %w", err)
 	}
@@ -39,13 +39,10 @@ func (g *CSVReportGenerator) Generate(ctx context.Context, transactions []domain
 		}
 
 		record := []string{
-			fmt.Sprintf("%d", tx.ID),
 			tx.TransactionNumber,
 			tx.Description,
 			fmt.Sprintf("%.2f", tx.Amount),
 			tx.TransactionDate.Format("2006-01-02"),
-			fmt.Sprintf("%d", tx.AccountID),
-			fmt.Sprintf("%d", tx.CategoryID),
 			categoryName,
 			categoryType,
 			fmt.Sprintf("%.2f", tx.RunningBalance),
