@@ -1,4 +1,4 @@
-#  accountable-holo 📊
+# accountable-holo 📊
 
 Welcome to **Accountable Holo**! ✨ A sleek, modern desktop application designed to help small businesses manage their finances with ease. Keep track of income, expenses, and generate insightful reports to understand your financial health at a glance.
 
@@ -6,12 +6,12 @@ Built with Go and the Fyne toolkit for a beautiful, cross-platform user experien
 
 ## ✨ Core Features
 
--   **Transaction Management:** 💸 Record income and expenses effortlessly.
--   **Category System:** 🏷️ Organize your transactions with customizable categories.
--   **Account Tracking:** 🏦 Manage multiple financial accounts.
--   **Financial Reporting:** 📈 Generate PDF and CSV reports to analyze your financial performance.
--   **Cash Reconciliation:** 🧾 Easily reconcile your accounts to ensure your books are accurate.
--   **Sleek UI:** 🎨 A clean, intuitive interface that's easy to navigate.
+- **Transaction Management:** 💸 Record income and expenses effortlessly.
+- **Category System:** 🏷️ Organize your transactions with customizable categories.
+- **Account Tracking:** 🏦 Manage multiple financial accounts.
+- **Financial Reporting:** 📈 Generate PDF and CSV reports to analyze your financial performance.
+- **Cash Reconciliation:** 🧾 Easily reconcile your accounts to ensure your books are accurate.
+- **Sleek UI:** 🎨 A clean, intuitive interface that's easy to navigate.
 
 ## 🚀 Getting Started
 
@@ -21,8 +21,8 @@ Follow these steps to get Accountable Holo running on your local machine.
 
 Make sure you have the following installed:
 
--   [Go](https://golang.org/doc/install) (version 1.18 or newer)
--   [Soda CLI](https://gobuffalo.io/en/docs/db/soda/installation/) for database migrations.
+- [Go](https://golang.org/doc/install) (version 1.18 or newer)
+- [Soda CLI](https://gobuffalo.io/en/docs/db/soda/installation/) for database migrations.
 
 ### 2. Clone the Repository
 
@@ -81,12 +81,11 @@ And that's it! 🎉 The Accountable Holo application window should appear on you
 
 This project uses a `Makefile` to simplify common tasks. Here are the available commands:
 
-| Command               | Description                                       |
-| --------------------- | ------------------------------------------------- |
-| `make run-desktop-app`  | Runs the desktop application directly.            |
-| `make build-desktop-app`| Builds the application executable into the `/build/desktop_app` directory. |
-| `make help`             | Shows a list of all available commands.           |
-
+| Command                  | Description                                                                |
+| ------------------------ | -------------------------------------------------------------------------- |
+| `make run-desktop-app`   | Runs the desktop application directly.                                     |
+| `make build-desktop-app` | Builds the application executable into the `/build/desktop_app` directory. |
+| `make help`              | Shows a list of all available commands.                                    |
 
 ---
 
