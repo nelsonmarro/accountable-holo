@@ -95,7 +95,8 @@ func (r *TransactionRepositoryImpl) FindTransactionsByAccount(
 			TotalCount: 0,
 			Page:       page,
 			PageSize:   pageSize,
-		}, nil
+		},
+		nil
 	}
 
 	// --- Build the main query for fetching the paginated data ---
@@ -157,16 +158,18 @@ func (r *TransactionRepositoryImpl) FindTransactionsByAccount(
 		TotalCount: totalCount,
 		Page:       page,
 		PageSize:   pageSize,
-	}, nil
+	},
+	nil
 }
 
 func (r *TransactionRepositoryImpl) FindAllTransactionsByAccount(
 	ctx context.Context,
 	accountID int,
 	filters domain.TransactionFilters,
+	searchString *string,
 ) ([]domain.Transaction, error) {
 	// --- Build the base query and arguments ---
-	whereCondition, args := r.buildQueryConditions(filters, nil, &accountID)
+	whereCondition, args := r.buildQueryConditions(filters, searchString, &accountID)
 	// --- Build the main query for fetching the paginated data ---
 	finalQuery := fmt.Sprintf(`
     SELECT
@@ -216,9 +219,10 @@ func (r *TransactionRepositoryImpl) FindAllTransactionsByAccount(
 func (r *TransactionRepositoryImpl) FindAllTransactions(
 	ctx context.Context,
 	filters domain.TransactionFilters,
+	searchString *string,
 ) ([]domain.Transaction, error) {
 	// --- Build the base query and arguments ---
-	whereCondition, args := r.buildQueryConditions(filters, nil, nil)
+	whereCondition, args := r.buildQueryConditions(filters, searchString, nil)
 
 	// --- Build the main query for fetching the paginated data ---
 	finalQuery := fmt.Sprintf(`
@@ -700,7 +704,7 @@ func (r *TransactionRepositoryImpl) scanTransactions(rows pgx.Rows) ([]domain.Tr
 			tx.AttachmentPath = &attachment.String
 		}
 		if voidedBy.Valid {
-			val := int(voidedBy.Int64)
+				val := int(voidedBy.Int64)
 			tx.VoidedByTransactionID = &val
 		}
 		if voids.Valid {

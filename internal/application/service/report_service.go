@@ -47,9 +47,9 @@ func (s *ReportServiceImpl) GetFinancialSummary(
 	var err error
 
 	if accountID != nil {
-		transactions, err = s.transactionRepo.FindAllTransactionsByAccount(ctx, *accountID, filters)
+		transactions, err = s.transactionRepo.FindAllTransactionsByAccount(ctx, *accountID, filters, nil)
 	} else {
-		transactions, err = s.transactionRepo.FindAllTransactions(ctx, filters)
+		transactions, err = s.transactionRepo.FindAllTransactions(ctx, filters, nil)
 	}
 
 	if err != nil {

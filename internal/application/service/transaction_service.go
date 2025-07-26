@@ -51,7 +51,7 @@ func (s *TransactionServiceImpl) FindAllTransactionsByAccount(
 	accountID int,
 	filters domain.TransactionFilters,
 ) ([]domain.Transaction, error) {
-	transactions, err := s.repo.FindAllTransactionsByAccount(ctx, accountID, filters)
+	transactions, err := s.repo.FindAllTransactionsByAccount(ctx, accountID, filters, nil)
 	if err != nil {
 		return nil, err
 	}

@@ -53,11 +53,13 @@ type TransactionRepository interface {
 		ctx context.Context,
 		accountID int,
 		filters domain.TransactionFilters,
+		searchString *string,
 	) ([]domain.Transaction, error)
 
 	FindAllTransactions(
 		ctx context.Context,
 		filters domain.TransactionFilters,
+		searchString *string,
 	) ([]domain.Transaction, error)
 
 	GetTransactionByID(ctx context.Context, id int) (*domain.Transaction, error)
