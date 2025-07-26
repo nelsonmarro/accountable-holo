@@ -406,43 +406,40 @@ func (ui *UI) generateReportFile(format string, outputPath string) {
 		progressDialog.Show()
 	})
 
-	go func() {
-		defer fyne.Do(func() {
-			progressDialog.Hide()
-		})
-
-		// Get all transactions with the current filters
-		transactions, err := ui.Services.TxService.FindAllTransactionsByAccount(
-			ctx,
-			ui.selectedAccountID,
-			ui.currentTransactionFilters,
-		)
-		if err != nil {
-			select {
-			case <-ctx.Done():
-				// Context was cancelled, so the error is expected
-				return
-			default:
-				fyne.Do(func() {
-					dialog.ShowError(err, ui.mainWindow)
-				})
-				return
-			}
+	// Get all transactions with the current filters
+	transactions, err := ui.Services.TxService.FindAllTransactionsByAccount(
+		ctx,
+		ui.selectedAccountID,
+		ui.currentTransactionFilters,
+	)
+	if err != nil {
+		select {
+		case <-ctx.Done():
+			// Context was cancelled, so the error is expected
+			return
+		default:
+			fyne.Do(func() {
+				progressDialog.Hide()
+				dialog.ShowError(err, ui.mainWindow)
+			})
+			return
 		}
+	}
 
-		// Generate the report
-		err = ui.Services.ReportService.GenerateReportFile(ctx, format, transactions, outputPath)
-		if err != nil {
-			select {
-			case <-ctx.Done():
-				// Context was cancelled, so the error is expected
-				return
-			default:
-				fyne.Do(func() {
-					dialog.ShowError(err, ui.mainWindow)
-				})
-				return
-			}
+	// Generate the report
+	err = ui.Services.ReportService.GenerateReportFile(ctx, format, transactions, outputPath)
+	if err != nil {
+		select {
+		case <-ctx.Done():
+			// Context was cancelled, so the error is expected
+			return
+		default:
+			fyne.Do(func() {
+				progressDialog.Hide()
+				dialog.ShowError(err, ui.mainWindow)
+			})
+			return
 		}
-	}()
+	}
+	progressDialog.Hide()
 }
