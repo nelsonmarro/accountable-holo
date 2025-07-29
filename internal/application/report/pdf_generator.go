@@ -38,6 +38,11 @@ func (g *PDFReportGenerator) SelectedTransactionsReport(ctx context.Context, tra
 
 	m := maroto.New(cfg)
 
+	// Register the footer BEFORE adding content
+	if err := g.buildFooter(m); err != nil {
+		return err
+	}
+
 	g.buildTitle(m, "Reporte de Transacciones")
 	g.buildTransactionsTable(m, transactions)
 
@@ -46,33 +51,36 @@ func (g *PDFReportGenerator) SelectedTransactionsReport(ctx context.Context, tra
 		return fmt.Errorf("failed to generate PDF: %w", err)
 	}
 
-	// Register the footer
-	if err := g.buildFooter(m); err != nil {
-		return err
-	}
-
 	return document.Save(outputPath)
 }
 
+// buildFooter creates a footer for the PDF report with legends for voided and voiding transactions.
 func (g *PDFReportGenerator) buildFooter(m core.Maroto) error {
 	voidedStyle := &props.Cell{BackgroundColor: &props.Color{Red: 255, Green: 220, Blue: 220}}
 	voidingStyle := &props.Cell{BackgroundColor: &props.Color{Red: 220, Green: 230, Blue: 255}}
-	legendTextProps := props.Text{Top: 1, Size: 8, Style: fontstyle.Italic}
+	legendTextProps := props.Text{Top: 1, Size: 8, Style: fontstyle.Italic, Align: align.Left}
+	titleProps := props.Text{Top: 1, Style: fontstyle.Bold, Align: align.Left}
 
-	footer := row.New(10).Add(
-		// Legend for Voided Transactions (light red)
-		col.New(1).WithStyle(voidedStyle),
-		text.NewCol(4, "Transacciones Anuladas", legendTextProps),
-
-		// Legend for Voiding Transactions (light blue)
-		col.New(1).WithStyle(voidingStyle),
-		text.NewCol(4, "Transacción de Anulación", legendTextProps),
-		col.New(2), // Spacer
+	// Create multiple rows for the footer
+	return m.RegisterFooter(
+		// Title Row
+		row.New(10).Add(
+			text.NewCol(12, "Leyenda", titleProps),
+		),
+		// Voided Transactions Legend Row
+		row.New(10).Add(
+			col.New(1).WithStyle(voidedStyle),
+			col.New(11).Add(text.New("Transacciones Anuladas", legendTextProps)),
+		),
+		// Voiding Transactions Legend Row
+		row.New(10).Add(
+			col.New(1).WithStyle(voidingStyle),
+			col.New(11).Add(text.New("Transacción de Anulación", legendTextProps)),
+		),
 	)
-
-	return m.RegisterFooter(footer)
 }
 
+// buildTitle adds a title to the PDF report.
 func (g *PDFReportGenerator) buildTitle(m core.Maroto, title string) {
 	m.AddRow(
 		15,

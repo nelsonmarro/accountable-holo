@@ -6,7 +6,7 @@
 /Contents 4 0 R>>
 endobj
 4 0 obj
-<</Length 21841>>
+<</Length 22650>>
 stream
 0 J
 0 j
@@ -420,6 +420,24 @@ BT /F0a76705d18e0494dd24cb573e53aa0a8c710ec99 10.00 Tf ET
 BT /F0a76705d18e0494dd24cb573e53aa0a8c710ec99 10.00 Tf ET
 BT /F0a76705d18e0494dd24cb573e53aa0a8c710ec99 10.00 Tf ET
 q 0.000 g BT 470.42 344.33 Td ($1999949.55) Tj ET Q
+BT /Ff5d2de5f3a71699ae4b2d83179e62d09e6fc4126 10.00 Tf ET
+BT /Ff5d2de5f3a71699ae4b2d83179e62d09e6fc4126 10.00 Tf ET
+BT /Ff5d2de5f3a71699ae4b2d83179e62d09e6fc4126 10.00 Tf ET
+q 0.000 g BT 28.35 128.90 Td (Leyenda) Tj ET Q
+1.000 0.863 0.863 rg
+28.35 113.39 44.88 -28.35 re f 
+1.000 g
+BT /F97f05bfb6ba727d84d5803987480190cb83c609d 8.00 Tf ET
+BT /F97f05bfb6ba727d84d5803987480190cb83c609d 8.00 Tf ET
+BT /F97f05bfb6ba727d84d5803987480190cb83c609d 8.00 Tf ET
+q 0.000 g BT 73.23 102.55 Td (Transacciones Anuladas) Tj ET Q
+0.863 0.902 1.000 rg
+28.35 85.04 44.88 -28.35 re f 
+1.000 g
+BT /F97f05bfb6ba727d84d5803987480190cb83c609d 8.00 Tf ET
+BT /F97f05bfb6ba727d84d5803987480190cb83c609d 8.00 Tf ET
+BT /F97f05bfb6ba727d84d5803987480190cb83c609d 8.00 Tf ET
+q 0.000 g BT 73.23 74.20 Td (Transacción de Anulación) Tj ET Q
 BT /F0a76705d18e0494dd24cb573e53aa0a8c710ec99 10.00 Tf ET
 BT /F0a76705d18e0494dd24cb573e53aa0a8c710ec99 10.00 Tf ET
 BT /F0a76705d18e0494dd24cb573e53aa0a8c710ec99 10.00 Tf ET
@@ -448,12 +466,20 @@ endobj
 /Encoding /WinAnsiEncoding
 >>
 endobj
+7 0 obj
+<</Type /Font
+/BaseFont /Helvetica-Oblique
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+>>
+endobj
 2 0 obj
 <<
 /ProcSet [/PDF /Text /ImageB /ImageC /ImageI]
 /Font <<
-/F0a76705d18e0494dd24cb573e53aa0a8c710ec99 5 0 R
 /Ff5d2de5f3a71699ae4b2d83179e62d09e6fc4126 6 0 R
+/F97f05bfb6ba727d84d5803987480190cb83c609d 7 0 R
+/F0a76705d18e0494dd24cb573e53aa0a8c710ec99 5 0 R
 >>
 /XObject <<
 >>
@@ -461,14 +487,14 @@ endobj
 >>
 >>
 endobj
-7 0 obj
+8 0 obj
 <<
 /Producer (þÿ F P D F   1 . 7)
-/CreationDate (D:20250729113839)
-/ModDate (D:20250729113839)
+/CreationDate (D:20250729114639)
+/ModDate (D:20250729114639)
 >>
 endobj
-8 0 obj
+9 0 obj
 <<
 /Type /Catalog
 /Pages 1 0 R
@@ -480,22 +506,23 @@ endobj
 >>
 endobj
 xref
-0 9
+0 10
 0000000000 65535 f 
-0000021979 00000 n 
-0000022263 00000 n 
+0000022788 00000 n 
+0000023176 00000 n 
 0000000009 00000 n 
 0000000087 00000 n 
-0000022066 00000 n 
-0000022162 00000 n 
-0000022473 00000 n 
-0000022586 00000 n 
+0000022875 00000 n 
+0000022971 00000 n 
+0000023072 00000 n 
+0000023435 00000 n 
+0000023548 00000 n 
 trailer
 <<
-/Size 9
-/Root 8 0 R
-/Info 7 0 R
+/Size 10
+/Root 9 0 R
+/Info 8 0 R
 >>
 startxref
-22683
+23645
 %%EOF
