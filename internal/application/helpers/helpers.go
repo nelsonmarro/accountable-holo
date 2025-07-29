@@ -45,7 +45,7 @@ func PrepareForTruncation(s string) string {
 	return strings.TrimSpace(singleLine)
 }
 
-// truncateString shortens a string to a max length and adds ellipsis.
+// TruncateString shortens a string to a max length and adds ellipsis.
 func TruncateString(s string, maxLength int) string {
 	if len(s) <= maxLength {
 		return s
