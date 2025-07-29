@@ -80,5 +80,5 @@ type ReportRepository interface {
 }
 
 type ReportGenerator interface {
-	Generate(ctx context.Context, transactions []domain.Transaction, outputPath string) error
+	GenerateSelectedTransactionsReport(ctx context.Context, transactions []domain.Transaction, outputPath string) error
 }
