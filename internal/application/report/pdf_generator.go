@@ -11,7 +11,6 @@ import (
 	"github.com/johnfercher/maroto/v2/pkg/components/text"
 	"github.com/johnfercher/maroto/v2/pkg/config"
 	"github.com/johnfercher/maroto/v2/pkg/consts/align"
-	"github.com/johnfercher/maroto/v2/pkg/consts/breakline"
 	"github.com/johnfercher/maroto/v2/pkg/consts/fontstyle"
 	"github.com/johnfercher/maroto/v2/pkg/core"
 	"github.com/johnfercher/maroto/v2/pkg/props"
@@ -67,9 +66,9 @@ func (g *PDFReportGenerator) buildTransactionsTable(m core.Maroto, transactions 
 	// Define styles
 	headerStyle := &props.Cell{BackgroundColor: &props.Color{Red: 220, Green: 230, Blue: 240}}
 	zebraStyle := &props.Cell{BackgroundColor: &props.Color{Red: 245, Green: 245, Blue: 245}}
-	headerTextProps := props.Text{Style: fontstyle.Bold, Align: align.Center, Top: 1}
-	cellTextProps := props.Text{Align: align.Center, Top: 1}
-	descriptionStyle := props.Text{Align: align.Left, Top: 1, BreakLineStrategy: breakline.EmptySpaceStrategy}
+	headerTextProps := props.Text{Style: fontstyle.Bold, Align: align.Center, Top: 2}
+	cellTextProps := props.Text{Align: align.Center, Top: 2}
+	descriptionStyle := props.Text{Align: align.Center, Top: 2}
 
 	headers := []string{"Fecha", "No.", "Descripción", "Categoría", "Tipo", "Monto", "Saldo"}
 
@@ -77,12 +76,12 @@ func (g *PDFReportGenerator) buildTransactionsTable(m core.Maroto, transactions 
 	m.AddRows(
 		row.New(10).WithStyle(headerStyle).Add(
 			text.NewCol(2, headers[0], headerTextProps),
-			text.NewCol(1, headers[1], headerTextProps),
-			text.NewCol(3, headers[2], headerTextProps),
+			text.NewCol(2, headers[1], headerTextProps),
+			text.NewCol(2, headers[2], headerTextProps),
 			text.NewCol(2, headers[3], headerTextProps),
 			text.NewCol(1, headers[4], headerTextProps),
-			text.NewCol(2, headers[5], headerTextProps),
-			text.NewCol(1, headers[6], headerTextProps),
+			text.NewCol(1, headers[5], headerTextProps),
+			text.NewCol(2, headers[6], headerTextProps),
 		),
 	)
 
@@ -95,7 +94,7 @@ func (g *PDFReportGenerator) buildTransactionsTable(m core.Maroto, transactions 
 			categoryType = string(tx.Category.Type)
 		}
 
-		amountStyle := props.Text{Align: align.Center, Top: 1}
+		amountStyle := props.Text{Align: align.Center, Top: 2}
 		if tx.Category.Type == domain.Income {
 			amountStyle.Color = &props.GreenColor
 		} else {
@@ -103,16 +102,16 @@ func (g *PDFReportGenerator) buildTransactionsTable(m core.Maroto, transactions 
 		}
 
 		// Truncate description to avoid excessively tall rows
-		description := truncateString(tx.Description, 80)
+		description := truncateString(tx.Description, 30)
 
 		dataRow := m.AddAutoRow(
 			text.NewCol(2, tx.TransactionDate.Format("2006-01-02"), cellTextProps),
-			text.NewCol(1, tx.TransactionNumber, cellTextProps),
-			text.NewCol(3, description, descriptionStyle),
+			text.NewCol(2, tx.TransactionNumber, cellTextProps),
+			text.NewCol(2, description, descriptionStyle),
 			text.NewCol(2, categoryName, cellTextProps),
 			text.NewCol(1, categoryType, cellTextProps),
-			text.NewCol(2, fmt.Sprintf("%.2f", tx.Amount), amountStyle),
-			text.NewCol(1, fmt.Sprintf("%.2f", tx.RunningBalance), cellTextProps),
+			text.NewCol(1, fmt.Sprintf("%.2f", tx.Amount), amountStyle),
+			text.NewCol(2, fmt.Sprintf("%.2f", tx.RunningBalance), cellTextProps),
 		)
 
 		if i%2 != 0 {
