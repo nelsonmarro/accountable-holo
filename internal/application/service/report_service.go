@@ -82,9 +82,9 @@ func (s *ReportServiceImpl) GetFinancialSummary(
 func (s *ReportServiceImpl) GenerateReportFile(ctx context.Context, format string, transactions []domain.Transaction, outputPath string) error {
 	switch format {
 	case "CSV":
-		return s.csvGenerator.GenerateSelectedTransactionsReport(ctx, transactions, outputPath)
+		return s.csvGenerator.SelectedTransactionsReport(ctx, transactions, outputPath)
 	case "PDF":
-		return s.pdfGenerator.GenerateSelectedTransactionsReport(ctx, transactions, outputPath)
+		return s.pdfGenerator.SelectedTransactionsReport(ctx, transactions, outputPath)
 	default:
 		return fmt.Errorf("unsupported report format: %s", format)
 	}

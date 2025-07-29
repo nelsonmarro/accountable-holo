@@ -15,7 +15,7 @@ func NewCSVReportGenerator() *CSVReportGenerator {
 	return &CSVReportGenerator{}
 }
 
-func (g *CSVReportGenerator) Generate(ctx context.Context, transactions []domain.Transaction, outputPath string) error {
+func (g *CSVReportGenerator) SelectedTransactionsReport(ctx context.Context, transactions []domain.Transaction, outputPath string) error {
 	file, err := os.Create(outputPath)
 	if err != nil {
 		return fmt.Errorf("failed to create CSV file: %w", err)

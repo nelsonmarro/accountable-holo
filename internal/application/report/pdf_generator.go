@@ -3,8 +3,9 @@ package report
 
 import (
 	"context"
-	"fmt"
 
+	"github.com/johnfercher/maroto/v2"
+	"github.com/johnfercher/maroto/v2/pkg/config"
 	"github.com/nelsonmarro/accountable-holo/internal/domain"
 )
 
@@ -14,7 +15,6 @@ func NewPDFReportGenerator() *PDFReportGenerator {
 	return &PDFReportGenerator{}
 }
 
-func (g *PDFReportGenerator) Generate(ctx context.Context, transactions []domain.Transaction, outputPath string) error {
-	// TODO: Implement PDF generation logic here
-	return fmt.Errorf("PDF generation not yet implemented")
+func (g *PDFReportGenerator) SelectedTransactionsReport(ctx context.Context, transactions []domain.Transaction, outputPath string) error {
+	m := maroto.New(config.New())
 }
