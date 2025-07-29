@@ -33,6 +33,7 @@ func (g *PDFReportGenerator) SelectedTransactionsReport(ctx context.Context, tra
 		WithLeftMargin(10).
 		WithTopMargin(15).
 		WithRightMargin(10).
+		WithBottomMargin(20). // Add bottom margin to make space for the footer
 		Build()
 
 	m := maroto.New(cfg)
@@ -45,7 +46,31 @@ func (g *PDFReportGenerator) SelectedTransactionsReport(ctx context.Context, tra
 		return fmt.Errorf("failed to generate PDF: %w", err)
 	}
 
+	// Register the footer
+	if err := g.buildFooter(m); err != nil {
+		return err
+	}
+
 	return document.Save(outputPath)
+}
+
+func (g *PDFReportGenerator) buildFooter(m core.Maroto) error {
+	voidedStyle := &props.Cell{BackgroundColor: &props.Color{Red: 255, Green: 220, Blue: 220}}
+	voidingStyle := &props.Cell{BackgroundColor: &props.Color{Red: 220, Green: 230, Blue: 255}}
+	legendTextProps := props.Text{Top: 1, Size: 8, Style: fontstyle.Italic}
+
+	footer := row.New(10).Add(
+		// Legend for Voided Transactions (light red)
+		col.New(1).WithStyle(voidedStyle),
+		text.NewCol(4, "Transacciones Anuladas", legendTextProps),
+
+		// Legend for Voiding Transactions (light blue)
+		col.New(1).WithStyle(voidingStyle),
+		text.NewCol(4, "Transacción de Anulación", legendTextProps),
+		col.New(2), // Spacer
+	)
+
+	return m.RegisterFooter(footer)
 }
 
 func (g *PDFReportGenerator) buildTitle(m core.Maroto, title string) {
