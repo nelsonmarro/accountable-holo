@@ -8,7 +8,8 @@ import (
 	"github.com/johnfercher/maroto/v2"
 	"github.com/johnfercher/maroto/v2/pkg/components/col"
 	"github.com/johnfercher/maroto/v2/pkg/components/text"
-	"github.com/johnfercher/maroto/v2/pkg/consts"
+	"github.com/johnfercher/maroto/v2/pkg/consts/align"
+	"github.com/johnfercher/maroto/v2/pkg/consts/fontstyle"
 	"github.com/johnfercher/maroto/v2/pkg/core"
 	"github.com/johnfercher/maroto/v2/pkg/props"
 	"github.com/nelsonmarro/accountable-holo/internal/domain"
@@ -45,9 +46,24 @@ func (g *PDFReportGenerator) buildTitle(m core.Maroto, title string) {
 			text.New(title, props.Text{
 				Top:   5,
 				Size:  14,
-				Style: consts.Bold,
-				Align: consts.Center,
+				Style: fontstyle.Bold,
+				Align: align.Center,
 			}),
 		),
+	)
+}
+
+func (g *PDFReportGenerator) buildTransactionsTable(m core.Maroto, transactions []domain.Transaction) {
+	headers := []string{"Fecha", "No.", "Descripción", "Categoría", "Tipo", "Monto", "Saldo"}
+
+	// Build the table header
+	m.AddRow(10,
+		col.New(2).Add(text.New(headers[0], props.Text{Style: fontstyle.Bold, Align: align.Center})),
+		col.New(1).Add(text.New(headers[1], props.Text{Style: fontstyle.Bold, Align: align.Center})),
+		col.New(3).Add(text.New(headers[2], props.Text{Style: fontstyle.Bold, Align: align.Center})),
+		col.New(2).Add(text.New(headers[3], props.Text{Style: fontstyle.Bold, Align: align.Center})),
+		col.New(1).Add(text.New(headers[4], props.Text{Style: fontstyle.Bold, Align: align.Center})),
+		col.New(2).Add(text.New(headers[5], props.Text{Style: fontstyle.Bold, Align: align.Right})),
+		col.New(1).Add(text.New(headers[6], props.Text{Style: fontstyle.Bold, Align: align.Right})),
 	)
 }
