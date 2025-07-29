@@ -55,17 +55,37 @@ func (g *PDFReportGenerator) buildTitle(m core.Maroto, title string) {
 }
 
 func (g *PDFReportGenerator) buildTransactionsTable(m core.Maroto, transactions []domain.Transaction) {
+	headerStyle := props.Cell{
+		BackgroundColor: &props.Color{
+			Red:   220,
+			Green: 230,
+			Blue:  240,
+		},
+	}
+
+	headerTextProps := props.Text{
+		Style: fontstyle.Bold,
+		Align: align.Center,
+		Top:   2,
+	}
+
+	rightAlignedTextProps := props.Text{
+		Style: fontstyle.Bold,
+		Align: align.Right,
+		Top:   2,
+	}
+
 	headers := []string{"Fecha", "No.", "Descripción", "Categoría", "Tipo", "Monto", "Saldo"}
 
 	// Build the table header
 	m.AddRow(10,
-		col.New(2).Add(text.New(headers[0], props.Text{Style: fontstyle.Bold, Align: align.Center})),
-		col.New(1).Add(text.New(headers[1], props.Text{Style: fontstyle.Bold, Align: align.Center})),
-		col.New(3).Add(text.New(headers[2], props.Text{Style: fontstyle.Bold, Align: align.Center})),
-		col.New(2).Add(text.New(headers[3], props.Text{Style: fontstyle.Bold, Align: align.Center})),
-		col.New(1).Add(text.New(headers[4], props.Text{Style: fontstyle.Bold, Align: align.Center})),
-		col.New(2).Add(text.New(headers[5], props.Text{Style: fontstyle.Bold, Align: align.Right})),
-		col.New(1).Add(text.New(headers[6], props.Text{Style: fontstyle.Bold, Align: align.Right})),
+		col.New(2).Add(text.New(headers[0], headerTextProps)),
+		col.New(1).Add(text.New(headers[1], headerTextProps)),
+		col.New(3).Add(text.New(headers[2], headerTextProps)),
+		col.New(2).Add(text.New(headers[3], headerTextProps)),
+		col.New(1).Add(text.New(headers[4], headerTextProps)),
+		col.New(2).Add(text.New(headers[5], rightAlignedTextProps)),
+		col.New(1).Add(text.New(headers[6], rightAlignedTextProps)),
 	)
 
 	// Add data rows
