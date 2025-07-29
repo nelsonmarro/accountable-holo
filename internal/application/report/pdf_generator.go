@@ -4,6 +4,7 @@ package report
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/johnfercher/maroto/v2"
 	"github.com/johnfercher/maroto/v2/pkg/components/col"
@@ -14,6 +15,7 @@ import (
 	"github.com/johnfercher/maroto/v2/pkg/consts/fontstyle"
 	"github.com/johnfercher/maroto/v2/pkg/core"
 	"github.com/johnfercher/maroto/v2/pkg/props"
+	"github.com/nelsonmarro/accountable-holo/internal/application/helpers"
 	"github.com/nelsonmarro/accountable-holo/internal/domain"
 )
 
@@ -66,6 +68,7 @@ func (g *PDFReportGenerator) buildTransactionsTable(m core.Maroto, transactions 
 	// Define styles
 	headerStyle := &props.Cell{BackgroundColor: &props.Color{Red: 220, Green: 230, Blue: 240}}
 	zebraStyle := &props.Cell{BackgroundColor: &props.Color{Red: 245, Green: 245, Blue: 245}}
+	voidedStyle := &props.Cell{BackgroundColor: &props.Color{Red: 255, Green: 220, Blue: 220}} // Light red for voided rows
 	headerTextProps := props.Text{Style: fontstyle.Bold, Align: align.Center, Top: 2}
 	cellTextProps := props.Text{Align: align.Center, Top: 2}
 	descriptionStyle := props.Text{Align: align.Center, Top: 2}
@@ -101,10 +104,11 @@ func (g *PDFReportGenerator) buildTransactionsTable(m core.Maroto, transactions 
 			amountStyle.Color = &props.RedColor
 		}
 
-		// Truncate description to avoid excessively tall rows
-		description := truncateString(tx.Description, 30)
+		// Clean and truncate description to a single line
+		descriptionOneLine := strings.ReplaceAll(tx.Description, "\n", " ")
+		description := helpers.TruncateString(descriptionOneLine, 20)
 
-		dataRow := m.AddAutoRow(
+		dataRow := row.New(10).Add(
 			text.NewCol(2, tx.TransactionDate.Format("2006-01-02"), cellTextProps),
 			text.NewCol(2, tx.TransactionNumber, cellTextProps),
 			text.NewCol(2, description, descriptionStyle),
@@ -114,16 +118,13 @@ func (g *PDFReportGenerator) buildTransactionsTable(m core.Maroto, transactions 
 			text.NewCol(2, fmt.Sprintf("%.2f", tx.RunningBalance), cellTextProps),
 		)
 
-		if i%2 != 0 {
+		// Apply styles conditionally
+		if tx.IsVoided {
+			dataRow.WithStyle(voidedStyle)
+		} else if i%2 != 0 {
 			dataRow.WithStyle(zebraStyle)
 		}
-	}
-}
 
-// truncateString shortens a string to a max length and adds ellipsis.
-func truncateString(s string, maxLength int) string {
-	if len(s) <= maxLength {
-		return s
+		m.AddRows(dataRow)
 	}
-	return s[:maxLength] + "..."
 }
