@@ -4,7 +4,6 @@ package report
 import (
 	"context"
 	"fmt"
-	"strings"
 
 	"github.com/johnfercher/maroto/v2"
 	"github.com/johnfercher/maroto/v2/pkg/components/col"
@@ -15,7 +14,6 @@ import (
 	"github.com/johnfercher/maroto/v2/pkg/consts/fontstyle"
 	"github.com/johnfercher/maroto/v2/pkg/core"
 	"github.com/johnfercher/maroto/v2/pkg/props"
-	"github.com/nelsonmarro/accountable-holo/internal/application/helpers"
 	"github.com/nelsonmarro/accountable-holo/internal/domain"
 )
 
@@ -68,23 +66,22 @@ func (g *PDFReportGenerator) buildTransactionsTable(m core.Maroto, transactions 
 	// Define styles
 	headerStyle := &props.Cell{BackgroundColor: &props.Color{Red: 220, Green: 230, Blue: 240}}
 	zebraStyle := &props.Cell{BackgroundColor: &props.Color{Red: 245, Green: 245, Blue: 245}}
-	voidedStyle := &props.Cell{BackgroundColor: &props.Color{Red: 255, Green: 220, Blue: 220}} // Light red for voided rows
+	voidedStyle := &props.Cell{BackgroundColor: &props.Color{Red: 255, Green: 220, Blue: 220}}  // Light red for voided rows
+	voidingStyle := &props.Cell{BackgroundColor: &props.Color{Red: 220, Green: 230, Blue: 255}} // Light blue for voiding rows
 	headerTextProps := props.Text{Style: fontstyle.Bold, Align: align.Center, Top: 2}
 	cellTextProps := props.Text{Align: align.Center, Top: 2}
-	descriptionStyle := props.Text{Align: align.Center, Top: 2}
 
-	headers := []string{"Fecha", "No.", "Descripción", "Categoría", "Tipo", "Monto", "Saldo"}
+	headers := []string{"Fecha", "No.", "Categoría", "Tipo", "Monto", "Saldo"}
 
 	// Build the table header
 	m.AddRows(
 		row.New(10).WithStyle(headerStyle).Add(
 			text.NewCol(2, headers[0], headerTextProps),
 			text.NewCol(2, headers[1], headerTextProps),
-			text.NewCol(2, headers[2], headerTextProps),
-			text.NewCol(2, headers[3], headerTextProps),
+			text.NewCol(3, headers[2], headerTextProps),
+			text.NewCol(1, headers[3], headerTextProps),
 			text.NewCol(1, headers[4], headerTextProps),
-			text.NewCol(1, headers[5], headerTextProps),
-			text.NewCol(2, headers[6], headerTextProps),
+			text.NewCol(3, headers[5], headerTextProps),
 		),
 	)
 
@@ -104,23 +101,20 @@ func (g *PDFReportGenerator) buildTransactionsTable(m core.Maroto, transactions 
 			amountStyle.Color = &props.RedColor
 		}
 
-		// Clean and truncate description to a single line
-		descriptionOneLine := strings.ReplaceAll(tx.Description, "\n", " ")
-		description := helpers.TruncateString(descriptionOneLine, 20)
-
 		dataRow := row.New(10).Add(
 			text.NewCol(2, tx.TransactionDate.Format("2006-01-02"), cellTextProps),
 			text.NewCol(2, tx.TransactionNumber, cellTextProps),
-			text.NewCol(2, description, descriptionStyle),
-			text.NewCol(2, categoryName, cellTextProps),
+			text.NewCol(3, categoryName, cellTextProps),
 			text.NewCol(1, categoryType, cellTextProps),
 			text.NewCol(1, fmt.Sprintf("%.2f", tx.Amount), amountStyle),
-			text.NewCol(2, fmt.Sprintf("%.2f", tx.RunningBalance), cellTextProps),
+			text.NewCol(3, fmt.Sprintf("$%.2f", tx.RunningBalance), cellTextProps),
 		)
 
-		// Apply styles conditionally
+		// Apply styles conditionally based on transaction state
 		if tx.IsVoided {
 			dataRow.WithStyle(voidedStyle)
+		} else if tx.VoidsTransactionID != nil {
+			dataRow.WithStyle(voidingStyle)
 		} else if i%2 != 0 {
 			dataRow.WithStyle(zebraStyle)
 		}
