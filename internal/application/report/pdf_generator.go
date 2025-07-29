@@ -7,6 +7,7 @@ import (
 
 	"github.com/johnfercher/maroto/v2"
 	"github.com/johnfercher/maroto/v2/pkg/components/col"
+	"github.com/johnfercher/maroto/v2/pkg/components/line"
 	"github.com/johnfercher/maroto/v2/pkg/components/text"
 	"github.com/johnfercher/maroto/v2/pkg/consts/align"
 	"github.com/johnfercher/maroto/v2/pkg/consts/fontstyle"
@@ -33,7 +34,7 @@ func (g *PDFReportGenerator) SelectedTransactionsReport(ctx context.Context, tra
 
 	document, err := m.Generate()
 	if err != nil {
-		return fmt.Errorf("failed to generate PDF", err)
+		return fmt.Errorf("failed to generate PDF: %w", err)
 	}
 
 	return document.Save(outputPath)
@@ -66,4 +67,30 @@ func (g *PDFReportGenerator) buildTransactionsTable(m core.Maroto, transactions 
 		col.New(2).Add(text.New(headers[5], props.Text{Style: fontstyle.Bold, Align: align.Right})),
 		col.New(1).Add(text.New(headers[6], props.Text{Style: fontstyle.Bold, Align: align.Right})),
 	)
+
+	// Add data rows
+	for _, tx := range transactions {
+		categoryName := ""
+		categoryType := ""
+		if tx.Category != nil {
+			categoryName = tx.Category.Name
+			categoryType = string(tx.Category.Type)
+		}
+
+		// Add a row for the transaction data
+		m.AddRow(10,
+			col.New(2).Add(text.New(tx.TransactionDate.Format("2006-01-02"), props.Text{Align: align.Center, Top: 2})),
+			col.New(1).Add(text.New(tx.TransactionNumber, props.Text{Align: align.Center, Top: 2})),
+			col.New(3).Add(text.New(tx.Description, props.Text{Align: align.Left, Top: 2})),
+			col.New(2).Add(text.New(categoryName, props.Text{Align: align.Center, Top: 2})),
+			col.New(1).Add(text.New(categoryType, props.Text{Align: align.Center, Top: 2})),
+			col.New(2).Add(text.New(fmt.Sprintf("%.2f", tx.Amount), props.Text{Align: align.Right, Top: 2})),
+			col.New(1).Add(text.New(fmt.Sprintf("%.2f", tx.RunningBalance), props.Text{Align: align.Right, Top: 2})),
+		)
+
+		// Add a separator line
+		m.AddRow(5,
+			col.New(12).Add(line.New(props.Line{Thickness: 0.1})),
+		)
+	}
 }
