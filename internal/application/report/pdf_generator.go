@@ -14,8 +14,8 @@ import (
 	"github.com/johnfercher/maroto/v2/pkg/consts/breakline"
 	"github.com/johnfercher/maroto/v2/pkg/consts/fontstyle"
 	"github.com/johnfercher/maroto/v2/pkg/core"
+	"github.com/johnfercher/maroto/v2/pkg/props"
 	"github.com/nelsonmarro/accountable-holo/internal/domain"
-	"github.comcom/johnfercher/maroto/v2/pkg/props"
 )
 
 // PDFReportGenerator generates reports in PDF format.
@@ -66,10 +66,11 @@ func (g *PDFReportGenerator) buildTitle(m core.Maroto, title string) {
 func (g *PDFReportGenerator) buildTransactionsTable(m core.Maroto, transactions []domain.Transaction) {
 	// Define styles
 	headerStyle := &props.Cell{BackgroundColor: &props.Color{Red: 220, Green: 230, Blue: 240}}
-	zebraStyle := &props.Cell{BackgroundColor: &props.Color{Red: 235, Green: 235, Blue: 235}}
-	headerTextProps := props.Text{Style: fontstyle.Bold, Align: align.Center, Top: 2}
-	cellTextProps := props.Text{Align: align.Center, Top: 2}
-	descriptionStyle := props.Text{Align: align.Left, Top: 2, BreakLineStrategy: breakline.EmptySpaceStrategy}
+	zebraStyle := &props.Cell{BackgroundColor: &props.Color{Red: 245, Green: 245, Blue: 245}}
+	headerTextProps := props.Text{Style: fontstyle.Bold, Align: align.Center, Top: 1}
+	cellTextProps := props.Text{Align: align.Center, Top: 1}
+	descriptionStyle := props.Text{Align: align.Left, Top: 1, BreakLineStrategy: breakline.EmptySpaceStrategy}
+
 	headers := []string{"Fecha", "No.", "Descripción", "Categoría", "Tipo", "Monto", "Saldo"}
 
 	// Build the table header
@@ -94,28 +95,36 @@ func (g *PDFReportGenerator) buildTransactionsTable(m core.Maroto, transactions 
 			categoryType = string(tx.Category.Type)
 		}
 
-		amountStyle := props.Text{Align: align.Center, Top: 2}
+		amountStyle := props.Text{Align: align.Center, Top: 1}
 		if tx.Category.Type == domain.Income {
 			amountStyle.Color = &props.GreenColor
 		} else {
 			amountStyle.Color = &props.RedColor
 		}
 
-		// Add a row with automatic height calculation
+		// Truncate description to avoid excessively tall rows
+		description := truncateString(tx.Description, 80)
+
 		dataRow := m.AddAutoRow(
-			col.New(2).Add(text.New(tx.TransactionDate.Format("2006-01-02"), cellTextProps)),
-			col.New(1).Add(text.New(tx.TransactionNumber, cellTextProps)),
-			col.New(3).Add(text.New(tx.Description, descriptionStyle)),
-			col.New(2).Add(text.New(categoryName, cellTextProps)),
-			col.New(1).Add(text.New(categoryType, cellTextProps)),
-			col.New(2).Add(text.New(fmt.Sprintf("%.2f", tx.Amount), amountStyle)),
-			col.New(1).Add(text.New(fmt.Sprintf("%.2f", tx.RunningBalance), cellTextProps)),
+			text.NewCol(2, tx.TransactionDate.Format("2006-01-02"), cellTextProps),
+			text.NewCol(1, tx.TransactionNumber, cellTextProps),
+			text.NewCol(3, description, descriptionStyle),
+			text.NewCol(2, categoryName, cellTextProps),
+			text.NewCol(1, categoryType, cellTextProps),
+			text.NewCol(2, fmt.Sprintf("%.2f", tx.Amount), amountStyle),
+			text.NewCol(1, fmt.Sprintf("%.2f", tx.RunningBalance), cellTextProps),
 		)
 
-		// Apply zebra striping to even rows
-		if i%2 == 0 {
+		if i%2 != 0 {
 			dataRow.WithStyle(zebraStyle)
 		}
 	}
 }
 
+// truncateString shortens a string to a max length and adds ellipsis.
+func truncateString(s string, maxLength int) string {
+	if len(s) <= maxLength {
+		return s
+	}
+	return s[:maxLength] + "..."
+}
