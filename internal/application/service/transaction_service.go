@@ -9,6 +9,7 @@ import (
 
 	"github.com/nelsonmarro/accountable-holo/internal/application/validator"
 	"github.com/nelsonmarro/accountable-holo/internal/domain"
+	"github.com/shopspring/decimal"
 )
 
 type AccountService interface {
@@ -189,9 +190,48 @@ func (s *TransactionServiceImpl) UpdateTransaction(ctx context.Context, tx *doma
 	return nil
 }
 
+// ReconcileAccount reconciles the account transactions up to the specified end date.
 func (s *TransactionServiceImpl) ReconcileAccount(
 	ctx context.Context,
 	accountID int,
 	endDate time.Time,
 ) (*domain.Reconciliation, error) {
+	account, err := s.accountService.GetAccountByID(ctx, accountID)
+	if err != nil {
+		return nil, fmt.Errorf("error al obtener la cuenta: %w", err)
+	}
+
+	filters := domain.TransactionFilters{EndDate: &endDate}
+	transactions, err := s.repo.FindAllTransactionsByAccount(ctx, accountID, filters, nil)
+	if err != nil {
+		return nil, fmt.Errorf("error al obtener las transacciones de la cuenta: %w", err)
+	}
+
+	// Calculate the startint balance
+	// Starting balance is the initial plus all tranactions before the account's creation date
+	// For simplicity in this step, we will assume the account's InitialBalance is the true starting point.
+	// TODO: A more complex implementation could calculate it based on transactions before a given start date.
+
+	startingBalance := account.InitialBalance
+
+	// Calculate the ending balance from the transactions
+	calculatedEndingBalance := decimal.NewFromFloat(startingBalance)
+	for _, tx := range transactions {
+		if tx.Category.Type == domain.Income {
+			calculatedEndingBalance = calculatedEndingBalance.Add(decimal.NewFromFloat(tx.Amount))
+		} else {
+			calculatedEndingBalance = calculatedEndingBalance.Sub(decimal.NewFromFloat(tx.Amount))
+		}
+	}
+
+	// Assemble the reconciliation object
+	reconciliation := &domain.Reconciliation{
+		AccountID:               accountID,
+		EndDate:                 endDate,
+		StartingBalance:         decimal.NewFromFloat(startingBalance),
+		CalculatedEndingBalance: calculatedEndingBalance,
+		Transactions:            transactions,
+	}
+
+	return reconciliation, nil
 }
