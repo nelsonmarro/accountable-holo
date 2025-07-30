@@ -1,8 +1,14 @@
 package ui
 
 import (
+	"context"
+	"fmt"
+	"time"
+
 	"fyne.io/fyne/v2"
+	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/widget"
+	"github.com/nelsonmarro/accountable-holo/internal/domain"
 )
 
 func (ui *UI) makeReconciliationUI() fyne.CanvasObject {
@@ -20,7 +26,7 @@ func (ui *UI) makeReconciliationUI() fyne.CanvasObject {
 }
 
 func (ui *UI) makeFormCard() fyne.CanvasObject {
-	accountsSelector := widget.NewSelect([]string{}, nil) // we'll populate this later
+	accountsSelector := widget.NewSelectEntry([]string{}) // we'll populate this later
 	endingDateEntry := widget.NewDateEntry()
 	actualBalanceEntry := widget.NewEntry()
 
@@ -47,11 +53,35 @@ func (ui *UI) makeFormCard() fyne.CanvasObject {
 	})
 
 	// Don't forget to load the accounts for the selector, similar to how you do it in the
-	go ui.loadAccountsForReconciliation(accountSelector)
+	go ui.loadAccountsForReconciliation(accountsSelector)
 
 	return nil
 }
 
 func (ui *UI) makeStatementCard() fyne.CanvasObject {
 	return widget.NewLabel("Statement Card is under construction. Please check back later.")
+}
+
+func (ui *UI) loadAccountsForReconciliation(selector *widget.SelectEntry) {
+	var accounts []domain.Account
+
+	if ui.accounts == nil || len(ui.accounts) <= 0 {
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cancel()
+
+	accounts, err := ui.Services.AccService.GetAllAccounts(ctx)
+	if err != nil {
+		fyne.Do(func() {
+			dialog.ShowError(fmt.Errorf("error al cargar las cuentas: %v", err), ui.mainWindow)
+			return
+		})
+	}
+
+	accountNames := make([]string, len(accounts))
+	for i, acc := range accounts {
+		accountNames[i] = acc.Name
+	}
+
+	selector.SetOptions(accountNames)
 }
