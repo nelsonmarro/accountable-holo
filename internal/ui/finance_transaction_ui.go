@@ -114,8 +114,9 @@ func (ui *UI) makeTransactionUI() fyne.CanvasObject {
 	generateReportBtn.Importance = widget.SuccessImportance
 
 	reconciliationBtn := widget.NewButtonWithIcon("Reconciliar", theme.ViewRefreshIcon(), func() {
-		dialog.ShowInformation("Conciliación", "Esta funcionalidad aún no está implementada.", ui.mainWindow)
+		ui.navToPage(ui.makeReconciliationUI())
 	})
+	reconciliationBtn.Importance = widget.WarningImportance
 
 	// Reload Data Button
 	reloadDataBtn := widget.NewButtonWithIcon("Recargar Datos", theme.ViewRefreshIcon(), func() {
@@ -127,7 +128,7 @@ func (ui *UI) makeTransactionUI() fyne.CanvasObject {
 	reloadDataBtn.Importance = widget.SuccessImportance
 
 	// Containers
-	topBar := container.NewBorder(nil, nil, container.NewHBox(txAddBtn, reloadDataBtn), container.NewHBox(advancedFiltersBtn, generateReportBtn), searchBar)
+	topBar := container.NewBorder(nil, nil, container.NewHBox(txAddBtn, reloadDataBtn), container.NewHBox(advancedFiltersBtn, generateReportBtn, reconciliationBtn), searchBar)
 	filters := container.NewBorder(
 		nil,
 		nil,

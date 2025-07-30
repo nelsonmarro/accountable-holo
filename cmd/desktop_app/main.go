@@ -52,7 +52,7 @@ func main() {
 	// ---- Application (Services) ----
 	accService := service.NewAccountService(accRepo)
 	catService := service.NewCategoryService(catRepo)
-	txService := service.NewTransactionService(txRepo, storageService)
+	txService := service.NewTransactionService(txRepo, storageService, accService)
 	reportService := service.NewReportService(reportRepo, txRepo, csvGen, pdfGen)
 
 	// 2. Create UI struct.
