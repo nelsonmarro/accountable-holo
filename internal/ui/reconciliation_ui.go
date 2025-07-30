@@ -14,13 +14,16 @@ import (
 
 func (ui *UI) makeReconciliationUI() fyne.CanvasObject {
 	// Top card (form)
-	ui.makeFormCard()
 
 	// Bottom card (reconciliation statement)
-	ui.makeStatementCard()
 
 	// containers
-	return widget.NewLabel("Reconciliation UI is under construction. Please check back later.")
+	mainContainer := container.NewBorder(
+		container.NewPadded(ui.makeFormCard()),
+		nil, nil, nil,
+		container.NewPadded(ui.makeStatementCard()),
+	)
+	return mainContainer
 }
 
 func (ui *UI) makeFormCard() fyne.CanvasObject {
@@ -29,6 +32,7 @@ func (ui *UI) makeFormCard() fyne.CanvasObject {
 	actualBalanceEntry := widget.NewEntry()
 
 	// TODO: add validation for the balance entry
+	formValidation(accountsSelector, endingDateEntry, actualBalanceEntry)
 
 	reconciliationForm := widget.NewForm(
 		widget.NewFormItem("Cuenta", accountsSelector),
@@ -37,11 +41,7 @@ func (ui *UI) makeFormCard() fyne.CanvasObject {
 	)
 
 	reconciliationForm.OnSubmit = func() {
-		// TODO: Implement the reconciliation logic
-		// a. Parse the values from the form widgets.
-		// b. Call the ui.Services.TxService.ReconcileAccount method.
-		// c. Take the result and populate the statement card.
-		// d. Show the statement card.
+		selectedAccountName := accountsSelector.Text
 	}
 
 	backButton := widget.NewButton("Volver", func() {
@@ -90,4 +90,15 @@ func (ui *UI) loadAccountsForReconciliation(selector *widget.SelectEntry) {
 	}
 
 	selector.SetOptions(accountNames)
+}
+
+func formValidation(
+	accountsSelector *widget.SelectEntry,
+	endingDateEntry *widget.DateEntry,
+	actualBalanceEntry *widget.Entry,
+) {
+	// Add validation logic here
+	// For example, you can disable the submit button until all fields are valid
+	// or show error messages if the fields are not filled correctly.
+	// This is a placeholder for your validation logic.
 }
