@@ -9,7 +9,8 @@ import (
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/widget"
-	"github.com/nelsonmarro/accountable-holo/internal/domain"
+	"github.com/nelsonmarro/accountable-holo/internal/application/uivalidators"
+	"github.com/shopspring/decimal"
 )
 
 func (ui *UI) makeReconciliationUI() fyne.CanvasObject {
@@ -31,7 +32,7 @@ func (ui *UI) makeFormCard() fyne.CanvasObject {
 	endingDateEntry := widget.NewDateEntry()
 	actualBalanceEntry := widget.NewEntry()
 
-	// TODO: add validation for the balance entry
+	// Validations for the balance entry
 	formValidation(accountsSelector, endingDateEntry, actualBalanceEntry)
 
 	reconciliationForm := widget.NewForm(
@@ -42,6 +43,28 @@ func (ui *UI) makeFormCard() fyne.CanvasObject {
 
 	reconciliationForm.OnSubmit = func() {
 		selectedAccountName := accountsSelector.Text
+		var selectedAccountID int
+		for _, acc := range ui.accounts {
+			if acc.Name == selectedAccountName {
+				selectedAccountID = acc.ID
+				break
+			}
+		}
+
+		if selectedAccountID == 0 {
+			dialog.ShowError(fmt.Errorf("la cuenta seleccionada no es válida"), ui.mainWindow)
+			return
+		}
+
+		endingDate := endingDateEntry.Date
+
+		actualBalance, err := decimal.NewFromString(actualBalanceEntry.Text)
+		if err != nil {
+			dialog.ShowError(fmt.Errorf("saldo final real no es un número válido: %v", err), ui.mainWindow)
+			return
+		}
+
+		initiateReconciliation(selectedAccountID, endingDate, actualBalance)
 	}
 
 	backButton := widget.NewButton("Volver", func() {
@@ -63,13 +86,18 @@ func (ui *UI) makeFormCard() fyne.CanvasObject {
 	return formCard
 }
 
+func initiateReconciliation(accountID int, endingDate *time.Time, actualBalance decimal.Decimal) {
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cancel()
+
+	reconciliation, err := ui.Services.TxService.ReconcileAccount(ctx, accountID, *endingDate, actualBalance)
+}
+
 func (ui *UI) makeStatementCard() fyne.CanvasObject {
 	return widget.NewLabel("Statement Card is under construction. Please check back later.")
 }
 
 func (ui *UI) loadAccountsForReconciliation(selector *widget.SelectEntry) {
-	var accounts []domain.Account
-
 	if ui.accounts == nil {
 		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 		defer cancel()
@@ -81,11 +109,11 @@ func (ui *UI) loadAccountsForReconciliation(selector *widget.SelectEntry) {
 			})
 			return
 		}
-		accounts = accs
+		ui.accounts = accs
 	}
 
-	accountNames := make([]string, len(accounts))
-	for i, acc := range accounts {
+	accountNames := make([]string, len(ui.accounts))
+	for i, acc := range ui.accounts {
 		accountNames[i] = acc.Name
 	}
 
@@ -97,8 +125,15 @@ func formValidation(
 	endingDateEntry *widget.DateEntry,
 	actualBalanceEntry *widget.Entry,
 ) {
-	// Add validation logic here
-	// For example, you can disable the submit button until all fields are valid
-	// or show error messages if the fields are not filled correctly.
-	// This is a placeholder for your validation logic.
+	selectorValidatior := uivalidators.NewValidator()
+	selectorValidatior.Required()
+	accountsSelector.Validator = selectorValidatior.Validate
+
+	dateValidator := uivalidators.NewValidator()
+	dateValidator.IsDate()
+	endingDateEntry.Validator = dateValidator.Validate
+
+	balanceValidator := uivalidators.NewValidator()
+	balanceValidator.IsFloat()
+	actualBalanceEntry.Validator = balanceValidator.Validate
 }
