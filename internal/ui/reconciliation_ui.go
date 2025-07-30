@@ -25,6 +25,31 @@ func (ui *UI) makeFormCard() fyne.CanvasObject {
 	actualBalanceEntry := widget.NewEntry()
 
 	// TODO: add validation for the balance entry
+
+	reconciliationForm := widget.NewForm(
+		widget.NewFormItem("Cuenta", accountsSelector),
+		widget.NewFormItem("Fecha de cierre", endingDateEntry),
+		widget.NewFormItem("Saldo Final Real", actualBalanceEntry),
+	)
+
+	reconciliationForm.OnSubmit = func() {
+		// TODO: Implement the reconciliation logic
+		// a. Parse the values from the form widgets.
+		// b. Call the ui.Services.TxService.ReconcileAccount method.
+		// c. Take the result and populate the statement card.
+		// d. Show the statement card.
+	}
+
+	backButton := widget.NewButton("Volver", func() {
+		// This should navigate back to the main transaction view.
+		// You can call the navigation function you created earlier.
+		ui.navToView(ui.makeFinancesTab())
+	})
+
+	// Don't forget to load the accounts for the selector, similar to how you do it in the
+	go ui.loadAccountsForReconciliation(accountSelector)
+
+	return nil
 }
 
 func (ui *UI) makeStatementCard() fyne.CanvasObject {
