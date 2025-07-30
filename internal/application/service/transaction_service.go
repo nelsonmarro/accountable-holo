@@ -195,6 +195,7 @@ func (s *TransactionServiceImpl) ReconcileAccount(
 	ctx context.Context,
 	accountID int,
 	endDate time.Time,
+	actualEndingBalance decimal.Decimal,
 ) (*domain.Reconciliation, error) {
 	account, err := s.accountService.GetAccountByID(ctx, accountID)
 	if err != nil {
@@ -224,12 +225,16 @@ func (s *TransactionServiceImpl) ReconcileAccount(
 		}
 	}
 
+	discrepancy := actualEndingBalance.Sub(calculatedEndingBalance)
+
 	// Assemble the reconciliation object
 	reconciliation := &domain.Reconciliation{
 		AccountID:               accountID,
 		EndDate:                 endDate,
 		StartingBalance:         decimal.NewFromFloat(startingBalance),
 		CalculatedEndingBalance: calculatedEndingBalance,
+		EndingBalance:           actualEndingBalance,
+		Difference:              discrepancy,
 		Transactions:            transactions,
 	}
 

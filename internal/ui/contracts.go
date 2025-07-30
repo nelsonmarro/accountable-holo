@@ -62,6 +62,7 @@ type TransactionService interface {
 		ctx context.Context,
 		accountID int,
 		endDate time.Time,
+		actualEndingBalance decimal.Decimal,
 	) (*domain.Reconciliation, error)
 }
 
