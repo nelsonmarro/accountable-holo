@@ -11,13 +11,30 @@ import (
 	"github.com/nelsonmarro/accountable-holo/internal/domain"
 )
 
-type TransactionServiceImpl struct {
-	repo    TransactionRepository
-	storage StorageService
+type AccountService interface {
+	GetAllAccounts(ctx context.Context) ([]domain.Account, error)
+	GetAccountByID(ctx context.Context, id int) (*domain.Account, error)
+	CreateNewAccount(ctx context.Context, acc *domain.Account) error
+	UpdateAccount(ctx context.Context, acc *domain.Account) error
+	DeleteAccount(ctx context.Context, id int) error
 }
 
-func NewTransactionService(repo TransactionRepository, storage StorageService) *TransactionServiceImpl {
-	return &TransactionServiceImpl{repo: repo, storage: storage}
+type TransactionServiceImpl struct {
+	repo           TransactionRepository
+	storage        StorageService
+	accountService AccountService
+}
+
+func NewTransactionService(
+	repo TransactionRepository,
+	storage StorageService,
+	accountService AccountService,
+) *TransactionServiceImpl {
+	return &TransactionServiceImpl{
+		repo:           repo,
+		storage:        storage,
+		accountService: accountService,
+	}
 }
 
 func (s *TransactionServiceImpl) FindTransactionsByAccount(
@@ -170,4 +187,11 @@ func (s *TransactionServiceImpl) UpdateTransaction(ctx context.Context, tx *doma
 		return fmt.Errorf("error al actualizar la transacción: %w", err)
 	}
 	return nil
+}
+
+func (s *TransactionServiceImpl) ReconcileAccount(
+	ctx context.Context,
+	accountID int,
+	endDate time.Time,
+) (*domain.Reconciliation, error) {
 }
