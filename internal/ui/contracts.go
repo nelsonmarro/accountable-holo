@@ -58,6 +58,11 @@ type TransactionService interface {
 	GetTransactionByID(ctx context.Context, id int) (*domain.Transaction, error)
 	VoidTransaction(ctx context.Context, transactionID int) error
 	UpdateTransaction(ctx context.Context, tx *domain.Transaction) error
+	ReconcileAccount(
+		ctx context.Context,
+		accountID int,
+		endDate time.Time,
+	) (*domain.Reconciliation, error)
 }
 
 type StorageService interface {
