@@ -23,6 +23,8 @@ func (ui *UI) makeFormCard() fyne.CanvasObject {
 	accountsSelector := widget.NewSelect([]string{}, nil) // we'll populate this later
 	endingDateEntry := widget.NewDateEntry()
 	actualBalanceEntry := widget.NewEntry()
+
+	// TODO: add validation for the balance entry
 }
 
 func (ui *UI) makeStatementCard() fyne.CanvasObject {
