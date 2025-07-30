@@ -441,5 +441,7 @@ func (ui *UI) generateReportFile(format string, outputPath string) {
 			return
 		}
 	}
-	progressDialog.Hide()
+	fyne.Do(func() {
+		progressDialog.Hide()
+	})
 }
