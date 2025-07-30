@@ -10,13 +10,13 @@ import (
 	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/widget"
 	"github.com/nelsonmarro/accountable-holo/internal/application/uivalidators"
+	"github.com/nelsonmarro/accountable-holo/internal/domain"
 	"github.com/shopspring/decimal"
 )
 
 func (ui *UI) makeReconciliationUI() fyne.CanvasObject {
-	// Top card (form)
-
-	// Bottom card (reconciliation statement)
+	ui.reconciliationStatementUI = ui.makeStatementCard()
+	ui.reconciliationStatementUI.Hide()
 
 	// containers
 	mainContainer := container.NewBorder(
@@ -64,7 +64,7 @@ func (ui *UI) makeFormCard() fyne.CanvasObject {
 			return
 		}
 
-		initiateReconciliation(selectedAccountID, endingDate, actualBalance)
+		go ui.initiateReconciliation(selectedAccountID, endingDate, actualBalance)
 	}
 
 	backButton := widget.NewButton("Volver", func() {
@@ -86,11 +86,26 @@ func (ui *UI) makeFormCard() fyne.CanvasObject {
 	return formCard
 }
 
-func initiateReconciliation(accountID int, endingDate *time.Time, actualBalance decimal.Decimal) {
+func (ui *UI) initiateReconciliation(accountID int, endingDate *time.Time, actualBalance decimal.Decimal) {
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
 
 	reconciliation, err := ui.Services.TxService.ReconcileAccount(ctx, accountID, *endingDate, actualBalance)
+	if err != nil {
+		fyne.Do(func() {
+			ui.reconciliationStatementUI.Hide()
+			dialog.ShowError(fmt.Errorf("error al reconciliar la cuenta: %v", err), ui.mainWindow)
+		})
+		return
+	}
+
+	updateStatementCard(reconciliation)
+	ui.reconciliationStatementUI.Show()
+}
+
+func updateStatementCard(reconciliation *domain.Reconciliation) {
+	// This function should update the reconciliation statement card with the reconciliation data.
+	panic("unimplemented")
 }
 
 func (ui *UI) makeStatementCard() fyne.CanvasObject {

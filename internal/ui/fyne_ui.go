@@ -53,6 +53,9 @@ type UI struct {
 	summaryTotalExpenses   *canvas.Text
 	summaryNetProfitLoss   *canvas.Text
 
+	// ---- Reconciliation Tab State ----
+	reconciliationStatementUI fyne.CanvasObject
+
 	// ---- Debug ----
 	infoLogger  *log.Logger
 	errorLogger *log.Logger
