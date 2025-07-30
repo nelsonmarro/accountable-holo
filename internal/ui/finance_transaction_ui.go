@@ -113,6 +113,10 @@ func (ui *UI) makeTransactionUI() fyne.CanvasObject {
 	})
 	generateReportBtn.Importance = widget.SuccessImportance
 
+	reconciliationBtn := widget.NewButtonWithIcon("Reconciliar", theme.ViewRefreshIcon(), func() {
+		dialog.ShowInformation("Conciliación", "Esta funcionalidad aún no está implementada.", ui.mainWindow)
+	})
+
 	// Reload Data Button
 	reloadDataBtn := widget.NewButtonWithIcon("Recargar Datos", theme.ViewRefreshIcon(), func() {
 		ui.currentTransactionFilters = domain.TransactionFilters{} // Reset filters
