@@ -92,7 +92,7 @@ func (ui *UI) buildMainUI() {
 	ui.mainWindow.SetMaster()
 }
 
-func (ui *UI) navToPage(content fyne.CanvasObject) {
+func (ui *UI) navToView(content fyne.CanvasObject) {
 	ui.mainWindow.SetContent(content)
 }
 
