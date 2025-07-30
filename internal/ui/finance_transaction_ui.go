@@ -114,7 +114,7 @@ func (ui *UI) makeTransactionUI() fyne.CanvasObject {
 	generateReportBtn.Importance = widget.SuccessImportance
 
 	reconciliationBtn := widget.NewButtonWithIcon("Reconciliar", theme.ViewRefreshIcon(), func() {
-		ui.navToPage(ui.makeReconciliationUI())
+		ui.navToView(ui.makeReconciliationUI())
 	})
 	reconciliationBtn.Importance = widget.WarningImportance
 
@@ -128,7 +128,11 @@ func (ui *UI) makeTransactionUI() fyne.CanvasObject {
 	reloadDataBtn.Importance = widget.SuccessImportance
 
 	// Containers
-	topBar := container.NewBorder(nil, nil, container.NewHBox(txAddBtn, reloadDataBtn), container.NewHBox(advancedFiltersBtn, generateReportBtn, reconciliationBtn), searchBar)
+	topBar := container.NewBorder(nil, nil,
+		container.NewHBox(txAddBtn, reloadDataBtn),
+		container.NewHBox(advancedFiltersBtn, generateReportBtn, reconciliationBtn),
+		searchBar,
+	)
 	filters := container.NewBorder(
 		nil,
 		nil,
