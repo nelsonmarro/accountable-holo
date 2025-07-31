@@ -17,6 +17,7 @@ type AccountService interface {
 }
 
 type CategoryService interface {
+	GetCategoryByTypeAndName(ctx context.Context, catType domain.CategoryType, name string) (*domain.Category, error)
 	GetPaginatedCategories(
 		ctx context.Context,
 		page,

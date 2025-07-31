@@ -17,6 +17,7 @@ type AccountRepository interface {
 }
 
 type CategoryRepository interface {
+	FindByNameAndType(ctx context.Context, name string, catType domain.CategoryType) (*domain.Category, error)
 	GetPaginatedCategories(
 		ctx context.Context,
 		page,

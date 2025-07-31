@@ -62,6 +62,10 @@ func (s *CategoryServiceImpl) GetCategoryByID(ctx context.Context, id int) (*dom
 	return s.repo.GetCategoryByID(ctx, id)
 }
 
+func (s *CategoryServiceImpl) GetCategoryByTypeAndName(ctx context.Context, catType domain.CategoryType, name string) (*domain.Category, error) {
+	return s.repo.FindByNameAndType(ctx, name, catType)
+}
+
 func (s *CategoryServiceImpl) CreateCategory(ctx context.Context, category *domain.Category) error {
 	catValidator := validator.New().For(category)
 	catValidator.Required("Name", "Type")

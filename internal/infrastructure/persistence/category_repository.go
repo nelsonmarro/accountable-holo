@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/nelsonmarro/accountable-holo/internal/domain"
 )
@@ -192,6 +193,19 @@ func (r *CategoryRepositoryImpl) CreateCategory(ctx context.Context, category *d
 	}
 
 	return nil
+}
+
+func (r *CategoryRepositoryImpl) FindByNameAndType(ctx context.Context, name string, catType domain.CategoryType) (*domain.Category, error) {
+	query := `SELECT id, name, type, created_at, updated_at FROM categories WHERE name = $1 AND type = $2`
+	var category domain.Category
+	err := r.db.QueryRow(ctx, query, name, catType).Scan(&category.ID, &category.Name, &category.Type, &category.CreatedAt, &category.UpdatedAt)
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			return nil, fmt.Errorf("category with name '%s' and type '%s' not found", name, catType)
+		}
+		return nil, fmt.Errorf("failed to scan category by name and type: %w", err)
+	}
+	return &category, nil
 }
 
 func (r *CategoryRepositoryImpl) UpdateCategory(ctx context.Context, category *domain.Category) error {
