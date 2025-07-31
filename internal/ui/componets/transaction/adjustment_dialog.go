@@ -97,7 +97,7 @@ func (h *AdjustmentDialogHandler) prefillForm(data *domain.Reconciliation) {
 	description := fmt.Sprintf("Ajuste por reconciliación de cuenta al %s.", data.EndDate.Format("2006-01-02"))
 	h.descriptionEntry.SetText(description)
 
-	h.dateEntry.SetDate(*data.EndDate)
+	h.dateEntry.SetDate(&data.EndDate)
 
 	var catType domain.CategoryType
 	if data.Difference.IsPositive() {
@@ -143,8 +143,6 @@ func (h *AdjustmentDialogHandler) submit(confirmed bool) {
 	progressDialog.Show()
 
 	go func() {
-		defer progressDialog.Hide()
-
 		amount, _ := decimal.NewFromString(h.amountEntry.Text)
 		amountFloat, _ := amount.Float64()
 
@@ -153,7 +151,7 @@ func (h *AdjustmentDialogHandler) submit(confirmed bool) {
 			CategoryID:      h.selectedCategory.ID,
 			Description:     h.descriptionEntry.Text,
 			Amount:          amountFloat,
-			TransactionDate: h.dateEntry.Date,
+			TransactionDate: *h.dateEntry.Date,
 		}
 
 		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
@@ -162,6 +160,7 @@ func (h *AdjustmentDialogHandler) submit(confirmed bool) {
 		err := h.txService.CreateTransaction(ctx, tx)
 		if err != nil {
 			fyne.Do(func() {
+				progressDialog.Hide()
 				dialog.ShowError(fmt.Errorf("error al crear la transacción de ajuste: %w", err), h.parent)
 			})
 			h.errorLogger.Println("Error creating adjustment transaction:", err)
@@ -169,6 +168,7 @@ func (h *AdjustmentDialogHandler) submit(confirmed bool) {
 		}
 
 		fyne.Do(func() {
+			progressDialog.Hide()
 			dialog.ShowInformation("Ajuste Creado", "Transacción de ajuste creada exitosamente!", h.parent)
 			if h.onConfirm != nil {
 				h.onConfirm()
