@@ -136,6 +136,31 @@ func (ui *UI) makeStatementCard() fyne.CanvasObject {
 		func() fyne.CanvasObject { return widget.NewLabel("") },
 		func(id widget.ListItemID, obj fyne.CanvasObject) {},
 	)
+
+	adjustmentButton := widget.NewButton("Crear Transacción de Ajuste", func() {
+		// TODO: Open the pre-filled transaction dialog
+	})
+	adjustmentButton.Disable()
+
+	finishButton := widget.NewButton("Finalizar Reconciliación", func() {
+		ui.reconciliationStatementUI.Hide()
+	})
+
+	statementCard := widget.NewCard("Resultados de Reconciliación", "",
+		container.NewBorder(keyFiguresGrid, container.NewHBox(adjustmentButton, finishButton), nil, nil, transactionsList),
+	)
+
+	ui.reconciliationWidgets = &reconciliationUIWidgets{
+		endingDateLabel:        endingDateLabel,
+		calculatedBalanceLabel: calculatedBalanceLabel,
+		actualBalanceLabel:     actualBalanceLabel,
+		differenceLabel:        differenceLabel,
+		differenceContainer:    differenceContainer,
+		transactionList:        transactionsList,
+		adjustmentButton:       adjustmentButton,
+	}
+
+	return statementCard
 }
 
 func (ui *UI) loadAccountsForReconciliation(selector *widget.SelectEntry) {
