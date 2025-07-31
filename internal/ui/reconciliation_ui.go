@@ -203,6 +203,7 @@ func (ui *UI) makeStatementCard() fyne.CanvasObject {
 
 	finishButton := widget.NewButton("Finalizar Reconciliación", func() {
 		ui.reconciliationStatementUI.Hide()
+		ui.reconciliationData = nil
 	})
 
 	statementCard := widget.NewCard("Resultados de Reconciliación", "",
