@@ -186,7 +186,17 @@ func (ui *UI) makeStatementCard() fyne.CanvasObject {
 	)
 
 	adjustmentButton := widget.NewButton("Crear Transacción de Ajuste", func() {
-		// TODO: Open the pre-filled transaction dialog
+		dialogHandler := transaction.NewAdjustmentTransactionDialog(
+			ui.mainWindow,
+			ui.errorLogger,
+			ui.Services.TxService,
+			ui.Services.CatService,
+			func() {
+				ui.reconciliationStatementUI.Hide()
+			},
+			ui.reconciliationData,
+		)
+		dialogHandler.Show()
 	})
 	adjustmentButton.Disable()
 
