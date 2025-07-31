@@ -3,9 +3,11 @@ package ui
 import (
 	"context"
 	"fmt"
+	"image/color"
 	"time"
 
 	"fyne.io/fyne/v2"
+	"fyne.io/fyne/v2/canvas"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/widget"
@@ -109,7 +111,31 @@ func (ui *UI) updateStatementCard(reconciliation *domain.Reconciliation) {
 }
 
 func (ui *UI) makeStatementCard() fyne.CanvasObject {
-	return widget.NewLabel("Statement Card is under construction. Please check back later.")
+	// Create the labels for the key figures
+	endingDateLabel := widget.NewLabel("Fecha de Cierre: N/A")
+	calculatedBalanceLabel := widget.NewLabel("Saldo Calculado: N/A")
+	actualBalanceLabel := widget.NewLabel("Saldo Real: N/A")
+	differenceLabel := widget.NewLabel("Diferencia: N/A")
+
+	differenceContainer := container.NewStack(
+		canvas.NewRectangle(color.Transparent),
+		differenceLabel,
+	)
+
+	// Create the grid for the key figures
+	keyFiguresGrid := container.NewGridWithColumns(2,
+		endingDateLabel,
+		calculatedBalanceLabel,
+		actualBalanceLabel,
+		differenceContainer,
+	)
+
+	// Create List for transactions
+	transactionsList := widget.NewList(
+		func() int { return 0 },
+		func() fyne.CanvasObject { return widget.NewLabel("") },
+		func(id widget.ListItemID, obj fyne.CanvasObject) {},
+	)
 }
 
 func (ui *UI) loadAccountsForReconciliation(selector *widget.SelectEntry) {
