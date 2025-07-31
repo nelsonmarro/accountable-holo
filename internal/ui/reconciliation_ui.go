@@ -107,7 +107,55 @@ func (ui *UI) initiateReconciliation(accountID int, endingDate *time.Time, actua
 
 func (ui *UI) updateStatementCard(reconciliation *domain.Reconciliation) {
 	// This function should update the reconciliation statement card with the reconciliation data.
-	panic("unimplemented")
+	widgets := ui.reconciliationWidgets
+	ui.reconciliationData = reconciliation
+
+	// Update the labels with the reconciliation data
+	widgets.endingDateLabel.SetText(fmt.Sprintf("Fecha de Cierre: %s",
+		reconciliation.EndDate.Format("2006-01-02")))
+
+	widgets.calculatedBalanceLabel.SetText(fmt.Sprintf("Saldo Calculado: $%s",
+		reconciliation.CalculatedEndingBalance.StringFixed(2)))
+
+	widgets.actualBalanceLabel.SetText(fmt.Sprintf("Saldo Real: $%s",
+		reconciliation.EndingBalance.StringFixed(2)))
+
+	widgets.differenceLabel.SetText(fmt.Sprintf("Diferencia: $%s",
+		reconciliation.Difference.StringFixed(2)))
+
+	// Update difference color
+	bg := widgets.differenceContainer.Objects[0].(*canvas.Rectangle)
+	if reconciliation.Difference.IsZero() {
+		bg.FillColor = color.Transparent
+		widgets.adjustmentButton.Disable()
+	} else {
+		bg.FillColor = color.NRGBA{R: 255, G: 0, B: 0, A: 60} // Light red
+		widgets.adjustmentButton.Enable()
+	}
+	bg.Refresh()
+
+	// Update the transaction list
+	widgets.transactionList.Length = func() int {
+		return len(ui.reconciliationData.Transactions)
+	}
+	widgets.transactionList.CreateItem = func() fyne.CanvasObject {
+		// Create a template similar to your main transaction list item
+		return container.NewGridWithColumns(4,
+			widget.NewLabel("Date"),
+			widget.NewLabel("Description"),
+			widget.NewLabel("Type"),
+			widget.NewLabel("Amount"),
+		)
+	}
+	widgets.transactionList.UpdateItem = func(id widget.ListItemID, item fyne.CanvasObject) {
+		tx := ui.reconciliationData.Transactions[id]
+		grid := item.(*fyne.Container)
+		grid.Objects[0].(*widget.Label).SetText(tx.TransactionDate.Format("2006-01-02"))
+		grid.Objects[1].(*widget.Label).SetText(tx.Description)
+		grid.Objects[2].(*widget.Label).SetText(string(tx.Category.Type))
+		grid.Objects[3].(*widget.Label).SetText(fmt.Sprintf("$%.2f", tx.Amount))
+	}
+	widgets.transactionList.Refresh()
 }
 
 func (ui *UI) makeStatementCard() fyne.CanvasObject {
