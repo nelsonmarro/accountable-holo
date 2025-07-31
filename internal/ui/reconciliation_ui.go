@@ -99,11 +99,11 @@ func (ui *UI) initiateReconciliation(accountID int, endingDate *time.Time, actua
 		return
 	}
 
-	updateStatementCard(reconciliation)
+	ui.updateStatementCard(reconciliation)
 	ui.reconciliationStatementUI.Show()
 }
 
-func updateStatementCard(reconciliation *domain.Reconciliation) {
+func (ui *UI) updateStatementCard(reconciliation *domain.Reconciliation) {
 	// This function should update the reconciliation statement card with the reconciliation data.
 	panic("unimplemented")
 }
