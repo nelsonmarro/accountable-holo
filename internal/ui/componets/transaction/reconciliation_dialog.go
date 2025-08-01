@@ -119,7 +119,7 @@ func (d *ReconciliationDialog) makeFormCard() fyne.CanvasObject {
 	)
 
 	// Don't forget to load the accounts for the selector, similar to how you do it in the
-	go d.loadAccountsForReconciliation(accountsSelector)
+	d.loadAccountsForReconciliation(accountsSelector)
 
 	return formCard
 }
@@ -256,7 +256,8 @@ func (d *ReconciliationDialog) makeStatementCard() fyne.CanvasObject {
 
 func (d *ReconciliationDialog) loadAccountsForReconciliation(selector *widget.SelectEntry) {
 	if d.accounts == nil {
-		panic("Deben cargar las cuentas antes de llamar a loadAccountsForReconciliation")
+		dialog.ShowError(fmt.Errorf("las cuentas no se pudieron cargar"), d.mainWindow)
+		return
 	}
 
 	accountNames := make([]string, len(d.accounts))
