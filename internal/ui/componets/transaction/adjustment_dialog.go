@@ -23,7 +23,6 @@ type AdjustmentDialogHandler struct {
 	catService  CategoryService
 	errorLogger *log.Logger
 	parent      fyne.Window
-	onConfirm   func()
 
 	// UI Components
 	descriptionEntry  *widget.Entry
@@ -43,7 +42,6 @@ func NewAdjustmentTransactionDialog(
 	errorLogger *log.Logger,
 	txService TransactionService,
 	catService CategoryService,
-	onConfirm func(),
 	reconciliationData *domain.Reconciliation,
 ) *AdjustmentDialogHandler {
 	h := &AdjustmentDialogHandler{
@@ -51,7 +49,6 @@ func NewAdjustmentTransactionDialog(
 		errorLogger:      errorLogger,
 		txService:        txService,
 		catService:       catService,
-		onConfirm:        onConfirm,
 		accountID:        reconciliationData.AccountID,
 		descriptionEntry: widget.NewMultiLineEntry(),
 		amountEntry:      widget.NewEntry(),
@@ -122,8 +119,8 @@ func (h *AdjustmentDialogHandler) findAndSetCategory(catType domain.CategoryType
 		return
 	}
 
+	h.selectedCategory = category
 	fyne.Do(func() {
-		h.selectedCategory = category
 		h.categoryLabel.SetText(category.Name)
 	})
 }
@@ -170,9 +167,6 @@ func (h *AdjustmentDialogHandler) submit(confirmed bool) {
 		fyne.Do(func() {
 			progressDialog.Hide()
 			dialog.ShowInformation("Ajuste Creado", "Transacción de ajuste creada exitosamente!", h.parent)
-			if h.onConfirm != nil {
-				h.onConfirm()
-			}
 			h.dialog.Hide()
 		})
 	}()

@@ -54,9 +54,17 @@ func NewReconciliationDialog(
 		accounts:   accounts,
 	}
 	d.statementUI = d.makeStatementCard()
-	d.dialog = dialog.NewCustom("Reconciliación de Cuenta", "Cerrar", d.makeFormCard(), mainWindow)
-	d.dialog.Resize(fyne.NewSize(400, 600))
+
+	formCard := d.makeFormCard()
+	dialogContent := container.NewBorder(formCard, nil, nil, nil, d.statementUI)
+	d.dialog = dialog.NewCustom("Reconciliación de Cuenta", "Cerrar", dialogContent, mainWindow)
+	d.dialog.Resize(fyne.NewSize(800, 600))
+
 	return d
+}
+
+func (d *ReconciliationDialog) Show() {
+	d.dialog.Show()
 }
 
 func (d *ReconciliationDialog) makeFormCard() fyne.CanvasObject {
@@ -212,9 +220,6 @@ func (d *ReconciliationDialog) makeStatementCard() fyne.CanvasObject {
 			d.logger,
 			d.TxService,
 			d.CatService,
-			func() {
-				d.statementUI.Hide()
-			},
 			d.data,
 		)
 		dialogHandler.Show()
@@ -222,7 +227,7 @@ func (d *ReconciliationDialog) makeStatementCard() fyne.CanvasObject {
 	adjustmentButton.Disable()
 
 	finishButton := widget.NewButton("Finalizar Reconciliación", func() {
-		d.statementUI.Hide()
+		d.dialog.Hide()
 		d.data = nil
 	})
 
