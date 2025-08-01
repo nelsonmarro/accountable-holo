@@ -88,7 +88,7 @@ func (ui *UI) makeTransactionUI() fyne.CanvasObject {
 	txAddBtn.Importance = widget.HighImportance
 
 	// Filtres Buttom
-	advancedFiltersBtn := widget.NewButton("Filtros Avanzados", func() {
+	advancedFiltersBtn := widget.NewButtonWithIcon("Filtros Avanzados", theme.MoreVerticalIcon(), func() {
 		filtersDialog := transaction.NewFiltersDialog(
 			ui.mainWindow,
 			ui.Services.CatService,
@@ -105,7 +105,7 @@ func (ui *UI) makeTransactionUI() fyne.CanvasObject {
 	advancedFiltersBtn.Importance = widget.HighImportance
 
 	// Report Buttom
-	generateReportBtn := widget.NewButton("Generar Reporte", func() {
+	generateReportBtn := widget.NewButtonWithIcon("Generar Reporte", theme.DocumentPrintIcon(), func() {
 		reportDialog := componets.NewReportDialog(ui.mainWindow, func(format string, outputPath string) {
 			go ui.generateReportFile(format, outputPath)
 		})
