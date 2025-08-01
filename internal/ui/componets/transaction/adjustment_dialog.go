@@ -99,14 +99,7 @@ func (h *AdjustmentDialogHandler) prefillForm(data *domain.Reconciliation) {
 
 	h.dateEntry.SetDate(&data.EndDate)
 
-	var catType domain.CategoryType
-	if data.Difference.IsPositive() {
-		catType = domain.Income
-	} else {
-		catType = domain.Outcome
-	}
-
-	go h.findAndSetCategory(catType, "Ajuste por Reconciliación")
+	go h.findAndSetCategory(domain.Adjustment, "Ajuste por Reconciliación")
 
 	h.searchCategoryBtn.Disable()
 }

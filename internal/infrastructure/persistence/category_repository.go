@@ -26,16 +26,6 @@ func (r *CategoryRepositoryImpl) getPaginatedCategories(
 	baseWhereClause string,
 	filter ...string,
 ) (*domain.PaginatedResult[domain.Category], error) {
-	if page < 1 {
-		page = 1
-	}
-	if pageSize < 1 {
-		pageSize = 10
-	}
-	if page > 100 {
-		page = 100
-	}
-
 	var queryArgs []any
 	var countQueryArgs []any
 	whereClauses := []string{}
@@ -131,7 +121,7 @@ func (r *CategoryRepositoryImpl) GetSelectablePaginatedCategories(ctx context.Co
 	*domain.PaginatedResult[domain.Category],
 	error,
 ) {
-	baseWhere := "name NOT LIKE '%Anular Transacción%'"
+	baseWhere := "name NOT LIKE '%Anular Transacción%' AND name NOT LIKE '%Ajuste por Reconciliación%'"
 	return r.getPaginatedCategories(ctx, page, pageSize, baseWhere, filter...)
 }
 
