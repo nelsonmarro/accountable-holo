@@ -20,16 +20,6 @@ type Services struct {
 	ReportService ReportService
 }
 
-type reconciliationUIWidgets struct {
-	endingDateLabel        *widget.Label
-	calculatedBalanceLabel *widget.Label
-	actualBalanceLabel     *widget.Label
-	differenceLabel        *widget.Label
-	differenceContainer    *fyne.Container
-	transactionList        *widget.List
-	adjustmentButton       *widget.Button
-}
-
 // The UI struct holds the dependencies and state for the Fyne UI.
 type UI struct {
 	// ---- Dependencies ----
@@ -62,11 +52,6 @@ type UI struct {
 	summaryTotalIncome     *canvas.Text
 	summaryTotalExpenses   *canvas.Text
 	summaryNetProfitLoss   *canvas.Text
-
-	// ---- Reconciliation Tab State ----
-	reconciliationStatementUI fyne.CanvasObject
-	reconciliationData        *domain.Reconciliation
-	reconciliationWidgets     *reconciliationUIWidgets
 
 	// ---- Debug ----
 	infoLogger  *log.Logger

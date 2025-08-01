@@ -2,8 +2,10 @@ package transaction
 
 import (
 	"context"
+	"time"
 
 	"github.com/nelsonmarro/accountable-holo/internal/domain"
+	"github.com/shopspring/decimal"
 )
 
 // TransactionService defines the interface for transaction-related business logic.
@@ -12,6 +14,12 @@ type TransactionService interface {
 	CreateTransaction(ctx context.Context, tx *domain.Transaction) error
 	UpdateTransaction(ctx context.Context, tx *domain.Transaction) error
 	VoidTransaction(ctx context.Context, id int) error
+	ReconcileAccount(
+		ctx context.Context,
+		accountID int,
+		endDate time.Time,
+		actualEndingBalance decimal.Decimal,
+	) (*domain.Reconciliation, error)
 }
 
 // CategoryService defines the interface for category-related business logic.

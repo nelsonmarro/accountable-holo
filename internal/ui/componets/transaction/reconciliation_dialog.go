@@ -13,21 +13,31 @@ import (
 	"fyne.io/fyne/v2/widget"
 	"github.com/nelsonmarro/accountable-holo/internal/application/uivalidators"
 	"github.com/nelsonmarro/accountable-holo/internal/domain"
-	"github.com/nelsonmarro/accountable-holo/internal/ui"
 	"github.com/nelsonmarro/accountable-holo/internal/ui/componets/transaction"
 	"github.com/shopspring/decimal"
 )
 
-type ReconciliationDialog struct {
-	ui *ui.UI
-	dialog.Dialog
+type reconciliationUIWidgets struct {
+	endingDateLabel        *widget.Label
+	calculatedBalanceLabel *widget.Label
+	actualBalanceLabel     *widget.Label
+	differenceLabel        *widget.Label
+	differenceContainer    *fyne.Container
+	transactionList        *widget.List
+	adjustmentButton       *widget.Button
+}
 
+type ReconciliationDialog struct {
+	dialog      dialog.Dialog
+	TxService   TransactionService
+	mainWindow  fyne.Window
 	statementUI fyne.CanvasObject
 	data        *domain.Reconciliation
 	widgets     *reconciliationUIWidgets
+	accounts    []domain.Account
 }
 
-func (ui *UI) makeFormCard() fyne.CanvasObject {
+func (d *ReconciliationDialog) makeFormCard() fyne.CanvasObject {
 	accountsSelector := widget.NewSelectEntry([]string{}) // we'll populate this later
 	endingDateEntry := widget.NewDateEntry()
 	actualBalanceEntry := widget.NewEntry()
@@ -44,7 +54,7 @@ func (ui *UI) makeFormCard() fyne.CanvasObject {
 	reconciliationForm.OnSubmit = func() {
 		selectedAccountName := accountsSelector.Text
 		var selectedAccountID int
-		for _, acc := range ui.accounts {
+		for _, acc := range d.accounts {
 			if acc.Name == selectedAccountName {
 				selectedAccountID = acc.ID
 				break
@@ -52,7 +62,7 @@ func (ui *UI) makeFormCard() fyne.CanvasObject {
 		}
 
 		if selectedAccountID == 0 {
-			dialog.ShowError(fmt.Errorf("la cuenta seleccionada no es válida"), ui.mainWindow)
+			dialog.ShowError(fmt.Errorf("la cuenta seleccionada no es válida"), d.mainWindow)
 			return
 		}
 
@@ -60,11 +70,11 @@ func (ui *UI) makeFormCard() fyne.CanvasObject {
 
 		actualBalance, err := decimal.NewFromString(actualBalanceEntry.Text)
 		if err != nil {
-			dialog.ShowError(fmt.Errorf("saldo final real no es un número válido: %v", err), ui.mainWindow)
+			dialog.ShowError(fmt.Errorf("saldo final real no es un número válido: %v", err), d.mainWindow)
 			return
 		}
 
-		go ui.initiateReconciliation(selectedAccountID, endingDate, actualBalance)
+		go d.initiateReconciliation(selectedAccountID, endingDate, actualBalance)
 	}
 
 	backButton := widget.NewButton("Volver", func() {
@@ -80,32 +90,32 @@ func (ui *UI) makeFormCard() fyne.CanvasObject {
 	)
 
 	// Don't forget to load the accounts for the selector, similar to how you do it in the
-	go ui.loadAccountsForReconciliation(accountsSelector)
+	go d.loadAccountsForReconciliation(accountsSelector)
 
 	return formCard
 }
 
-func (ui *UI) initiateReconciliation(accountID int, endingDate *time.Time, actualBalance decimal.Decimal) {
+func (d *ReconciliationDialog) initiateReconciliation(accountID int, endingDate *time.Time, actualBalance decimal.Decimal) {
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
 
-	reconciliation, err := ui.Services.TxService.ReconcileAccount(ctx, accountID, *endingDate, actualBalance)
+	reconciliation, err := d.TxService.ReconcileAccount(ctx, accountID, *endingDate, actualBalance)
 	if err != nil {
 		fyne.Do(func() {
-			ui.reconciliationStatementUI.Hide()
-			dialog.ShowError(fmt.Errorf("error al reconciliar la cuenta: %v", err), ui.mainWindow)
+			d.statementUI.Hide()
+			dialog.ShowError(fmt.Errorf("error al reconciliar la cuenta: %v", err), d.mainWindow)
 		})
 		return
 	}
 
-	ui.updateStatementCard(reconciliation)
-	ui.reconciliationStatementUI.Show()
+	d.updateStatementCard(reconciliation)
+	d.statementUI.Show()
 }
 
-func (ui *UI) updateStatementCard(reconciliation *domain.Reconciliation) {
+func (d *ReconciliationDialog) updateStatementCard(reconciliation *domain.Reconciliation) {
 	// This function should update the reconciliation statement card with the reconciliation data.
-	widgets := ui.reconciliationWidgets
-	ui.reconciliationData = reconciliation
+	widgets := d.widgets
+	d.data = reconciliation
 
 	// Update the labels with the reconciliation data
 	widgets.endingDateLabel.SetText(fmt.Sprintf("Fecha de Cierre: %s",
@@ -133,7 +143,7 @@ func (ui *UI) updateStatementCard(reconciliation *domain.Reconciliation) {
 
 	// Update the transaction list
 	widgets.transactionList.Length = func() int {
-		return len(ui.reconciliationData.Transactions)
+		return len(d.data.Transactions)
 	}
 	widgets.transactionList.CreateItem = func() fyne.CanvasObject {
 		// Create a template similar to your main transaction list item
@@ -145,7 +155,7 @@ func (ui *UI) updateStatementCard(reconciliation *domain.Reconciliation) {
 		)
 	}
 	widgets.transactionList.UpdateItem = func(id widget.ListItemID, item fyne.CanvasObject) {
-		tx := ui.reconciliationData.Transactions[id]
+		tx := d.data.Transactions[id]
 		grid := item.(*fyne.Container)
 		grid.Objects[0].(*widget.Label).SetText(tx.TransactionDate.Format("2006-01-02"))
 		grid.Objects[1].(*widget.Label).SetText(tx.Description)
@@ -155,7 +165,7 @@ func (ui *UI) updateStatementCard(reconciliation *domain.Reconciliation) {
 	widgets.transactionList.Refresh()
 }
 
-func (ui *UI) makeStatementCard() fyne.CanvasObject {
+func (d *ReconciliationDialog) makeStatementCard() fyne.CanvasObject {
 	// Create the labels for the key figures
 	endingDateLabel := widget.NewLabel("Fecha de Cierre: N/A")
 	calculatedBalanceLabel := widget.NewLabel("Saldo Calculado: N/A")
@@ -184,29 +194,29 @@ func (ui *UI) makeStatementCard() fyne.CanvasObject {
 
 	adjustmentButton := widget.NewButton("Crear Transacción de Ajuste", func() {
 		dialogHandler := transaction.NewAdjustmentTransactionDialog(
-			ui.mainWindow,
-			ui.errorLogger,
-			ui.Services.TxService,
-			ui.Services.CatService,
+			d.mainWindow,
+			d.logger,
+			d.TxService,
+			d.CatService,
 			func() {
-				ui.reconciliationStatementUI.Hide()
+				d.statementUI.Hide()
 			},
-			ui.reconciliationData,
+			d.data,
 		)
 		dialogHandler.Show()
 	})
 	adjustmentButton.Disable()
 
 	finishButton := widget.NewButton("Finalizar Reconciliación", func() {
-		ui.reconciliationStatementUI.Hide()
-		ui.reconciliationData = nil
+		d.statementUI.Hide()
+		d.data = nil
 	})
 
 	statementCard := widget.NewCard("Resultados de Reconciliación", "",
 		container.NewBorder(keyFiguresGrid, container.NewHBox(adjustmentButton, finishButton), nil, nil, transactionsList),
 	)
 
-	ui.reconciliationWidgets = &reconciliationUIWidgets{
+	d.widgets = &reconciliationUIWidgets{
 		endingDateLabel:        endingDateLabel,
 		calculatedBalanceLabel: calculatedBalanceLabel,
 		actualBalanceLabel:     actualBalanceLabel,
@@ -219,23 +229,13 @@ func (ui *UI) makeStatementCard() fyne.CanvasObject {
 	return statementCard
 }
 
-func (ui *UI) loadAccountsForReconciliation(selector *widget.SelectEntry) {
-	if ui.accounts == nil {
-		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
-		defer cancel()
-
-		accs, err := ui.Services.AccService.GetAllAccounts(ctx)
-		if err != nil {
-			fyne.Do(func() {
-				dialog.ShowError(fmt.Errorf("error al cargar las cuentas: %v", err), ui.mainWindow)
-			})
-			return
-		}
-		ui.accounts = accs
+func (d *ReconciliationDialog) loadAccountsForReconciliation(selector *widget.SelectEntry) {
+	if d.accounts == nil {
+		panic("Deben cargar las cuentas antes de llamar a loadAccountsForReconciliation")
 	}
 
-	accountNames := make([]string, len(ui.accounts))
-	for i, acc := range ui.accounts {
+	accountNames := make([]string, len(d.accounts))
+	for i, acc := range d.accounts {
 		accountNames[i] = acc.Name
 	}
 
