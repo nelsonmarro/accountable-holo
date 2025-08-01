@@ -6,6 +6,7 @@ require (
 	fyne.io/fyne/v2 v2.6.1
 	github.com/golang-migrate/migrate/v4 v4.18.3
 	github.com/jackc/pgx/v5 v5.7.5
+	github.com/johnfercher/maroto/v2 v2.3.1
 	github.com/ory/dockertest/v3 v3.12.0
 	github.com/shopspring/decimal v1.2.0
 	github.com/spf13/viper v1.20.1
@@ -54,7 +55,6 @@ require (
 	github.com/jackc/puddle/v2 v2.2.2 // indirect
 	github.com/jeandeaual/go-locale v0.0.0-20250612000132-0ef82f21eade // indirect
 	github.com/johnfercher/go-tree v1.0.5 // indirect
-	github.com/johnfercher/maroto/v2 v2.3.1 // indirect
 	github.com/jsummers/gobmp v0.0.0-20230614200233-a9de23ed2e25 // indirect
 	github.com/jung-kurt/gofpdf v1.16.2 // indirect
 	github.com/lib/pq v1.10.9 // indirect
