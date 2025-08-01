@@ -27,14 +27,16 @@ type AdjustmentDialogHandler struct {
 
 	// UI Components
 	descriptionEntry  *widget.Entry
-	amountEntry       *widget.Entry
-	dateEntry         *widget.DateEntry
+	amountLabel       *widget.Label
+	dateLabel         *widget.Label
 	categoryLabel     *widget.Label
 	searchCategoryBtn *widget.Button
 
 	// Data
 	accountID        int
 	selectedCategory *domain.Category
+	amount           decimal.Decimal
+	transactionDate  time.Time
 }
 
 // NewAdjustmentTransactionDialog creates a new dialog for creating a reconciliation adjustment transaction.
@@ -54,9 +56,10 @@ func NewAdjustmentTransactionDialog(
 		onConfirm:        onConfirm,
 		accountID:        reconciliationData.AccountID,
 		descriptionEntry: widget.NewMultiLineEntry(),
-		amountEntry:      widget.NewEntry(),
-		dateEntry:        widget.NewDateEntry(),
+		amountLabel:      widget.NewLabel(""),
+		dateLabel:        widget.NewLabel(""),
 		categoryLabel:    widget.NewLabel("Buscando categoría..."),
+		transactionDate:  time.Now(),
 	}
 
 	h.searchCategoryBtn = widget.NewButtonWithIcon("", theme.SearchIcon(), func() {
@@ -77,10 +80,10 @@ func NewAdjustmentTransactionDialog(
 	categoryContainer := container.NewBorder(nil, nil, nil, h.searchCategoryBtn, h.categoryLabel)
 
 	formItems := []*widget.FormItem{
-		widget.NewFormItem("Descripción", h.descriptionEntry),
-		widget.NewFormItem("Monto", h.amountEntry),
-		widget.NewFormItem("Fecha", h.dateEntry),
-		widget.NewFormItem("Categoría", categoryContainer),
+		{Text: "Descripción", Widget: h.descriptionEntry},
+		{Text: "Monto", Widget: h.amountLabel},
+		{Text: "Fecha", Widget: h.dateLabel},
+		{Text: "Categoría", Widget: categoryContainer},
 	}
 
 	h.dialog = dialog.NewForm("Crear Transacción de Ajuste", "Crear", "Cancelar", formItems, h.submit, parent)
@@ -90,14 +93,13 @@ func NewAdjustmentTransactionDialog(
 
 // prefillForm sets the initial values for the adjustment transaction.
 func (h *AdjustmentDialogHandler) prefillForm(data *domain.Reconciliation) {
-	amount := data.Difference.Abs()
-	h.amountEntry.SetText(amount.StringFixed(2))
-	h.amountEntry.Disable()
+	h.amount = data.Difference.Abs()
+	h.amountLabel.SetText(fmt.Sprintf("$%s", h.amount.StringFixed(2)))
 
 	description := fmt.Sprintf("Ajuste por reconciliación de cuenta al %s.", data.EndDate.Format("2006-01-02"))
 	h.descriptionEntry.SetText(description)
 
-	h.dateEntry.SetDate(&data.EndDate)
+	h.dateLabel.SetText(h.transactionDate.Format("01/02/2006"))
 
 	go h.findAndSetCategory(domain.Adjustment, "Ajuste por Reconciliación")
 
@@ -108,7 +110,6 @@ func (h *AdjustmentDialogHandler) findAndSetCategory(catType domain.CategoryType
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	// We assume adjustment categories exist. A more robust solution would be to check this on startup.
 	category, err := h.catService.GetCategoryByTypeAndName(ctx, catType, catName)
 	if err != nil {
 		fyne.Do(func() { h.categoryLabel.SetText("Error: Categoría no encontrada") })
@@ -136,15 +137,14 @@ func (h *AdjustmentDialogHandler) submit(confirmed bool) {
 	progressDialog.Show()
 
 	go func() {
-		amount, _ := decimal.NewFromString(h.amountEntry.Text)
-		amountFloat, _ := amount.Float64()
+		amountFloat, _ := h.amount.Float64()
 
 		tx := &domain.Transaction{
 			AccountID:       h.accountID,
 			CategoryID:      h.selectedCategory.ID,
 			Description:     h.descriptionEntry.Text,
 			Amount:          amountFloat,
-			TransactionDate: *h.dateEntry.Date,
+			TransactionDate: h.transactionDate,
 		}
 
 		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
