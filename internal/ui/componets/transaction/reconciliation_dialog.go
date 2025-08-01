@@ -39,6 +39,26 @@ type ReconciliationDialog struct {
 	accounts    []domain.Account
 }
 
+func NewReconciliationDialog(
+	mainWindow fyne.Window,
+	logger *log.Logger,
+	txService TransactionService,
+	catService CategoryService,
+	accounts []domain.Account,
+) *ReconciliationDialog {
+	d := &ReconciliationDialog{
+		TxService:  txService,
+		CatService: catService,
+		logger:     logger,
+		mainWindow: mainWindow,
+		accounts:   accounts,
+	}
+	d.statementUI = d.makeStatementCard()
+	d.dialog = dialog.NewCustom("Reconciliación de Cuenta", "Cerrar", d.makeFormCard(), mainWindow)
+	d.dialog.Resize(fyne.NewSize(400, 600))
+	return d
+}
+
 func (d *ReconciliationDialog) makeFormCard() fyne.CanvasObject {
 	accountsSelector := widget.NewSelectEntry([]string{}) // we'll populate this later
 	endingDateEntry := widget.NewDateEntry()
@@ -79,16 +99,11 @@ func (d *ReconciliationDialog) makeFormCard() fyne.CanvasObject {
 		go d.initiateReconciliation(selectedAccountID, endingDate, actualBalance)
 	}
 
-	backButton := widget.NewButton("Volver", func() {
-		// This should navigate back to the main transaction view.
-		// You can call the navigation function you created earlier.
-	})
-
 	// Create the card itself
 	formCard := widget.NewCard(
 		"Reconciliación de Cuenta",
 		"",
-		container.NewVBox(reconciliationForm, backButton),
+		reconciliationForm,
 	)
 
 	// Don't forget to load the accounts for the selector, similar to how you do it in the
