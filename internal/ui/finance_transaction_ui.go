@@ -113,7 +113,7 @@ func (ui *UI) makeTransactionUI() fyne.CanvasObject {
 	})
 	generateReportBtn.Importance = widget.SuccessImportance
 
-	reconciliationBtn := widget.NewButtonWithIcon("Reconciliar", theme.ViewRefreshIcon(), func() {
+	reconciliationBtn := widget.NewButtonWithIcon("Reconciliar", theme.ContentPasteIcon(), func() {
 		dialogHandler := transaction.NewReconciliationDialog(
 			ui.mainWindow,
 			ui.errorLogger,

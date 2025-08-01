@@ -125,7 +125,7 @@ func (ui *UI) fillCategoryListData(i widget.ListItemID, o fyne.CanvasObject) {
 	deleteBtn := actionsContainer.Objects[1].(*widget.Button)
 	editBtn.Enable()
 
-	if strings.Contains(cat.Name, "Anular") {
+	if strings.Contains(cat.Name, "Anular") || strings.Contains(cat.Name, "Ajuste") {
 		editBtn.Disable()
 		deleteBtn.Disable()
 	}
