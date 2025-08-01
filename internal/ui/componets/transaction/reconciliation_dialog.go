@@ -37,6 +37,7 @@ type ReconciliationDialog struct {
 	data        *domain.Reconciliation
 	widgets     *reconciliationUIWidgets
 	accounts    []domain.Account
+	onConfirm   func()
 }
 
 func NewReconciliationDialog(
@@ -45,6 +46,7 @@ func NewReconciliationDialog(
 	txService TransactionService,
 	catService CategoryService,
 	accounts []domain.Account,
+	onConfirm func(),
 ) *ReconciliationDialog {
 	d := &ReconciliationDialog{
 		TxService:  txService,
@@ -52,6 +54,7 @@ func NewReconciliationDialog(
 		logger:     logger,
 		mainWindow: mainWindow,
 		accounts:   accounts,
+		onConfirm:  onConfirm,
 	}
 	d.statementUI = d.makeStatementCard()
 
@@ -59,6 +62,9 @@ func NewReconciliationDialog(
 	dialogContent := container.NewBorder(formCard, nil, nil, nil, d.statementUI)
 	d.dialog = dialog.NewCustom("Reconciliación de Cuenta", "Cerrar", dialogContent, mainWindow)
 	d.dialog.Resize(fyne.NewSize(800, 600))
+	d.dialog.SetOnClosed(func() {
+		onConfirm()
+	})
 
 	return d
 }
