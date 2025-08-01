@@ -120,6 +120,9 @@ func (ui *UI) makeTransactionUI() fyne.CanvasObject {
 			ui.Services.TxService,
 			ui.Services.CatService,
 			ui.accounts,
+			func() {
+				go ui.loadTransactions(1, ui.transactionPaginator.GetPageSize())
+			},
 		)
 
 		dialogHandler.Show()

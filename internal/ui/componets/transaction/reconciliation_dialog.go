@@ -28,16 +28,16 @@ type reconciliationUIWidgets struct {
 }
 
 type ReconciliationDialog struct {
-	dialog      dialog.Dialog
-	TxService   TransactionService
-	CatService  CategoryService
-	logger      *log.Logger
-	mainWindow  fyne.Window
-	statementUI fyne.CanvasObject
-	data        *domain.Reconciliation
-	widgets     *reconciliationUIWidgets
-	accounts    []domain.Account
-	onConfirm   func()
+	dialog                dialog.Dialog
+	TxService             TransactionService
+	CatService            CategoryService
+	logger                *log.Logger
+	mainWindow            fyne.Window
+	statementUI           fyne.CanvasObject
+	data                  *domain.Reconciliation
+	widgets               *reconciliationUIWidgets
+	accounts              []domain.Account
+	onAdjustmentTxCreated func()
 }
 
 func NewReconciliationDialog(
@@ -46,25 +46,23 @@ func NewReconciliationDialog(
 	txService TransactionService,
 	catService CategoryService,
 	accounts []domain.Account,
-	onConfirm func(),
+	onAdjustmentTxCreated func(),
 ) *ReconciliationDialog {
 	d := &ReconciliationDialog{
-		TxService:  txService,
-		CatService: catService,
-		logger:     logger,
-		mainWindow: mainWindow,
-		accounts:   accounts,
-		onConfirm:  onConfirm,
+		TxService:             txService,
+		CatService:            catService,
+		logger:                logger,
+		mainWindow:            mainWindow,
+		accounts:              accounts,
+		onAdjustmentTxCreated: onAdjustmentTxCreated,
 	}
 	d.statementUI = d.makeStatementCard()
+	d.statementUI.Hide()
 
 	formCard := d.makeFormCard()
 	dialogContent := container.NewBorder(formCard, nil, nil, nil, d.statementUI)
 	d.dialog = dialog.NewCustom("Reconciliación de Cuenta", "Cerrar", dialogContent, mainWindow)
 	d.dialog.Resize(fyne.NewSize(800, 600))
-	d.dialog.SetOnClosed(func() {
-		onConfirm()
-	})
 
 	return d
 }
@@ -227,14 +225,16 @@ func (d *ReconciliationDialog) makeStatementCard() fyne.CanvasObject {
 			d.TxService,
 			d.CatService,
 			d.data,
+			d.onAdjustmentTxCreated,
 		)
 		dialogHandler.Show()
 	})
 	adjustmentButton.Disable()
 
 	finishButton := widget.NewButton("Finalizar Reconciliación", func() {
-		d.dialog.Hide()
+		d.statementUI.Hide()
 		d.data = nil
+		d.dialog.Hide()
 	})
 
 	statementCard := widget.NewCard("Resultados de Reconciliación", "",
