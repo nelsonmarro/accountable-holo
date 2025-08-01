@@ -1,4 +1,4 @@
-package ui
+package transaction
 
 import (
 	"context"
@@ -13,21 +13,18 @@ import (
 	"fyne.io/fyne/v2/widget"
 	"github.com/nelsonmarro/accountable-holo/internal/application/uivalidators"
 	"github.com/nelsonmarro/accountable-holo/internal/domain"
+	"github.com/nelsonmarro/accountable-holo/internal/ui"
 	"github.com/nelsonmarro/accountable-holo/internal/ui/componets/transaction"
 	"github.com/shopspring/decimal"
 )
 
-func (ui *UI) makeReconciliationUI() fyne.CanvasObject {
-	ui.reconciliationStatementUI = ui.makeStatementCard()
-	ui.reconciliationStatementUI.Hide()
+type ReconciliationDialog struct {
+	ui *ui.UI
+	dialog.Dialog
 
-	// containers
-	mainContainer := container.NewBorder(
-		container.NewPadded(ui.makeFormCard()),
-		nil, nil, nil,
-		container.NewPadded(ui.makeStatementCard()),
-	)
-	return mainContainer
+	statementUI fyne.CanvasObject
+	data        *domain.Reconciliation
+	widgets     *reconciliationUIWidgets
 }
 
 func (ui *UI) makeFormCard() fyne.CanvasObject {
@@ -73,7 +70,6 @@ func (ui *UI) makeFormCard() fyne.CanvasObject {
 	backButton := widget.NewButton("Volver", func() {
 		// This should navigate back to the main transaction view.
 		// You can call the navigation function you created earlier.
-		ui.navToView(ui.makeFinancesTab())
 	})
 
 	// Create the card itself

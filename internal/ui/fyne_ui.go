@@ -107,10 +107,6 @@ func (ui *UI) buildMainUI() {
 	ui.mainWindow.SetMaster()
 }
 
-func (ui *UI) navToView(content fyne.CanvasObject) {
-	ui.mainWindow.SetContent(content)
-}
-
 // Run now simply builds and then runs the application.
 func (ui *UI) Run() {
 	ui.buildMainUI()

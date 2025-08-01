@@ -114,7 +114,6 @@ func (ui *UI) makeTransactionUI() fyne.CanvasObject {
 	generateReportBtn.Importance = widget.SuccessImportance
 
 	reconciliationBtn := widget.NewButtonWithIcon("Reconciliar", theme.ViewRefreshIcon(), func() {
-		ui.navToView(ui.makeReconciliationUI())
 	})
 	reconciliationBtn.Importance = widget.WarningImportance
 
