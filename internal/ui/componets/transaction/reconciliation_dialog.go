@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"image/color"
+	"log"
 	"time"
 
 	"fyne.io/fyne/v2"
@@ -13,7 +14,6 @@ import (
 	"fyne.io/fyne/v2/widget"
 	"github.com/nelsonmarro/accountable-holo/internal/application/uivalidators"
 	"github.com/nelsonmarro/accountable-holo/internal/domain"
-	"github.com/nelsonmarro/accountable-holo/internal/ui/componets/transaction"
 	"github.com/shopspring/decimal"
 )
 
@@ -30,6 +30,8 @@ type reconciliationUIWidgets struct {
 type ReconciliationDialog struct {
 	dialog      dialog.Dialog
 	TxService   TransactionService
+	CatService  CategoryService
+	logger      *log.Logger
 	mainWindow  fyne.Window
 	statementUI fyne.CanvasObject
 	data        *domain.Reconciliation
@@ -108,44 +110,41 @@ func (d *ReconciliationDialog) initiateReconciliation(accountID int, endingDate 
 		return
 	}
 
-	d.updateStatementCard(reconciliation)
+	d.data = reconciliation
+	d.updateStatementCard()
 	d.statementUI.Show()
 }
 
-func (d *ReconciliationDialog) updateStatementCard(reconciliation *domain.Reconciliation) {
-	// This function should update the reconciliation statement card with the reconciliation data.
-	widgets := d.widgets
-	d.data = reconciliation
+// updateStatementCard updates the reconciliation statement card with the latest data.
+func (d *ReconciliationDialog) updateStatementCard() {
+	d.widgets.endingDateLabel.SetText(fmt.Sprintf("Fecha de Cierre: %s",
+		d.data.EndDate.Format("2006-01-02")))
 
-	// Update the labels with the reconciliation data
-	widgets.endingDateLabel.SetText(fmt.Sprintf("Fecha de Cierre: %s",
-		reconciliation.EndDate.Format("2006-01-02")))
+	d.widgets.calculatedBalanceLabel.SetText(fmt.Sprintf("Saldo Calculado: $%s",
+		d.data.CalculatedEndingBalance.StringFixed(2)))
 
-	widgets.calculatedBalanceLabel.SetText(fmt.Sprintf("Saldo Calculado: $%s",
-		reconciliation.CalculatedEndingBalance.StringFixed(2)))
+	d.widgets.actualBalanceLabel.SetText(fmt.Sprintf("Saldo Real: $%s",
+		d.data.EndingBalance.StringFixed(2)))
 
-	widgets.actualBalanceLabel.SetText(fmt.Sprintf("Saldo Real: $%s",
-		reconciliation.EndingBalance.StringFixed(2)))
-
-	widgets.differenceLabel.SetText(fmt.Sprintf("Diferencia: $%s",
-		reconciliation.Difference.StringFixed(2)))
+	d.widgets.differenceLabel.SetText(fmt.Sprintf("Diferencia: $%s",
+		d.data.Difference.StringFixed(2)))
 
 	// Update difference color
-	bg := widgets.differenceContainer.Objects[0].(*canvas.Rectangle)
-	if reconciliation.Difference.IsZero() {
+	bg := d.widgets.differenceContainer.Objects[0].(*canvas.Rectangle)
+	if d.data.Difference.IsZero() {
 		bg.FillColor = color.Transparent
-		widgets.adjustmentButton.Disable()
+		d.widgets.adjustmentButton.Disable()
 	} else {
 		bg.FillColor = color.NRGBA{R: 255, G: 0, B: 0, A: 60} // Light red
-		widgets.adjustmentButton.Enable()
+		d.widgets.adjustmentButton.Enable()
 	}
 	bg.Refresh()
 
 	// Update the transaction list
-	widgets.transactionList.Length = func() int {
+	d.widgets.transactionList.Length = func() int {
 		return len(d.data.Transactions)
 	}
-	widgets.transactionList.CreateItem = func() fyne.CanvasObject {
+	d.widgets.transactionList.CreateItem = func() fyne.CanvasObject {
 		// Create a template similar to your main transaction list item
 		return container.NewGridWithColumns(4,
 			widget.NewLabel("Date"),
@@ -154,7 +153,7 @@ func (d *ReconciliationDialog) updateStatementCard(reconciliation *domain.Reconc
 			widget.NewLabel("Amount"),
 		)
 	}
-	widgets.transactionList.UpdateItem = func(id widget.ListItemID, item fyne.CanvasObject) {
+	d.widgets.transactionList.UpdateItem = func(id widget.ListItemID, item fyne.CanvasObject) {
 		tx := d.data.Transactions[id]
 		grid := item.(*fyne.Container)
 		grid.Objects[0].(*widget.Label).SetText(tx.TransactionDate.Format("2006-01-02"))
@@ -162,7 +161,7 @@ func (d *ReconciliationDialog) updateStatementCard(reconciliation *domain.Reconc
 		grid.Objects[2].(*widget.Label).SetText(string(tx.Category.Type))
 		grid.Objects[3].(*widget.Label).SetText(fmt.Sprintf("$%.2f", tx.Amount))
 	}
-	widgets.transactionList.Refresh()
+	d.widgets.transactionList.Refresh()
 }
 
 func (d *ReconciliationDialog) makeStatementCard() fyne.CanvasObject {
@@ -193,7 +192,7 @@ func (d *ReconciliationDialog) makeStatementCard() fyne.CanvasObject {
 	)
 
 	adjustmentButton := widget.NewButton("Crear Transacción de Ajuste", func() {
-		dialogHandler := transaction.NewAdjustmentTransactionDialog(
+		dialogHandler := NewAdjustmentTransactionDialog(
 			d.mainWindow,
 			d.logger,
 			d.TxService,
