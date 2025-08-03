@@ -9,12 +9,12 @@ import (
 	"github.com/shopspring/decimal"
 )
 
-// TransactionReportGenerator defines the interface for generating reports from a list of transactions.
+// TransactionReportGenerator defines an interface for generating reports from a list of transactions.
 type TransactionReportGenerator interface {
 	SelectedTransactionsReport(ctx context.Context, transactions []domain.Transaction, outputPath string) error
 }
 
-// ReconciliationReportGenerator defines the interface for generating a reconciliation statement report.
+// ReconciliationReportGenerator defines an interface for generating a reconciliation statement report.
 type ReconciliationReportGenerator interface {
 	ReconciliationStatementReport(ctx context.Context, reconciliation *domain.Reconciliation, outputPath string) error
 }
@@ -24,7 +24,10 @@ type ReportServiceImpl struct {
 	repo            ReportRepository
 	transactionRepo TransactionRepository
 	csvGenerator    TransactionReportGenerator
-	pdfGenerator    ReconciliationReportGenerator
+	pdfGenerator    interface { // This generator must be able to handle both report types
+		TransactionReportGenerator
+		ReconciliationReportGenerator
+	}
 }
 
 // NewReportService creates a new instance of ReportServiceImpl.
@@ -32,7 +35,10 @@ func NewReportService(
 	repo ReportRepository,
 	transactionRepo TransactionRepository,
 	csvGenerator TransactionReportGenerator,
-	pdfGenerator ReconciliationReportGenerator,
+	pdfGenerator interface {
+		TransactionReportGenerator
+		ReconciliationReportGenerator
+	},
 ) *ReportServiceImpl {
 	return &ReportServiceImpl{
 		repo:            repo,
@@ -94,12 +100,7 @@ func (s *ReportServiceImpl) GenerateReportFile(ctx context.Context, format strin
 	case "CSV":
 		return s.csvGenerator.SelectedTransactionsReport(ctx, transactions, outputPath)
 	case "PDF":
-		// Since pdfGenerator now has a different type, we must use a type assertion to call the correct method.
-		pdfTxGenerator, ok := s.pdfGenerator.(transactionReportGenerator)
-		if !ok {
-			return fmt.Errorf("PDF generator does not support transaction reports")
-		}
-		return pdfTxGenerator.SelectedTransactionsReport(ctx, transactions, outputPath)
+		return s.pdfGenerator.SelectedTransactionsReport(ctx, transactions, outputPath)
 	default:
 		return fmt.Errorf("unsupported report format: %s", format)
 	}

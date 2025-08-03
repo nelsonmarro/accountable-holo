@@ -107,19 +107,19 @@ func (g *PDFReportGenerator) buildReconciliationSummary(m core.Maroto, reconcili
 	}
 
 	m.AddRow(8,
-		col.New(4).Add(text.New("Fecha de Cierre:", labelStyle)),
+		col.New(4).Add(text.New("Fecha de Cierre: ", labelStyle)),
 		col.New(8).Add(text.New(reconciliation.EndDate.Format("2006-01-02"), valueStyle)),
 	)
 	m.AddRow(8,
-		col.New(4).Add(text.New("Saldo Calculado (Sistema):", labelStyle)),
+		col.New(4).Add(text.New("Saldo Calculado (Sistema): ", labelStyle)),
 		col.New(8).Add(text.New(fmt.Sprintf("$%s", reconciliation.CalculatedEndingBalance.StringFixed(2)), valueStyle)),
 	)
 	m.AddRow(8,
-		col.New(4).Add(text.New("Saldo Real (Contado):", labelStyle)),
+		col.New(4).Add(text.New("Saldo Real (Contado): ", labelStyle)),
 		col.New(8).Add(text.New(fmt.Sprintf("$%s", reconciliation.EndingBalance.StringFixed(2)), valueStyle)),
 	)
 	m.AddRow(8,
-		col.New(4).Add(text.New("Diferencia:", labelStyle)),
+		col.New(4).Add(text.New("Diferencia: ", labelStyle)),
 		col.New(8).Add(text.New(fmt.Sprintf("$%s", reconciliation.Difference.StringFixed(2)), differenceStyle)),
 	)
 }
@@ -183,8 +183,8 @@ func (g *PDFReportGenerator) buildTransactionsTable(m core.Maroto, transactions 
 			text.NewCol(2, headers[1], headerTextProps),
 			text.NewCol(3, headers[2], headerTextProps),
 			text.NewCol(1, headers[3], headerTextProps),
-			text.NewCol(1, headers[4], headerTextProps),
-			text.NewCol(3, headers[5], headerTextProps),
+			text.NewCol(2, headers[4], headerTextProps),
+			text.NewCol(2, headers[5], headerTextProps),
 		),
 	)
 
@@ -209,8 +209,8 @@ func (g *PDFReportGenerator) buildTransactionsTable(m core.Maroto, transactions 
 			text.NewCol(2, tx.TransactionNumber, cellTextProps),
 			text.NewCol(3, categoryName, cellTextProps),
 			text.NewCol(1, categoryType, cellTextProps),
-			text.NewCol(1, fmt.Sprintf("%.2f", tx.Amount), amountStyle),
-			text.NewCol(3, fmt.Sprintf("$%.2f", tx.RunningBalance), cellTextProps),
+			text.NewCol(2, fmt.Sprintf("%.2f", tx.Amount), amountStyle),
+			text.NewCol(2, fmt.Sprintf("$%.2f", tx.RunningBalance), cellTextProps),
 		)
 
 		// Apply styles conditionally based on transaction state
