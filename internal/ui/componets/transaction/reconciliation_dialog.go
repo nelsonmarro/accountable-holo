@@ -164,8 +164,9 @@ func (d *ReconciliationDialog) makeStatementCard() fyne.CanvasObject {
 	)
 
 	// Create List for transactions
-	tableHeader := container.NewGridWithColumns(3,
+	tableHeader := container.NewGridWithColumns(4,
 		widget.NewLabel("Fecha"),
+		widget.NewLabel("Categoria"),
 		widget.NewLabel("Tipo"),
 		widget.NewLabel("Monto"),
 	)
@@ -243,8 +244,9 @@ func (d *ReconciliationDialog) updateStatementCard() {
 	}
 	d.widgets.transactionList.CreateItem = func() fyne.CanvasObject {
 		// Create a template similar to your main transaction list item
-		return container.NewGridWithColumns(3,
+		return container.NewGridWithColumns(4,
 			widget.NewLabel("Date"),
+			widget.NewLabel("Category"),
 			widget.NewLabel("Type"),
 			widget.NewLabel("Amount"),
 		)
@@ -253,8 +255,9 @@ func (d *ReconciliationDialog) updateStatementCard() {
 		tx := d.data.Transactions[id]
 		grid := item.(*fyne.Container)
 		grid.Objects[0].(*widget.Label).SetText(tx.TransactionDate.Format("2006-01-02"))
-		grid.Objects[1].(*widget.Label).SetText(string(tx.Category.Type))
-		grid.Objects[2].(*widget.Label).SetText(fmt.Sprintf("$%.2f", tx.Amount))
+		grid.Objects[1].(*widget.Label).SetText(string(tx.Category.Name))
+		grid.Objects[2].(*widget.Label).SetText(string(tx.Category.Type))
+		grid.Objects[3].(*widget.Label).SetText(fmt.Sprintf("$%.2f", tx.Amount))
 	}
 	d.widgets.transactionList.Refresh()
 }
