@@ -23,11 +23,10 @@ type AdjustmentDialogHandler struct {
 	onConfirm   func()
 
 	// UI Components
-	descriptionEntry  *widget.Entry
-	amountLabel       *widget.Label
-	dateLabel         *widget.Label
-	categoryLabel     *widget.Label
-	searchCategoryBtn *widget.Button
+	descriptionEntry *widget.Entry
+	amountLabel      *widget.Label
+	dateLabel        *widget.Label
+	categoryLabel    *widget.Label
 
 	// Data
 	accountID        int
@@ -91,8 +90,6 @@ func (h *AdjustmentDialogHandler) prefillForm(data *domain.Reconciliation) {
 	}
 
 	go h.findAndSetCategory(catType, "Ajuste por Reconciliación")
-
-	h.searchCategoryBtn.Disable()
 }
 
 func (h *AdjustmentDialogHandler) findAndSetCategory(catType domain.CategoryType, catName string) {

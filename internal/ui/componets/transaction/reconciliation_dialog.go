@@ -40,6 +40,11 @@ type ReconciliationDialog struct {
 	widgets               *reconciliationUIWidgets
 	accounts              []domain.Account
 	onAdjustmentTxCreated func()
+
+	// Form widgets
+	accountsSelector   *widget.SelectEntry
+	endingDateEntry    *widget.DateEntry
+	actualBalanceEntry *widget.Entry
 }
 
 func NewReconciliationDialog(
@@ -76,21 +81,21 @@ func (d *ReconciliationDialog) Show() {
 }
 
 func (d *ReconciliationDialog) makeFormCard() fyne.CanvasObject {
-	accountsSelector := widget.NewSelectEntry([]string{}) // we'll populate this later
-	endingDateEntry := widget.NewDateEntry()
-	actualBalanceEntry := widget.NewEntry()
+	d.accountsSelector = widget.NewSelectEntry([]string{}) // we'll populate this later
+	d.endingDateEntry = widget.NewDateEntry()
+	d.actualBalanceEntry = widget.NewEntry()
 
 	// Validations for the balance entry
-	formValidation(accountsSelector, endingDateEntry, actualBalanceEntry)
+	formValidation(d.accountsSelector, d.endingDateEntry, d.actualBalanceEntry)
 
 	reconciliationForm := widget.NewForm(
-		widget.NewFormItem("Cuenta", accountsSelector),
-		widget.NewFormItem("Fecha de cierre", endingDateEntry),
-		widget.NewFormItem("Saldo Final Real", actualBalanceEntry),
+		widget.NewFormItem("Cuenta", d.accountsSelector),
+		widget.NewFormItem("Fecha de cierre", d.endingDateEntry),
+		widget.NewFormItem("Saldo Final Real", d.actualBalanceEntry),
 	)
 
 	reconciliationForm.OnSubmit = func() {
-		selectedAccountName := accountsSelector.Text
+		selectedAccountName := d.accountsSelector.Text
 		var selectedAccountID int
 		for _, acc := range d.accounts {
 			if acc.Name == selectedAccountName {
@@ -104,9 +109,9 @@ func (d *ReconciliationDialog) makeFormCard() fyne.CanvasObject {
 			return
 		}
 
-		endingDate := endingDateEntry.Date
+		endingDate := d.endingDateEntry.Date
 
-		actualBalance, err := decimal.NewFromString(actualBalanceEntry.Text)
+		actualBalance, err := decimal.NewFromString(d.actualBalanceEntry.Text)
 		if err != nil {
 			dialog.ShowError(fmt.Errorf("saldo final real no es un número válido: %v", err), d.mainWindow)
 			return
@@ -123,7 +128,7 @@ func (d *ReconciliationDialog) makeFormCard() fyne.CanvasObject {
 	)
 
 	// Don't forget to load the accounts for the selector, similar to how you do it in the
-	d.loadAccountsForReconciliation(accountsSelector)
+	d.loadAccountsForReconciliation(d.accountsSelector)
 
 	return formCard
 }
