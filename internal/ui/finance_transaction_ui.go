@@ -6,6 +6,7 @@ import (
 	"image/color"
 	"net/url"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"fyne.io/fyne/v2"
@@ -296,7 +297,6 @@ func (ui *UI) updateTransactionItem(i widget.ListItemID, o fyne.CanvasObject) {
 		attachmentLink.SetText("-")
 		attachmentLink.SetTooltip("")
 		attachmentLink.OnTapped = nil
-		attachmentLink.Hide()
 	}
 
 	actionsContainer := rowContainer.Objects[8].(*fyne.Container)
@@ -333,7 +333,8 @@ func (ui *UI) updateTransactionItem(i widget.ListItemID, o fyne.CanvasObject) {
 		dialogHandler.Show()
 	}
 
-	if tx.IsVoided || tx.VoidsTransactionID != nil {
+	if tx.IsVoided || tx.VoidsTransactionID != nil ||
+		strings.Contains(tx.Category.Name, "Ajuste") {
 		voidBtn.Hide()
 		editBtn.Hide()
 	} else {
