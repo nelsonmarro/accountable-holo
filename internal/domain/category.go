@@ -4,9 +4,8 @@ package domain
 type CategoryType string
 
 const (
-	Income     CategoryType = "Ingreso"
-	Outcome    CategoryType = "Egreso"
-	Adjustment CategoryType = "Ajuste"
+	Income  CategoryType = "Ingreso"
+	Outcome CategoryType = "Egreso"
 )
 
 type Category struct {

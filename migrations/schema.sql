@@ -222,10 +222,10 @@ CREATE UNIQUE INDEX accounts_name_idx ON public.accounts USING btree (name);
 
 
 --
--- Name: categories_name_idx; Type: INDEX; Schema: public; Owner: nelson
+-- Name: categories_name_type_idx; Type: INDEX; Schema: public; Owner: nelson
 --
 
-CREATE UNIQUE INDEX categories_name_idx ON public.categories USING btree (name);
+CREATE UNIQUE INDEX categories_name_type_idx ON public.categories USING btree (name, type);
 
 
 --
