@@ -142,6 +142,76 @@ func (d *ReconciliationDialog) initiateReconciliation(accountID int, endingDate 
 	d.statementUI.Show()
 }
 
+// makeStatementCard creates the card that displays the reconciliation results.
+func (d *ReconciliationDialog) makeStatementCard() fyne.CanvasObject {
+	// Create the labels for the key figures
+	endingDateLabel := widget.NewLabel("Fecha de Cierre: N/A")
+	calculatedBalanceLabel := widget.NewLabel("Saldo Calculado: N/A")
+	actualBalanceLabel := widget.NewLabel("Saldo Real: N/A")
+	differenceLabel := widget.NewLabel("Diferencia: N/A")
+
+	differenceContainer := container.NewStack(
+		canvas.NewRectangle(color.Transparent),
+		differenceLabel,
+	)
+
+	// Create the grid for the key figures
+	keyFiguresGrid := container.NewGridWithColumns(2,
+		endingDateLabel,
+		calculatedBalanceLabel,
+		actualBalanceLabel,
+		differenceContainer,
+	)
+
+	// Create List for transactions
+	tableHeader := container.NewGridWithColumns(3,
+		widget.NewLabel("Fecha"),
+		widget.NewLabel("Tipo"),
+		widget.NewLabel("Monto"),
+	)
+	transactionsList := widget.NewList(
+		func() int { return 0 },
+		func() fyne.CanvasObject { return widget.NewLabel("") },
+		func(id widget.ListItemID, obj fyne.CanvasObject) {},
+	)
+	transactionListContainer := container.NewBorder(tableHeader, nil, nil, nil, transactionsList)
+
+	adjustmentButton := widget.NewButton("Crear Transacción de Ajuste", func() {
+		dialogHandler := NewAdjustmentTransactionDialog(
+			d.mainWindow,
+			d.logger,
+			d.TxService,
+			d.CatService,
+			d.data,
+			d.onAdjustmentTxCreated,
+		)
+		dialogHandler.Show()
+	})
+	adjustmentButton.Disable()
+
+	finishButton := widget.NewButton("Finalizar Reconciliación", func() {
+		d.statementUI.Hide()
+		d.data = nil
+		d.dialog.Hide()
+	})
+
+	statementCard := widget.NewCard("Resultados de Reconciliación", "",
+		container.NewBorder(keyFiguresGrid, container.NewHBox(adjustmentButton, finishButton), nil, nil, transactionListContainer),
+	)
+
+	d.widgets = &reconciliationUIWidgets{
+		endingDateLabel:        endingDateLabel,
+		calculatedBalanceLabel: calculatedBalanceLabel,
+		actualBalanceLabel:     actualBalanceLabel,
+		differenceLabel:        differenceLabel,
+		differenceContainer:    differenceContainer,
+		transactionList:        transactionsList,
+		adjustmentButton:       adjustmentButton,
+	}
+
+	return statementCard
+}
+
 // updateStatementCard updates the reconciliation statement card with the latest data.
 func (d *ReconciliationDialog) updateStatementCard() {
 	d.widgets.endingDateLabel.SetText(fmt.Sprintf("Fecha de Cierre: %s",
@@ -173,9 +243,8 @@ func (d *ReconciliationDialog) updateStatementCard() {
 	}
 	d.widgets.transactionList.CreateItem = func() fyne.CanvasObject {
 		// Create a template similar to your main transaction list item
-		return container.NewGridWithColumns(4,
+		return container.NewGridWithColumns(3,
 			widget.NewLabel("Date"),
-			widget.NewLabel("Description"),
 			widget.NewLabel("Type"),
 			widget.NewLabel("Amount"),
 		)
@@ -184,74 +253,10 @@ func (d *ReconciliationDialog) updateStatementCard() {
 		tx := d.data.Transactions[id]
 		grid := item.(*fyne.Container)
 		grid.Objects[0].(*widget.Label).SetText(tx.TransactionDate.Format("2006-01-02"))
-		grid.Objects[1].(*widget.Label).SetText(tx.Description)
-		grid.Objects[2].(*widget.Label).SetText(string(tx.Category.Type))
-		grid.Objects[3].(*widget.Label).SetText(fmt.Sprintf("$%.2f", tx.Amount))
+		grid.Objects[1].(*widget.Label).SetText(string(tx.Category.Type))
+		grid.Objects[2].(*widget.Label).SetText(fmt.Sprintf("$%.2f", tx.Amount))
 	}
 	d.widgets.transactionList.Refresh()
-}
-
-func (d *ReconciliationDialog) makeStatementCard() fyne.CanvasObject {
-	// Create the labels for the key figures
-	endingDateLabel := widget.NewLabel("Fecha de Cierre: N/A")
-	calculatedBalanceLabel := widget.NewLabel("Saldo Calculado: N/A")
-	actualBalanceLabel := widget.NewLabel("Saldo Real: N/A")
-	differenceLabel := widget.NewLabel("Diferencia: N/A")
-
-	differenceContainer := container.NewStack(
-		canvas.NewRectangle(color.Transparent),
-		differenceLabel,
-	)
-
-	// Create the grid for the key figures
-	keyFiguresGrid := container.NewGridWithColumns(2,
-		endingDateLabel,
-		calculatedBalanceLabel,
-		actualBalanceLabel,
-		differenceContainer,
-	)
-
-	// Create List for transactions
-	transactionsList := widget.NewList(
-		func() int { return 0 },
-		func() fyne.CanvasObject { return widget.NewLabel("") },
-		func(id widget.ListItemID, obj fyne.CanvasObject) {},
-	)
-
-	adjustmentButton := widget.NewButton("Crear Transacción de Ajuste", func() {
-		dialogHandler := NewAdjustmentTransactionDialog(
-			d.mainWindow,
-			d.logger,
-			d.TxService,
-			d.CatService,
-			d.data,
-			d.onAdjustmentTxCreated,
-		)
-		dialogHandler.Show()
-	})
-	adjustmentButton.Disable()
-
-	finishButton := widget.NewButton("Finalizar Reconciliación", func() {
-		d.statementUI.Hide()
-		d.data = nil
-		d.dialog.Hide()
-	})
-
-	statementCard := widget.NewCard("Resultados de Reconciliación", "",
-		container.NewBorder(keyFiguresGrid, container.NewHBox(adjustmentButton, finishButton), nil, nil, transactionsList),
-	)
-
-	d.widgets = &reconciliationUIWidgets{
-		endingDateLabel:        endingDateLabel,
-		calculatedBalanceLabel: calculatedBalanceLabel,
-		actualBalanceLabel:     actualBalanceLabel,
-		differenceLabel:        differenceLabel,
-		differenceContainer:    differenceContainer,
-		transactionList:        transactionsList,
-		adjustmentButton:       adjustmentButton,
-	}
-
-	return statementCard
 }
 
 func (d *ReconciliationDialog) loadAccountsForReconciliation(selector *widget.SelectEntry) {
