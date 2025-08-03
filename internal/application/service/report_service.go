@@ -9,20 +9,30 @@ import (
 	"github.com/shopspring/decimal"
 )
 
+// TransactionReportGenerator defines the interface for generating reports from a list of transactions.
+type TransactionReportGenerator interface {
+	SelectedTransactionsReport(ctx context.Context, transactions []domain.Transaction, outputPath string) error
+}
+
+// ReconciliationReportGenerator defines the interface for generating a reconciliation statement report.
+type ReconciliationReportGenerator interface {
+	ReconciliationStatementReport(ctx context.Context, reconciliation *domain.Reconciliation, outputPath string) error
+}
+
 // ReportServiceImpl provides methods to generate financial reports.
 type ReportServiceImpl struct {
 	repo            ReportRepository
 	transactionRepo TransactionRepository
-	csvGenerator    ReportGenerator
-	pdfGenerator    ReportGenerator
+	csvGenerator    TransactionReportGenerator
+	pdfGenerator    ReconciliationReportGenerator
 }
 
-// NewReportService creates a new instance of ReportServiceImpl with the given repository.
+// NewReportService creates a new instance of ReportServiceImpl.
 func NewReportService(
 	repo ReportRepository,
 	transactionRepo TransactionRepository,
-	csvGenerator ReportGenerator,
-	pdfGenerator ReportGenerator,
+	csvGenerator TransactionReportGenerator,
+	pdfGenerator ReconciliationReportGenerator,
 ) *ReportServiceImpl {
 	return &ReportServiceImpl{
 		repo:            repo,
@@ -84,20 +94,19 @@ func (s *ReportServiceImpl) GenerateReportFile(ctx context.Context, format strin
 	case "CSV":
 		return s.csvGenerator.SelectedTransactionsReport(ctx, transactions, outputPath)
 	case "PDF":
-		return s.pdfGenerator.SelectedTransactionsReport(ctx, transactions, outputPath)
+		// Since pdfGenerator now has a different type, we must use a type assertion to call the correct method.
+		pdfTxGenerator, ok := s.pdfGenerator.(transactionReportGenerator)
+		if !ok {
+			return fmt.Errorf("PDF generator does not support transaction reports")
+		}
+		return pdfTxGenerator.SelectedTransactionsReport(ctx, transactions, outputPath)
 	default:
 		return fmt.Errorf("unsupported report format: %s", format)
 	}
 }
 
 func (s *ReportServiceImpl) GenerateReconciliationReportFile(ctx context.Context, reconciliation *domain.Reconciliation, outputPath string) error {
-	pdfGen, ok := s.pdfGenerator.(interface {
-		ReconciliationStatementReport(context.Context, *domain.Reconciliation, string) error
-	})
-	if !ok {
-		return fmt.Errorf("PDF generator does not support reconciliation reports")
-	}
-	return pdfGen.ReconciliationStatementReport(ctx, reconciliation, outputPath)
+	return s.pdfGenerator.ReconciliationStatementReport(ctx, reconciliation, outputPath)
 }
 
 func (s *ReportServiceImpl) GetReconciliation(ctx context.Context, accountID int, startDate, endDate time.Time, endingBalance decimal.Decimal) (*domain.Reconciliation, error) {
