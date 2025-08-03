@@ -15,7 +15,6 @@ import (
 	"fyne.io/fyne/v2/widget"
 	"github.com/nelsonmarro/accountable-holo/internal/application/uivalidators"
 	"github.com/nelsonmarro/accountable-holo/internal/domain"
-	"github.com/nelsonmarro/accountable-holo/internal/ui/componets"
 	"github.com/shopspring/decimal"
 )
 
@@ -202,14 +201,14 @@ func (d *ReconciliationDialog) makeStatementCard() fyne.CanvasObject {
 	finishButton.Importance = widget.SuccessImportance
 
 	generateReportBtn := widget.NewButtonWithIcon("Generar Reporte", theme.DocumentPrintIcon(), func() {
-		reportDialog := componets.NewReportDialog(d.mainWindow, func(format string, outputPath string) {
-		})
-		reportDialog.Show()
 	})
 	generateReportBtn.Importance = widget.SuccessImportance
 
 	statementCard := widget.NewCard("Resultados de Reconciliación", "",
-		container.NewBorder(keyFiguresGrid, container.NewHBox(adjustmentButton, finishButton), nil, nil, transactionListContainer),
+		container.NewBorder(keyFiguresGrid,
+			container.NewHBox(adjustmentButton, finishButton, generateReportBtn),
+			nil, nil,
+			transactionListContainer),
 	)
 
 	d.widgets = &reconciliationUIWidgets{

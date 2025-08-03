@@ -54,6 +54,76 @@ func (g *PDFReportGenerator) SelectedTransactionsReport(ctx context.Context, tra
 	return document.Save(outputPath)
 }
 
+// ReconciliationStatementReport generates a PDF report for a reconciliation statement.
+func (g *PDFReportGenerator) ReconciliationStatementReport(ctx context.Context, reconciliation *domain.Reconciliation, outputPath string) error {
+	cfg := config.NewBuilder().
+		WithPageNumber().
+		WithLeftMargin(10).
+		WithTopMargin(15).
+		WithRightMargin(10).
+		WithBottomMargin(20).
+		Build()
+
+	m := maroto.New(cfg)
+
+	if err := g.buildFooter(m); err != nil {
+		return err
+	}
+
+	g.buildTitle(m, "Reporte de Reconciliación de Cuenta")
+	g.buildReconciliationSummary(m, reconciliation)
+	m.AddRow(10) // Add some space
+
+	m.AddRow(
+		10,
+		col.New(12).Add(
+			text.New("Transacciones Incluidas", props.Text{
+				Top:   5,
+				Size:  12,
+				Style: fontstyle.Bold,
+				Align: align.Left,
+			}),
+		),
+	)
+
+	g.buildTransactionsTable(m, reconciliation.Transactions)
+
+	document, err := m.Generate()
+	if err != nil {
+		return fmt.Errorf("failed to generate PDF: %w", err)
+	}
+
+	return document.Save(outputPath)
+}
+
+func (g *PDFReportGenerator) buildReconciliationSummary(m core.Maroto, reconciliation *domain.Reconciliation) {
+	labelStyle := props.Text{Style: fontstyle.Bold, Align: align.Right, Top: 1}
+	valueStyle := props.Text{Align: align.Left, Top: 1}
+	redValueStyle := props.Text{Align: align.Left, Top: 1, Color: &props.RedColor, Style: fontstyle.Bold}
+
+	differenceStyle := valueStyle
+	if !reconciliation.Difference.IsZero() {
+		differenceStyle = redValueStyle
+	}
+
+	m.AddRow(8,
+		col.New(4).Add(text.New("Fecha de Cierre:", labelStyle)),
+		col.New(8).Add(text.New(reconciliation.EndDate.Format("2006-01-02"), valueStyle)),
+	)
+	m.AddRow(8,
+		col.New(4).Add(text.New("Saldo Calculado (Sistema):", labelStyle)),
+		col.New(8).Add(text.New(fmt.Sprintf("$%s", reconciliation.CalculatedEndingBalance.StringFixed(2)), valueStyle)),
+	)
+	m.AddRow(8,
+		col.New(4).Add(text.New("Saldo Real (Contado):", labelStyle)),
+		col.New(8).Add(text.New(fmt.Sprintf("$%s", reconciliation.EndingBalance.StringFixed(2)), valueStyle)),
+	)
+	m.AddRow(8,
+		col.New(4).Add(text.New("Diferencia:", labelStyle)),
+		col.New(8).Add(text.New(fmt.Sprintf("$%s", reconciliation.Difference.StringFixed(2)), differenceStyle)),
+	)
+}
+
 // buildFooter creates a footer for the PDF report with legends for voided and voiding transactions.
 func (g *PDFReportGenerator) buildFooter(m core.Maroto) error {
 	voidedStyle := &props.Cell{BackgroundColor: &props.Color{Red: 255, Green: 220, Blue: 220}}
