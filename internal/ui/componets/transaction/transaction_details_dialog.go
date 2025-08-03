@@ -29,7 +29,7 @@ func NewDetailsDialog(parent fyne.Window, tx *domain.Transaction) *DetailsDialog
 func (d *DetailsDialog) Show() {
 	content := d.buildContent()
 	dlg := dialog.NewCustom("Detalles de la Transacción", "Cerrar", content, d.parent)
-	dlg.Resize(fyne.NewSize(400, 300))
+	dlg.Resize(fyne.NewSize(700, 500))
 	dlg.Show()
 }
 
@@ -37,7 +37,10 @@ func (d *DetailsDialog) buildContent() fyne.CanvasObject {
 	// Create labels for each field
 	txNumberLabel := widget.NewLabel(d.tx.TransactionNumber)
 	dateLabel := widget.NewLabel(d.tx.TransactionDate.Format("01/02/2006"))
+
 	descriptionLabel := widget.NewLabel(d.tx.Description)
+	descriptionLabel.Wrapping = fyne.TextWrapBreak
+
 	categoryLabel := widget.NewLabel(d.tx.Category.Name)
 	typeLabel := widget.NewLabel(string(d.tx.Category.Type))
 	amountLabel := widget.NewLabel(fmt.Sprintf("$%.2f", d.tx.Amount))
@@ -59,5 +62,5 @@ func (d *DetailsDialog) buildContent() fyne.CanvasObject {
 		amountLabel,
 	)
 
-	return grid
+	return container.NewPadded(grid)
 }
