@@ -196,6 +196,9 @@ func (ui *UI) createTransactiontItem() fyne.CanvasObject {
 	voidBtn := widget.NewButtonWithIcon("", theme.CancelIcon(), nil)
 	voidBtn.Importance = widget.DangerImportance
 
+	viewBtn := widget.NewButtonWithIcon("", theme.VisibilityIcon(), nil)
+	viewBtn.Importance = widget.LowImportance
+
 	attachmentLink := componets.NewHoverableHyperlink("", nil, ui.mainWindow.Canvas())
 	attachmentLink.Wrapping = fyne.TextWrap(fyne.TextTruncateClip)
 
@@ -231,6 +234,7 @@ func (ui *UI) createTransactiontItem() fyne.CanvasObject {
 		container.NewHBox(
 			editBtn,
 			voidBtn,
+			viewBtn,
 		),
 	)
 
@@ -302,6 +306,7 @@ func (ui *UI) updateTransactionItem(i widget.ListItemID, o fyne.CanvasObject) {
 	actionsContainer := rowContainer.Objects[8].(*fyne.Container)
 	editBtn := actionsContainer.Objects[0].(*widget.Button)
 	voidBtn := actionsContainer.Objects[1].(*widget.Button)
+	viewBtn := actionsContainer.Objects[2].(*widget.Button)
 
 	editBtn.OnTapped = func() {
 		dialigHandler := transaction.NewEditTransactionDialog(
@@ -333,13 +338,20 @@ func (ui *UI) updateTransactionItem(i widget.ListItemID, o fyne.CanvasObject) {
 		dialogHandler.Show()
 	}
 
+	viewBtn.OnTapped = func() {
+		detailsDialog := transaction.NewDetailsDialog(ui.mainWindow, &tx)
+		detailsDialog.Show()
+	}
+
 	if tx.IsVoided || tx.VoidsTransactionID != nil ||
 		strings.Contains(tx.Category.Name, "Ajuste") {
 		voidBtn.Hide()
 		editBtn.Hide()
+		viewBtn.Show()
 	} else {
 		voidBtn.Show()
 		editBtn.Show()
+		viewBtn.Hide()
 	}
 }
 
