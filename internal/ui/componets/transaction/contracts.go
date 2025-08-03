@@ -45,3 +45,7 @@ type StorageService interface {
 	GetFullPath(storagePath string) (string, error)
 	Delete(ctx context.Context, storagePath string) error
 }
+
+type ReportService interface {
+	GenerateReconciliationReportFile(ctx context.Context, reconciliation *domain.Reconciliation, outputPath string) error
+}

@@ -82,5 +82,4 @@ type ReportRepository interface {
 
 type ReportGenerator interface {
 	SelectedTransactionsReport(ctx context.Context, transactions []domain.Transaction, outputPath string) error
-	ReconciliationStatementReport(ctx context.Context, reconciliation *domain.Reconciliation, outputPath string) error
 }

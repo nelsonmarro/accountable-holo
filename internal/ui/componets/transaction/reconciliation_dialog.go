@@ -32,6 +32,7 @@ type ReconciliationDialog struct {
 	dialog                dialog.Dialog
 	TxService             TransactionService
 	CatService            CategoryService
+	ReportService         ReportService
 	logger                *log.Logger
 	mainWindow            fyne.Window
 	statementUI           fyne.CanvasObject
@@ -46,12 +47,14 @@ func NewReconciliationDialog(
 	logger *log.Logger,
 	txService TransactionService,
 	catService CategoryService,
+	reportService ReportService,
 	accounts []domain.Account,
 	onAdjustmentTxCreated func(),
 ) *ReconciliationDialog {
 	d := &ReconciliationDialog{
 		TxService:             txService,
 		CatService:            catService,
+		ReportService:         reportService,
 		logger:                logger,
 		mainWindow:            mainWindow,
 		accounts:              accounts,
@@ -201,6 +204,37 @@ func (d *ReconciliationDialog) makeStatementCard() fyne.CanvasObject {
 	finishButton.Importance = widget.SuccessImportance
 
 	generateReportBtn := widget.NewButtonWithIcon("Generar Reporte", theme.DocumentPrintIcon(), func() {
+		fileSaveDialog := dialog.NewFileSave(func(writer fyne.URIWriteCloser, err error) {
+			if err != nil {
+				dialog.ShowError(err, d.mainWindow)
+				return
+			}
+			if writer == nil {
+				// User cancelled
+				return
+			}
+			defer writer.Close()
+
+			go func() {
+				ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+				defer cancel()
+
+				err := d.ReportService.GenerateReconciliationReportFile(ctx, d.data, writer.URI().Path())
+				if err != nil {
+					fyne.Do(func() {
+						dialog.ShowError(fmt.Errorf("error al generar el reporte: %w", err), d.mainWindow)
+					})
+					return
+				}
+
+				fyne.Do(func() {
+					dialog.ShowInformation("Reporte Generado", "El reporte de reconciliación ha sido guardado exitosamente.", d.mainWindow)
+				})
+			}()
+		}, d.mainWindow)
+
+		fileSaveDialog.SetFileName(fmt.Sprintf("reconciliacion-%s.pdf", d.data.EndDate.Format("2006-01-02")))
+		fileSaveDialog.Show()
 	})
 	generateReportBtn.Importance = widget.SuccessImportance
 

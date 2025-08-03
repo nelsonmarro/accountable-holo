@@ -120,6 +120,7 @@ func (ui *UI) makeTransactionUI() fyne.CanvasObject {
 			ui.errorLogger,
 			ui.Services.TxService,
 			ui.Services.CatService,
+			ui.Services.ReportService,
 			ui.accounts,
 			func() {
 				go ui.loadTransactions(1, ui.transactionPaginator.GetPageSize())

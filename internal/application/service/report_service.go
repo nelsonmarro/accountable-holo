@@ -90,6 +90,16 @@ func (s *ReportServiceImpl) GenerateReportFile(ctx context.Context, format strin
 	}
 }
 
+func (s *ReportServiceImpl) GenerateReconciliationReportFile(ctx context.Context, reconciliation *domain.Reconciliation, outputPath string) error {
+	pdfGen, ok := s.pdfGenerator.(interface {
+		ReconciliationStatementReport(context.Context, *domain.Reconciliation, string) error
+	})
+	if !ok {
+		return fmt.Errorf("PDF generator does not support reconciliation reports")
+	}
+	return pdfGen.ReconciliationStatementReport(ctx, reconciliation, outputPath)
+}
+
 func (s *ReportServiceImpl) GetReconciliation(ctx context.Context, accountID int, startDate, endDate time.Time, endingBalance decimal.Decimal) (*domain.Reconciliation, error) {
 	reconciliation, err := s.repo.GetReconciliation(ctx, accountID, startDate, endDate)
 	if err != nil {
