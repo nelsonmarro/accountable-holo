@@ -62,7 +62,7 @@ func NewReconciliationDialog(
 	formCard := d.makeFormCard()
 	dialogContent := container.NewBorder(formCard, nil, nil, nil, d.statementUI)
 	d.dialog = dialog.NewCustom("Reconciliación de Cuenta", "Cerrar", dialogContent, mainWindow)
-	d.dialog.Resize(fyne.NewSize(800, 600))
+	d.dialog.Resize(fyne.NewSize(800, 700))
 
 	return d
 }
@@ -138,8 +138,10 @@ func (d *ReconciliationDialog) initiateReconciliation(accountID int, endingDate 
 	}
 
 	d.data = reconciliation
-	d.updateStatementCard()
-	d.statementUI.Show()
+	fyne.Do(func() {
+		d.updateStatementCard()
+		d.statementUI.Show()
+	})
 }
 
 // makeStatementCard creates the card that displays the reconciliation results.
@@ -189,12 +191,13 @@ func (d *ReconciliationDialog) makeStatementCard() fyne.CanvasObject {
 		dialogHandler.Show()
 	})
 	adjustmentButton.Disable()
+	adjustmentButton.Importance = widget.HighImportance
 
 	finishButton := widget.NewButton("Finalizar Reconciliación", func() {
 		d.statementUI.Hide()
 		d.data = nil
-		d.dialog.Hide()
 	})
+	finishButton.Importance = widget.SuccessImportance
 
 	statementCard := widget.NewCard("Resultados de Reconciliación", "",
 		container.NewBorder(keyFiguresGrid, container.NewHBox(adjustmentButton, finishButton), nil, nil, transactionListContainer),
