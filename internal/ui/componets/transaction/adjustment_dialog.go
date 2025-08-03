@@ -7,12 +7,9 @@ import (
 	"time"
 
 	"fyne.io/fyne/v2"
-	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/dialog"
-	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 	"github.com/nelsonmarro/accountable-holo/internal/domain"
-	"github.com/nelsonmarro/accountable-holo/internal/ui/componets/category"
 	"github.com/shopspring/decimal"
 )
 
@@ -62,28 +59,13 @@ func NewAdjustmentTransactionDialog(
 		transactionDate:  time.Now(),
 	}
 
-	h.searchCategoryBtn = widget.NewButtonWithIcon("", theme.SearchIcon(), func() {
-		searchDialog := category.NewCategorySearchDialog(
-			h.parent,
-			h.errorLogger,
-			h.catService,
-			func(cat *domain.Category) {
-				h.selectedCategory = cat
-				h.categoryLabel.SetText(cat.Name)
-			},
-		)
-		searchDialog.Show()
-	})
-
 	h.prefillForm(reconciliationData)
-
-	categoryContainer := container.NewBorder(nil, nil, nil, h.searchCategoryBtn, h.categoryLabel)
 
 	formItems := []*widget.FormItem{
 		{Text: "Descripción", Widget: h.descriptionEntry},
 		{Text: "Monto", Widget: h.amountLabel},
 		{Text: "Fecha", Widget: h.dateLabel},
-		{Text: "Categoría", Widget: categoryContainer},
+		{Text: "Categoría", Widget: h.categoryLabel},
 	}
 
 	h.dialog = dialog.NewForm("Crear Transacción de Ajuste", "Crear", "Cancelar", formItems, h.submit, parent)
@@ -101,7 +83,14 @@ func (h *AdjustmentDialogHandler) prefillForm(data *domain.Reconciliation) {
 
 	h.dateLabel.SetText(h.transactionDate.Format("01/02/2006"))
 
-	go h.findAndSetCategory(domain.Adjustment, "Ajuste por Reconciliación")
+	var catType domain.CategoryType
+	if data.Difference.IsPositive() {
+		catType = domain.Income
+	} else {
+		catType = domain.Outcome
+	}
+
+	go h.findAndSetCategory(catType, "Ajuste por Reconciliación")
 
 	h.searchCategoryBtn.Disable()
 }
