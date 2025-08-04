@@ -205,6 +205,11 @@ func (d *ReconciliationDialog) makeStatementCard() fyne.CanvasObject {
 	finishButton := widget.NewButton("Finalizar Reconciliación", func() {
 		d.statementUI.Hide()
 		d.data = nil
+		// Clear the form fields
+		d.accountsSelector.SetText("")
+		now := time.Now()
+		d.endingDateEntry.SetDate(&now)
+		d.actualBalanceEntry.SetText("")
 	})
 	finishButton.Importance = widget.SuccessImportance
 
