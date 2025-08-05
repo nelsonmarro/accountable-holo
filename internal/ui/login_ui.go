@@ -7,6 +7,7 @@ import (
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/dialog"
+	"fyne.io/fyne/v2/layout"
 	"fyne.io/fyne/v2/widget"
 )
 
@@ -37,5 +38,12 @@ func (ui *UI) makeLoginUI() fyne.CanvasObject {
 		},
 	}
 
-	return container.NewBorder(nil, nil, nil, nil, loginForm)
+	// Use a grid with spacers to center the form and give it a reasonable width
+	grid := container.NewGridWithRows(3,
+		layout.NewSpacer(),
+		container.NewPadded(loginForm),
+		layout.NewSpacer(),
+	)
+
+	return grid
 }
