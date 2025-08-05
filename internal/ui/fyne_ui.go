@@ -1,16 +1,13 @@
-// Package ui provides the UI implementation for the application.
+// Package ui provides the Fyne-based user interface for the Accountable Holo application.
 package ui
 
 import (
-	"context"
 	"log"
 	"os"
-	"time"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/canvas"
 	"fyne.io/fyne/v2/container"
-	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 	"github.com/nelsonmarro/accountable-holo/internal/domain"
@@ -38,6 +35,9 @@ type UI struct {
 	currentUser *domain.User
 
 	// ---- UI widgets (State) ----
+	userList *widget.List
+	users    []domain.User
+
 	accountList *widget.List
 	accounts    []domain.Account
 
@@ -110,34 +110,4 @@ func (ui *UI) Run() {
 	ui.mainWindow.Resize(fyne.NewSize(400, 200))
 	ui.mainWindow.CenterOnScreen()
 	ui.mainWindow.ShowAndRun()
-}
-
-func (ui *UI) makeLoginUI() fyne.CanvasObject {
-	usernameEntry := widget.NewEntry()
-	usernameEntry.SetPlaceHolder("Username")
-
-	passwordEntry := widget.NewPasswordEntry()
-	passwordEntry.SetPlaceHolder("Password")
-
-	loginForm := &widget.Form{
-		Items: []*widget.FormItem{
-			{Text: "Username", Widget: usernameEntry},
-			{Text: "Password", Widget: passwordEntry},
-		},
-		OnSubmit: func() {
-			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-			defer cancel()
-
-			user, err := ui.Services.UserService.Login(ctx, usernameEntry.Text, passwordEntry.Text)
-			if err != nil {
-				dialog.ShowError(err, ui.mainWindow)
-				return
-			}
-
-			ui.currentUser = user
-			ui.buildMainUI()
-		},
-	}
-
-	return container.NewCenter(loginForm)
 }

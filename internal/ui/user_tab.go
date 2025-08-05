@@ -15,33 +15,21 @@ import (
 
 func (ui *UI) makeUserTab() fyne.CanvasObject {
 	// Title
-	title := widget.NewLabel("Manage Users")
+	title := widget.NewRichText(&widget.TextSegment{
+		Text: "Manage Users",
+		Style: widget.RichTextStyle{
+			SizeName:  theme.SizeNameHeadingText,
+			Alignment: fyne.TextAlignCenter,
+		},
+	})
 
 	// User List
-	userList := widget.NewList(
+	ui.userList = widget.NewList(
 		func() int {
 			return len(ui.users)
 		},
-		func() fyne.CanvasObject {
-			return container.NewBorder(nil, nil, nil, widget.NewButtonWithIcon("", theme.DeleteIcon(), nil), widget.NewLabel("template"))
-		},
-		func(id widget.ListItemID, item fyne.CanvasObject) {
-			container := item.(*fyne.Container)
-			label := container.Objects[0].(*widget.Label)
-			label.SetText(ui.users[id].Username)
-
-			editBtn := container.Objects[1].(*widget.Button)
-			editBtn.OnTapped = func() {
-				dialogHandler := user.NewEditUserDialog(ui.mainWindow, ui.errorLogger, ui.Services.UserService, func() { ui.loadUsers() }, ui.currentUser, &ui.users[id])
-				dialogHandler.Show()
-			}
-
-			deleteBtn := container.Objects[2].(*widget.Button)
-			deleteBtn.OnTapped = func() {
-				dialogHandler := user.NewDeleteUserDialog(ui.mainWindow, ui.errorLogger, ui.Services.UserService, func() { ui.loadUsers() }, &ui.users[id], ui.currentUser)
-				dialogHandler.Show()
-			}
-		},
+		ui.createUserItem,
+		ui.updateUserItem,
 	)
 
 	// Add User Button
@@ -49,40 +37,96 @@ func (ui *UI) makeUserTab() fyne.CanvasObject {
 		dialogHandler := user.NewAddUserDialog(ui.mainWindow, ui.errorLogger, ui.Services.UserService, func() { ui.loadUsers() }, ui.currentUser)
 		dialogHandler.Show()
 	})
+	addUserBtn.Importance = widget.HighImportance
+
+	// Reload Data Button
+	reloadDataBtn := widget.NewButtonWithIcon("Reload Data", theme.ViewRefreshIcon(), func() {
+		ui.loadUsers()
+	})
+	reloadDataBtn.Importance = widget.SuccessImportance
 
 	// Toolbar
-	toolbar := widget.NewToolbar(
-		widget.NewToolbarAction(theme.ContentAddIcon(), func() { addUserBtn.OnTapped() }),
+	topBar := container.NewBorder(nil, nil, container.NewHBox(addUserBtn), container.NewHBox(reloadDataBtn))
+
+	titleContainer := container.NewVBox(
+		container.NewCenter(title),
+		topBar,
 	)
 
-	// Layout
-	content := container.NewBorder(
-		container.NewVBox(title, toolbar),
+	tableHeader := container.NewGridWithColumns(3,
+		widget.NewLabel("Username"),
+		widget.NewLabel("Role"),
+		widget.NewLabel("Actions"),
+	)
+
+	tableContainer := container.NewBorder(
+		tableHeader, nil, nil, nil,
+		ui.userList,
+	)
+
+	mainContent := container.NewBorder(
+		container.NewPadded(titleContainer),
 		nil, nil, nil,
-		userList,
+		tableContainer,
 	)
 
-	ui.loadUsers = func() {
-		go func() {
-			ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
-			defer cancel()
+	go ui.loadUsers()
 
-			users, err := ui.Services.UserService.GetAllUsers(ctx, ui.currentUser)
-			if err != nil {
-				fyne.Do(func() {
-					dialog.ShowError(fmt.Errorf("error loading users: %w", err), ui.mainWindow)
-				})
-				return
-			}
+	return mainContent
+}
 
-			fyne.Do(func() {
-				ui.users = users
-				userList.Refresh()
-			})
-		}()
+func (ui *UI) createUserItem() fyne.CanvasObject {
+	editBtn := widget.NewButtonWithIcon("", theme.DocumentCreateIcon(), nil)
+	editBtn.Importance = widget.HighImportance
+
+	deleteBtn := widget.NewButtonWithIcon("", theme.DeleteIcon(), nil)
+	deleteBtn.Importance = widget.DangerImportance
+
+	return container.NewGridWithColumns(3,
+		widget.NewLabel("username template"),
+		widget.NewLabel("role template"),
+		container.NewHBox(editBtn, deleteBtn),
+	)
+}
+
+func (ui *UI) updateUserItem(i widget.ListItemID, o fyne.CanvasObject) {
+	userToUpdate := ui.users[i]
+	grid := o.(*fyne.Container)
+
+	usernameLabel := grid.Objects[0].(*widget.Label)
+	usernameLabel.SetText(userToUpdate.Username)
+
+	roleLabel := grid.Objects[1].(*widget.Label)
+	roleLabel.SetText(string(userToUpdate.Role))
+
+	actionsContainer := grid.Objects[2].(*fyne.Container)
+	editBtn := actionsContainer.Objects[0].(*widget.Button)
+	editBtn.OnTapped = func() {
+		dialogHandler := user.NewEditUserDialog(ui.mainWindow, ui.errorLogger, ui.Services.UserService, func() { ui.loadUsers() }, ui.currentUser, &userToUpdate)
+		dialogHandler.Show()
 	}
 
-	ui.loadUsers()
+	deleteBtn := actionsContainer.Objects[1].(*widget.Button)
+	deleteBtn.OnTapped = func() {
+		dialogHandler := user.NewDeleteUserDialog(ui.mainWindow, ui.errorLogger, ui.Services.UserService, func() { ui.loadUsers() }, &userToUpdate, ui.currentUser)
+		dialogHandler.Show()
+	}
+}
 
-	return content
+func (ui *UI) loadUsers() {
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cancel()
+
+	users, err := ui.Services.UserService.GetAllUsers(ctx, ui.currentUser)
+	if err != nil {
+		fyne.Do(func() {
+			dialog.ShowError(fmt.Errorf("error loading users: %w", err), ui.mainWindow)
+		})
+		return
+	}
+
+	fyne.Do(func() {
+		ui.users = users
+		ui.userList.Refresh()
+	})
 }
