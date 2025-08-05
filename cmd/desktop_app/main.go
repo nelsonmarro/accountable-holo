@@ -44,6 +44,7 @@ func main() {
 	catRepo := persistence.NewCategoryRepository(pool)
 	txRepo := persistence.NewTransactionRepository(pool)
 	reportRepo := persistence.NewReportRepository(pool)
+	userRepo := persistence.NewUserRepository(pool)
 
 	// ---- Application (Report Generators) ----
 	csvGen := report.NewCSVReportGenerator()
@@ -53,6 +54,7 @@ func main() {
 	accService := service.NewAccountService(accRepo)
 	catService := service.NewCategoryService(catRepo)
 	txService := service.NewTransactionService(txRepo, storageService, accService)
+	userService := service.NewUserService(userRepo)
 	reportService := service.NewReportService(reportRepo, txRepo, csvGen, pdfGen)
 
 	// 2. Create UI struct.
@@ -61,6 +63,7 @@ func main() {
 		CatService:    catService,
 		TxService:     txService,
 		ReportService: reportService,
+		UserService:   userService,
 	})
 
 	// 3. Initialize the UI with the app object.

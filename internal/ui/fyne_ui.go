@@ -2,12 +2,16 @@
 package ui
 
 import (
+	"context"
 	"log"
 	"os"
+	"time"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/canvas"
 	"fyne.io/fyne/v2/container"
+	"fyne.io/fyne/v2/dialog"
+	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 	"github.com/nelsonmarro/accountable-holo/internal/domain"
 	"github.com/nelsonmarro/accountable-holo/internal/ui/componets"
@@ -90,6 +94,10 @@ func (ui *UI) buildMainUI() {
 		container.NewTabItemWithIcon("Transacciones", transactionIcon, ui.makeFinancesTab()),
 	)
 
+	if ui.currentUser.Role == domain.AdminRole {
+		tabs.Append(container.NewTabItemWithIcon("Users", theme.AccountIcon(), ui.makeUserTab()))
+	}
+
 	ui.mainWindow.SetContent(tabs)
 	ui.mainWindow.Resize(fyne.NewSize(1280, 720))
 	ui.mainWindow.CenterOnScreen()
@@ -98,6 +106,38 @@ func (ui *UI) buildMainUI() {
 
 // Run now simply builds and then runs the application.
 func (ui *UI) Run() {
-	ui.buildMainUI()
+	ui.mainWindow.SetContent(ui.makeLoginUI())
+	ui.mainWindow.Resize(fyne.NewSize(400, 200))
+	ui.mainWindow.CenterOnScreen()
 	ui.mainWindow.ShowAndRun()
+}
+
+func (ui *UI) makeLoginUI() fyne.CanvasObject {
+	usernameEntry := widget.NewEntry()
+	usernameEntry.SetPlaceHolder("Username")
+
+	passwordEntry := widget.NewPasswordEntry()
+	passwordEntry.SetPlaceHolder("Password")
+
+	loginForm := &widget.Form{
+		Items: []*widget.FormItem{
+			{Text: "Username", Widget: usernameEntry},
+			{Text: "Password", Widget: passwordEntry},
+		},
+		OnSubmit: func() {
+			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+			defer cancel()
+
+			user, err := ui.Services.UserService.Login(ctx, usernameEntry.Text, passwordEntry.Text)
+			if err != nil {
+				dialog.ShowError(err, ui.mainWindow)
+				return
+			}
+
+			ui.currentUser = user
+			ui.buildMainUI()
+		},
+	}
+
+	return container.NewCenter(loginForm)
 }
