@@ -18,6 +18,7 @@ type Services struct {
 	CatService    CategoryService
 	TxService     TransactionService
 	ReportService ReportService
+	UserService   UserService
 }
 
 // The UI struct holds the dependencies and state for the Fyne UI.
@@ -28,6 +29,9 @@ type UI struct {
 	// ---- Fyne App Objects ----
 	app        fyne.App
 	mainWindow fyne.Window
+
+	// ---- Auth State ----
+	currentUser *domain.User
 
 	// ---- UI widgets (State) ----
 	accountList *widget.List
