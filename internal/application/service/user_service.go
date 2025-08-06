@@ -98,6 +98,15 @@ func (s *UserServiceImpl) DeleteUser(ctx context.Context, id int, currentUser *d
 		return fmt.Errorf("cannot delete currently logged in user")
 	}
 
+	userToDelete, err := s.repo.GetUserByID(ctx, id)
+	if err != nil {
+		return err
+	}
+
+	if userToDelete.Username == "admin" {
+		return fmt.Errorf("cannot delete the default admin user")
+	}
+
 	return s.repo.DeleteUser(ctx, id)
 }
 
