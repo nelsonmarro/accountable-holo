@@ -98,24 +98,30 @@ func (ui *UI) buildMainUI() fyne.CanvasObject {
 		tabs.Append(container.NewTabItemWithIcon("Users", theme.AccountIcon(), ui.makeUserTab()))
 	}
 
-	ui.mainWindow.SetMainMenu(ui.makeMainMenu())
-
 	return tabs
 }
 
 // Run now simply builds and then runs the application.
 func (ui *UI) Run() {
-	ui.mainWindow.SetContent(ui.makeLoginUI())
+	loginUI := ui.makeLoginUI()
+	ui.mainWindow.SetContent(loginUI)
+	ui.mainWindow.SetFullScreen(false)
 	ui.mainWindow.Resize(fyne.NewSize(500, 300))
 	ui.mainWindow.CenterOnScreen()
+	loginUI.Refresh()
 	ui.mainWindow.ShowAndRun()
 }
 
 func (ui *UI) makeMainMenu() *fyne.MainMenu {
 	logoutItem := fyne.NewMenuItem("Cerrar Sesión", func() {
+		loginUI := ui.makeLoginUI()
 		ui.currentUser = nil
-		ui.mainWindow.SetContent(ui.makeLoginUI())
+		ui.mainWindow.SetContent(loginUI)
 		ui.mainWindow.SetMainMenu(nil)
+		ui.mainWindow.SetFullScreen(false)
+		ui.mainWindow.Resize(fyne.NewSize(500, 300))
+		ui.mainWindow.CenterOnScreen()
+		loginUI.Refresh()
 	})
 
 	fileMenu := fyne.NewMenu("Sesión", logoutItem)
