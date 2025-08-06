@@ -83,7 +83,7 @@ func (ui *UI) Init(a fyne.App) {
 }
 
 // buildMainUI creates all the main UI components and sets them on the window.
-func (ui *UI) buildMainUI() {
+func (ui *UI) buildMainUI() fyne.CanvasObject {
 	accountIcon := NewThemeAwareResource(resourceAccountstabiconlightPng, resourceAccountstabicondarkPng)
 	transactionIcon := NewThemeAwareResource(resourceTransactionstabiconlightPng, resourceTransactiontabicondarkPng)
 	reportIcon := NewThemeAwareResource(resourceReportstabiconlightPng, resourceReportstabicondarkPng)
@@ -98,17 +98,15 @@ func (ui *UI) buildMainUI() {
 		tabs.Append(container.NewTabItemWithIcon("Users", theme.AccountIcon(), ui.makeUserTab()))
 	}
 
-	ui.mainWindow.SetContent(tabs)
 	ui.mainWindow.SetMainMenu(ui.makeMainMenu())
-	ui.mainWindow.Resize(fyne.NewSize(1280, 720))
-	ui.mainWindow.CenterOnScreen()
-	ui.mainWindow.SetMaster()
+
+	return tabs
 }
 
 // Run now simply builds and then runs the application.
 func (ui *UI) Run() {
 	ui.mainWindow.SetContent(ui.makeLoginUI())
-	ui.mainWindow.Resize(fyne.NewSize(400, 200))
+	ui.mainWindow.Resize(fyne.NewSize(500, 300))
 	ui.mainWindow.CenterOnScreen()
 	ui.mainWindow.ShowAndRun()
 }
@@ -118,8 +116,6 @@ func (ui *UI) makeMainMenu() *fyne.MainMenu {
 		ui.currentUser = nil
 		ui.mainWindow.SetContent(ui.makeLoginUI())
 		ui.mainWindow.SetMainMenu(nil)
-		ui.mainWindow.Resize(fyne.NewSize(400, 200))
-		ui.mainWindow.CenterOnScreen()
 	})
 
 	fileMenu := fyne.NewMenu("Sesión", logoutItem)

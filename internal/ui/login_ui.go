@@ -35,7 +35,10 @@ func (ui *UI) makeLoginUI() fyne.CanvasObject {
 			}
 
 			ui.currentUser = user
-			ui.buildMainUI()
+			newContent := ui.buildMainUI()
+			ui.mainWindow.SetContent(newContent)
+			ui.mainWindow.SetFullScreen(true)
+			newContent.Refresh()
 		},
 	}
 
