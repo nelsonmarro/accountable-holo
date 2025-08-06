@@ -13,16 +13,17 @@ import (
 
 func (ui *UI) makeLoginUI() fyne.CanvasObject {
 	usernameEntry := widget.NewEntry()
-	usernameEntry.SetPlaceHolder("Username")
+	usernameEntry.SetPlaceHolder("Nombre de usuario")
 
 	passwordEntry := widget.NewPasswordEntry()
-	passwordEntry.SetPlaceHolder("Password")
+	passwordEntry.SetPlaceHolder("Contraseña")
 
 	loginForm := &widget.Form{
 		Items: []*widget.FormItem{
-			{Text: "Username", Widget: usernameEntry},
-			{Text: "Password", Widget: passwordEntry},
+			{Text: "Nombre de Usuario", Widget: usernameEntry},
+			{Text: "Contraseña", Widget: passwordEntry},
 		},
+		SubmitText: "Ingresar",
 		OnSubmit: func() {
 			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 			defer cancel()

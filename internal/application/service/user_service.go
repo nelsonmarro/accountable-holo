@@ -32,12 +32,12 @@ func NewUserService(repo UserRepository) *UserServiceImpl {
 func (s *UserServiceImpl) Login(ctx context.Context, username, password string) (*domain.User, error) {
 	user, err := s.repo.GetUserByUsername(ctx, username)
 	if err != nil {
-		return nil, fmt.Errorf("invalid credentials")
+		return nil, fmt.Errorf("credenciales incorrectas")
 	}
 
 	err = bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(password))
 	if err != nil {
-		return nil, fmt.Errorf("invalid credentials")
+		return nil, fmt.Errorf("credenciales incorrectas")
 	}
 
 	return user, nil
