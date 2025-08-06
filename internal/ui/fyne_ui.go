@@ -99,6 +99,7 @@ func (ui *UI) buildMainUI() {
 	}
 
 	ui.mainWindow.SetContent(tabs)
+	ui.mainWindow.SetMainMenu(ui.makeMainMenu())
 	ui.mainWindow.Resize(fyne.NewSize(1280, 720))
 	ui.mainWindow.CenterOnScreen()
 	ui.mainWindow.SetMaster()
@@ -110,4 +111,18 @@ func (ui *UI) Run() {
 	ui.mainWindow.Resize(fyne.NewSize(400, 200))
 	ui.mainWindow.CenterOnScreen()
 	ui.mainWindow.ShowAndRun()
+}
+
+func (ui *UI) makeMainMenu() *fyne.MainMenu {
+	logoutItem := fyne.NewMenuItem("Cerrar Sesión", func() {
+		ui.currentUser = nil
+		ui.mainWindow.SetContent(ui.makeLoginUI())
+		ui.mainWindow.SetMainMenu(nil)
+		ui.mainWindow.Resize(fyne.NewSize(400, 200))
+		ui.mainWindow.CenterOnScreen()
+	})
+
+	fileMenu := fyne.NewMenu("Sesión", logoutItem)
+
+	return fyne.NewMainMenu(fileMenu)
 }
