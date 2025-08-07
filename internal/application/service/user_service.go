@@ -44,7 +44,7 @@ func (s *UserServiceImpl) Login(ctx context.Context, username, password string) 
 }
 
 // CreateUser creates a new user.
-func (s *UserServiceImpl) CreateUser(ctx context.Context, username, password string, role domain.UserRole, currentUser *domain.User) error {
+func (s *UserServiceImpl) CreateUser(ctx context.Context, username, password, firstName, lastName string, role domain.UserRole, currentUser *domain.User) error {
 	if currentUser.Role != domain.AdminRole {
 		return fmt.Errorf("unauthorized: only admins can create users")
 	}
@@ -57,6 +57,8 @@ func (s *UserServiceImpl) CreateUser(ctx context.Context, username, password str
 	user := &domain.User{
 		Username:     username,
 		PasswordHash: string(hashedPassword),
+		FirstName:    firstName,
+		LastName:     lastName,
 		Role:         role,
 	}
 
@@ -64,7 +66,7 @@ func (s *UserServiceImpl) CreateUser(ctx context.Context, username, password str
 }
 
 // UpdateUser updates an existing user.
-func (s *UserServiceImpl) UpdateUser(ctx context.Context, id int, username, password string, role domain.UserRole, currentUser *domain.User) error {
+func (s *UserServiceImpl) UpdateUser(ctx context.Context, id int, username, password, firstName, lastName string, role domain.UserRole, currentUser *domain.User) error {
 	if currentUser.Role != domain.AdminRole {
 		return fmt.Errorf("unauthorized: only admins can update users")
 	}
@@ -75,6 +77,8 @@ func (s *UserServiceImpl) UpdateUser(ctx context.Context, id int, username, pass
 	}
 
 	user.Username = username
+	user.FirstName = firstName
+	user.LastName = lastName
 	user.Role = role
 
 	if password != "" {

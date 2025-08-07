@@ -21,9 +21,11 @@ type AddUserDialog struct {
 	currentUser    *domain.User
 
 	// UI Components
-	usernameEntry *widget.Entry
-	passwordEntry *widget.Entry
-	roleSelect    *widget.SelectEntry
+	usernameEntry  *widget.Entry
+	passwordEntry  *widget.Entry
+	firstNameEntry *widget.Entry
+	lastNameEntry  *widget.Entry
+	roleSelect     *widget.SelectEntry
 }
 
 // NewAddUserDialog creates a new dialog handler.
@@ -42,6 +44,8 @@ func NewAddUserDialog(
 		currentUser:    currentUser,
 		usernameEntry:  widget.NewEntry(),
 		passwordEntry:  &widget.Entry{Password: true},
+		firstNameEntry: widget.NewEntry(),
+		lastNameEntry:  widget.NewEntry(),
 		roleSelect:     widget.NewSelectEntry([]string{string(domain.AdminRole), string(domain.CustomerRole)}),
 	}
 	d.roleSelect.SetText(string(domain.CustomerRole)) // Default to Customer
@@ -54,13 +58,15 @@ func (d *AddUserDialog) Show() {
 		UserForm(
 			d.usernameEntry,
 			d.passwordEntry,
+			d.firstNameEntry,
+			d.lastNameEntry,
 			d.roleSelect,
 		),
 		d.handleSubmit,
 		d.mainWin,
 	)
 
-	formDialog.Resize(fyne.NewSize(400, 250))
+	formDialog.Resize(fyne.NewSize(400, 300))
 	formDialog.Show()
 }
 
@@ -78,7 +84,7 @@ func (d *AddUserDialog) handleSubmit(valid bool) {
 		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 		defer cancel()
 
-		err := d.userService.CreateUser(ctx, d.usernameEntry.Text, d.passwordEntry.Text, domain.UserRole(d.roleSelect.Text), d.currentUser)
+		err := d.userService.CreateUser(ctx, d.usernameEntry.Text, d.passwordEntry.Text, d.firstNameEntry.Text, d.lastNameEntry.Text, domain.UserRole(d.roleSelect.Text), d.currentUser)
 		if err != nil {
 			fyne.Do(func() {
 				dialog.ShowError(fmt.Errorf("error creating user: %w", err), d.mainWin)
