@@ -294,7 +294,7 @@ func (r *TransactionRepositoryImpl) FindAllTransactions(
 func (r *TransactionRepositoryImpl) VoidTransaction(
 	ctx context.Context,
 	transactionID int,
-	currentUser *domain.User,
+	currentUser domain.User,
 ) error {
 	tx, err := r.db.Begin(ctx)
 	if err != nil {

@@ -40,7 +40,7 @@ type AddTransactionDialog struct {
 	categories       []domain.Category
 	selectedCategory *domain.Category
 	attachmentPath   string
-	currentUser      *domain.User
+	currentUser      domain.User
 }
 
 // NewAddTransactionDialog creates a new dialog handler.
@@ -51,7 +51,7 @@ func NewAddTransactionDialog(
 	cs CategoryService,
 	callback func(),
 	accountID int,
-	currentUser *domain.User,
+	currentUser domain.User,
 ) *AddTransactionDialog {
 	d := &AddTransactionDialog{
 		mainWin:          win,

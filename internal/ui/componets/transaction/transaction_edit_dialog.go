@@ -45,11 +45,20 @@ type EditTransactionDialog struct {
 	categories         []domain.Category
 	selectedCategoryID int
 	attachmentPath     string
-	currentUser        *domain.User
+	currentUser        domain.User
 }
 
 // NewEditTransactionDialog creates a new dialog handler for the edit action.
-func NewEditTransactionDialog(win fyne.Window, l *log.Logger, txs TransactionService, cs CategoryService, callback func(), txID int, accountID int, currentUser *domain.User) *EditTransactionDialog {
+func NewEditTransactionDialog(
+	win fyne.Window,
+	l *log.Logger,
+	txs TransactionService,
+	cs CategoryService,
+	callback func(),
+	txID int,
+	accountID int,
+	currentUser domain.User,
+) *EditTransactionDialog {
 	d := &EditTransactionDialog{
 		mainWin:          win,
 		logger:           l,

@@ -139,7 +139,7 @@ func (h *AdjustmentDialogHandler) submit(confirmed bool) {
 		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 		defer cancel()
 
-		err := h.txService.CreateTransaction(ctx, tx, h.currentUser)
+		err := h.txService.CreateTransaction(ctx, tx, *h.currentUser)
 		if err != nil {
 			fyne.Do(func() {
 				progressDialog.Hide()
