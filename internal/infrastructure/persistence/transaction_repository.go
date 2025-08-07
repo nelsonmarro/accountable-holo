@@ -38,12 +38,13 @@ func (r *TransactionRepositoryImpl) CreateTransaction(ctx context.Context, trans
 	if err != nil {
 		return fmt.Errorf("failed to generate transaction number: %w", err)
 	}
+
 	transaction.TransactionNumber = newTxNumber
 
 	query := `
 		insert into transactions (transaction_number, description, amount, transaction_date, account_id, category_id, attachment_path, created_by_id, updated_by_id, created_at, updated_at)
-						 values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
-						  returning id, created_at, updated_at`
+				 values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+				  returning id, created_at, updated_at`
 
 	now := time.Now()
 	err = tx.QueryRow(ctx, query,
@@ -194,6 +195,8 @@ func (r *TransactionRepositoryImpl) FindAllTransactionsByAccount(
         t.voids_transaction_id,
         c.name AS category_name,
         c.type AS category_type,
+		uc.username AS created_by,
+		uu.username AS updated_by,
         (
             SELECT initial_balance FROM accounts WHERE id = t.account_id
         ) + (
@@ -211,6 +214,10 @@ func (r *TransactionRepositoryImpl) FindAllTransactionsByAccount(
         transactions AS t
     LEFT JOIN
         categories AS c ON t.category_id = c.id
+	LEFT JOIN
+		users AS uc ON t.created_by_id = uc.id
+	LEFT JOIN
+		users AS uu ON t.updated_by_id = uu.id
     WHERE %s
     ORDER BY
         t.transaction_date DESC, t.id DESC;`, whereCondition)
@@ -248,6 +255,8 @@ func (r *TransactionRepositoryImpl) FindAllTransactions(
         t.voids_transaction_id,
         c.name AS category_name,
         c.type AS category_type,
+			  uc.username AS created_by,
+		    uu.username AS updated_by,
         (
             SELECT initial_balance FROM accounts WHERE id = t.account_id
         ) + (
@@ -265,6 +274,10 @@ func (r *TransactionRepositoryImpl) FindAllTransactions(
         transactions AS t
     LEFT JOIN
         categories AS c ON t.category_id = c.id
+		LEFT JOIN
+				users AS uc ON t.created_by_id = uc.id
+		LEFT JOIN
+				users AS uu ON t.updated_by_id = uu.id
     WHERE %s
     ORDER BY
         t.transaction_date DESC, t.id DESC;`, whereCondition)
@@ -493,7 +506,8 @@ func (r *TransactionRepositoryImpl) UpdateTransaction(ctx context.Context, tx *d
 		transaction_date,
 		is_voided,
 		voids_transaction_id
-		FROM transactions WHERE id = $1`, tx.ID).
+		FROM transactions WHERE id = $1`,
+		tx.ID).
 		Scan(
 			&originalTx.CategoryID,
 			&originalTx.TransactionDate,
