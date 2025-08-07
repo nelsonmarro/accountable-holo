@@ -291,7 +291,11 @@ func (r *TransactionRepositoryImpl) FindAllTransactions(
 	return r.scanTransactions(rows)
 }
 
-func (r *TransactionRepositoryImpl) VoidTransaction(ctx context.Context, transactionID int) error {
+func (r *TransactionRepositoryImpl) VoidTransaction(
+	ctx context.Context,
+	transactionID int,
+	currentUser *domain.User,
+) error {
 	tx, err := r.db.Begin(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to begin transaction: %w", err)
@@ -377,11 +381,12 @@ func (r *TransactionRepositoryImpl) VoidTransaction(ctx context.Context, transac
 	}
 
 	voidTransactionQuery := `
-	  insert into transactions
-	    (description, amount, transaction_date, account_id,
-	  category_id, voids_transaction_id, created_at, updated_at, transaction_number)
-	  	 values($1, $2, $3, $4, $5, $6, $7, $8, $9) returning id
-	`
+         insert into transactions
+           (description, amount, transaction_date, account_id,
+         category_id, voids_transaction_id, created_at, updated_at, transaction_number,
+      created_by_id, updated_by_id)
+               values1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) returning id
+     `
 
 	var voidTransactionID int
 	err = tx.QueryRow(
@@ -396,10 +401,9 @@ func (r *TransactionRepositoryImpl) VoidTransaction(ctx context.Context, transac
 		time.Now(),
 		time.Now(),
 		voidTransactionNumber,
+		currentUser.ID,
+		currentUser.ID,
 	).Scan(&voidTransactionID)
-	if err != nil {
-		return fmt.Errorf("error when inserting the void transaction: %w", err)
-	}
 
 	// Mark the original transaction as voided
 	markAsVoidedQuery := `
