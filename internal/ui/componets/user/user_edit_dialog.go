@@ -23,9 +23,11 @@ type EditUserDialog struct {
 	userToEdit     *domain.User
 
 	// UI Components
-	usernameEntry *widget.Entry
-	passwordEntry *widget.Entry
-	roleSelect    *widget.SelectEntry
+	usernameEntry  *widget.Entry
+	passwordEntry  *widget.Entry
+	firstNameEntry *widget.Entry
+	lastNameEntry  *widget.Entry
+	roleSelect     *widget.SelectEntry
 }
 
 // NewEditUserDialog creates a new dialog handler.
@@ -46,9 +48,13 @@ func NewEditUserDialog(
 		userToEdit:     userToEdit,
 		usernameEntry:  widget.NewEntry(),
 		passwordEntry:  &widget.Entry{Password: true},
+		firstNameEntry: widget.NewEntry(),
+		lastNameEntry:  widget.NewEntry(),
 		roleSelect:     widget.NewSelectEntry([]string{string(domain.AdminRole), string(domain.CustomerRole)}),
 	}
 	d.usernameEntry.SetText(userToEdit.Username)
+	d.firstNameEntry.SetText(userToEdit.FirstName)
+	d.lastNameEntry.SetText(userToEdit.LastName)
 	d.roleSelect.SetText(string(userToEdit.Role))
 	return d
 }
@@ -59,13 +65,15 @@ func (d *EditUserDialog) Show() {
 		UserForm(
 			d.usernameEntry,
 			d.passwordEntry,
+			d.firstNameEntry,
+			d.lastNameEntry,
 			d.roleSelect,
 		),
 		d.handleSubmit,
 		d.mainWin,
 	)
 
-	formDialog.Resize(fyne.NewSize(400, 250))
+	formDialog.Resize(fyne.NewSize(400, 300))
 	formDialog.Show()
 }
 
@@ -83,7 +91,7 @@ func (d *EditUserDialog) handleSubmit(valid bool) {
 		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 		defer cancel()
 
-		err := d.userService.UpdateUser(ctx, d.userToEdit.ID, d.usernameEntry.Text, d.passwordEntry.Text, domain.UserRole(d.roleSelect.Text), d.currentUser)
+		err := d.userService.UpdateUser(ctx, d.userToEdit.ID, d.usernameEntry.Text, d.passwordEntry.Text, d.firstNameEntry.Text, d.lastNameEntry.Text, domain.UserRole(d.roleSelect.Text), d.currentUser)
 		if err != nil {
 			fyne.Do(func() {
 				dialog.ShowError(fmt.Errorf("error updating user: %w", err), d.mainWin)

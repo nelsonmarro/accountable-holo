@@ -82,8 +82,8 @@ type ReportService interface {
 
 type UserService interface {
 	Login(ctx context.Context, username, password string) (*domain.User, error)
-	CreateUser(ctx context.Context, username, password string, role domain.UserRole, currentUser *domain.User) error
-	UpdateUser(ctx context.Context, id int, username, password string, role domain.UserRole, currentUser *domain.User) error
+	CreateUser(ctx context.Context, username, password, firstName, lastName string, role domain.UserRole, currentUser *domain.User) error
+	UpdateUser(ctx context.Context, id int, username, password, firstName, lastName string, role domain.UserRole, currentUser *domain.User) error
 	DeleteUser(ctx context.Context, id int, currentUser *domain.User) error
 	GetAllUsers(ctx context.Context, currentUser *domain.User) ([]domain.User, error)
 }

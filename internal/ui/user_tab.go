@@ -53,8 +53,9 @@ func (ui *UI) makeUserTab() fyne.CanvasObject {
 		topBar,
 	)
 
-	tableHeader := container.NewGridWithColumns(3,
+	tableHeader := container.NewGridWithColumns(4,
 		widget.NewLabel("Username"),
+		widget.NewLabel("Full Name"),
 		widget.NewLabel("Role"),
 		widget.NewLabel("Actions"),
 	)
@@ -82,8 +83,9 @@ func (ui *UI) createUserItem() fyne.CanvasObject {
 	deleteBtn := widget.NewButtonWithIcon("", theme.DeleteIcon(), nil)
 	deleteBtn.Importance = widget.DangerImportance
 
-	return container.NewGridWithColumns(3,
+	return container.NewGridWithColumns(4,
 		widget.NewLabel("username template"),
+		widget.NewLabel("full name template"),
 		widget.NewLabel("role template"),
 		container.NewHBox(editBtn, deleteBtn),
 	)
@@ -96,10 +98,13 @@ func (ui *UI) updateUserItem(i widget.ListItemID, o fyne.CanvasObject) {
 	usernameLabel := grid.Objects[0].(*widget.Label)
 	usernameLabel.SetText(userToUpdate.Username)
 
-	roleLabel := grid.Objects[1].(*widget.Label)
+	fullNameLabel := grid.Objects[1].(*widget.Label)
+	fullNameLabel.SetText(fmt.Sprintf("%s %s", userToUpdate.FirstName, userToUpdate.LastName))
+
+	roleLabel := grid.Objects[2].(*widget.Label)
 	roleLabel.SetText(string(userToUpdate.Role))
 
-	actionsContainer := grid.Objects[2].(*fyne.Container)
+	actionsContainer := grid.Objects[3].(*fyne.Container)
 	editBtn := actionsContainer.Objects[0].(*widget.Button)
 	editBtn.OnTapped = func() {
 		dialogHandler := user.NewEditUserDialog(ui.mainWindow, ui.errorLogger, ui.Services.UserService, func() { ui.loadUsers() }, ui.currentUser, &userToUpdate)
@@ -110,6 +115,11 @@ func (ui *UI) updateUserItem(i widget.ListItemID, o fyne.CanvasObject) {
 	deleteBtn.OnTapped = func() {
 		dialogHandler := user.NewDeleteUserDialog(ui.mainWindow, ui.errorLogger, ui.Services.UserService, func() { ui.loadUsers() }, &userToUpdate, ui.currentUser)
 		dialogHandler.Show()
+	}
+
+	if userToUpdate.Username == "admin" {
+		editBtn.Disable()
+		deleteBtn.Disable()
 	}
 }
 
