@@ -33,6 +33,7 @@ type AdjustmentDialogHandler struct {
 	selectedCategory *domain.Category
 	amount           decimal.Decimal
 	transactionDate  time.Time
+	currentUser      *domain.User
 }
 
 // NewAdjustmentTransactionDialog creates a new dialog for creating a reconciliation adjustment transaction.
@@ -43,6 +44,7 @@ func NewAdjustmentTransactionDialog(
 	catService CategoryService,
 	reconciliationData *domain.Reconciliation,
 	onConfirm func(),
+	currentUser *domain.User,
 ) *AdjustmentDialogHandler {
 	h := &AdjustmentDialogHandler{
 		parent:           parent,
@@ -56,6 +58,7 @@ func NewAdjustmentTransactionDialog(
 		dateLabel:        widget.NewLabel(""),
 		categoryLabel:    widget.NewLabel("Buscando categoría..."),
 		transactionDate:  time.Now(),
+		currentUser:      currentUser,
 	}
 
 	h.prefillForm(reconciliationData)
@@ -136,7 +139,7 @@ func (h *AdjustmentDialogHandler) submit(confirmed bool) {
 		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 		defer cancel()
 
-		err := h.txService.CreateTransaction(ctx, tx)
+		err := h.txService.CreateTransaction(ctx, tx, h.currentUser)
 		if err != nil {
 			fyne.Do(func() {
 				progressDialog.Hide()

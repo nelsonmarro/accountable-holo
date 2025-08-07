@@ -11,8 +11,8 @@ import (
 // TransactionService defines the interface for transaction-related business logic.
 type TransactionService interface {
 	GetTransactionByID(ctx context.Context, id int) (*domain.Transaction, error)
-	CreateTransaction(ctx context.Context, tx *domain.Transaction) error
-	UpdateTransaction(ctx context.Context, tx *domain.Transaction) error
+	CreateTransaction(ctx context.Context, transaction *domain.Transaction, currentUser *domain.User) error
+	UpdateTransaction(ctx context.Context, tx *domain.Transaction, currentUser *domain.User) error
 	VoidTransaction(ctx context.Context, id int) error
 	ReconcileAccount(
 		ctx context.Context,

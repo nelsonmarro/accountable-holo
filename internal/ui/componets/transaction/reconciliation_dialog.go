@@ -40,6 +40,7 @@ type ReconciliationDialog struct {
 	widgets               *reconciliationUIWidgets
 	accounts              []domain.Account
 	onAdjustmentTxCreated func()
+	currentUser           *domain.User
 
 	// Form widgets
 	accountsSelector   *widget.SelectEntry
@@ -55,6 +56,7 @@ func NewReconciliationDialog(
 	reportService ReportService,
 	accounts []domain.Account,
 	onAdjustmentTxCreated func(),
+	currentUser *domain.User,
 ) *ReconciliationDialog {
 	d := &ReconciliationDialog{
 		TxService:             txService,
@@ -64,6 +66,7 @@ func NewReconciliationDialog(
 		mainWindow:            mainWindow,
 		accounts:              accounts,
 		onAdjustmentTxCreated: onAdjustmentTxCreated,
+		currentUser:           currentUser,
 	}
 	d.statementUI = d.makeStatementCard()
 	d.statementUI.Hide()
@@ -196,6 +199,7 @@ func (d *ReconciliationDialog) makeStatementCard() fyne.CanvasObject {
 			d.CatService,
 			d.data,
 			d.onAdjustmentTxCreated,
+			d.currentUser,
 		)
 		dialogHandler.Show()
 	})
