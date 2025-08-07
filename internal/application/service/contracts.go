@@ -64,7 +64,7 @@ type TransactionRepository interface {
 	) ([]domain.Transaction, error)
 
 	GetTransactionByID(ctx context.Context, id int) (*domain.Transaction, error)
-	VoidTransaction(ctx context.Context, transactionID int) error
+	VoidTransaction(ctx context.Context, transactionID int, currentUser domain.User) error
 	UpdateTransaction(ctx context.Context, tx *domain.Transaction) error
 	UpdateAttachmentPath(ctx context.Context, transactionID int, attachmentPath string) error
 }
