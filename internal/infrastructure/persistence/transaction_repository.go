@@ -299,14 +299,14 @@ func (r *TransactionRepositoryImpl) VoidTransaction(ctx context.Context, transac
 	defer tx.Rollback(ctx)
 
 	originalTransactionQuery := `
-		 SELECT 
-			 t.id, 
-			 t.transaction_number, 
-			 transaction_date, 
-			 t.description, 
-			 t.amount, 
-			 t.account_id, 
-			 t.is_voided, 
+		 SELECT
+			 t.id,
+			 t.transaction_number,
+			 transaction_date,
+			 t.description,
+			 t.amount,
+			 t.account_id,
+			 t.is_voided,
 			 t.voided_by_transaction_id,
 			 t.voids_transaction_id,
 			 c.type
