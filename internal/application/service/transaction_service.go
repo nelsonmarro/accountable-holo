@@ -151,12 +151,12 @@ func (s *TransactionServiceImpl) CreateTransaction(ctx context.Context, tx *doma
 	return nil
 }
 
-func (s *TransactionServiceImpl) VoidTransaction(ctx context.Context, transactionID int) error {
+func (s *TransactionServiceImpl) VoidTransaction(ctx context.Context, transactionID int, currentUser domain.User) error {
 	if transactionID <= 0 {
 		return fmt.Errorf("ID de transacción inválido: %d", transactionID)
 	}
 
-	return s.repo.VoidTransaction(ctx, transactionID)
+	return s.repo.VoidTransaction(ctx, transactionID, currentUser)
 }
 
 func (s *TransactionServiceImpl) UpdateTransaction(ctx context.Context, tx *domain.Transaction, currentUser *domain.User) error {

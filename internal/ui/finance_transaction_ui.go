@@ -338,6 +338,7 @@ func (ui *UI) updateTransactionItem(i widget.ListItemID, o fyne.CanvasObject) {
 				ui.loadTransactions(1, ui.transactionPaginator.GetPageSize())
 			},
 			tx.ID,
+			*ui.currentUser,
 		)
 
 		dialogHandler.Show()

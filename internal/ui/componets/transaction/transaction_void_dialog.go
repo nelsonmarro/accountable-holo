@@ -9,6 +9,7 @@ import (
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/widget"
+	"github.com/nelsonmarro/accountable-holo/internal/domain"
 )
 
 // VoidTransactionDialog holds the dependencies for the delete confirmation dialog.
@@ -18,16 +19,25 @@ type VoidTransactionDialog struct {
 	service        TransactionService
 	callbackAction func()
 	txID           int
+	currentUser    domain.User
 }
 
 // NewVoidTransactionDialog creates a new dialog handler for the delete action.
-func NewVoidTransactionDialog(win fyne.Window, l *log.Logger, service TransactionService, callback func(), txID int) *VoidTransactionDialog {
+func NewVoidTransactionDialog(
+	win fyne.Window,
+	l *log.Logger,
+	service TransactionService,
+	callback func(),
+	txID int,
+	currentUser domain.User,
+) *VoidTransactionDialog {
 	return &VoidTransactionDialog{
 		mainWin:        win,
 		logger:         l,
 		service:        service,
 		callbackAction: callback,
 		txID:           txID,
+		currentUser:    currentUser,
 	}
 }
 
@@ -48,7 +58,7 @@ func (d *VoidTransactionDialog) Show() {
 	)
 }
 
-// executeVoid runs the actual deletion logic.
+// executeVoid runs the actual voiding logic.
 func (d *VoidTransactionDialog) executeVoid() {
 	progress := dialog.NewCustomWithoutButtons("Anulando...", widget.NewProgressBarInfinite(), d.mainWin)
 	progress.Show()
@@ -57,7 +67,7 @@ func (d *VoidTransactionDialog) executeVoid() {
 		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 		defer cancel()
 
-		err := d.service.VoidTransaction(ctx, d.txID)
+		err := d.service.VoidTransaction(ctx, d.txID, d.currentUser)
 		if err != nil {
 			d.logger.Printf("Error voiding transaction %d: %v", d.txID, err)
 			fyne.Do(func() {
