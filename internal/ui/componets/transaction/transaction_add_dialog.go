@@ -40,6 +40,7 @@ type AddTransactionDialog struct {
 	categories       []domain.Category
 	selectedCategory *domain.Category
 	attachmentPath   string
+	currentUser      *domain.User
 }
 
 // NewAddTransactionDialog creates a new dialog handler.
@@ -50,6 +51,7 @@ func NewAddTransactionDialog(
 	cs CategoryService,
 	callback func(),
 	accountID int,
+	currentUser *domain.User,
 ) *AddTransactionDialog {
 	d := &AddTransactionDialog{
 		mainWin:          win,
@@ -63,6 +65,7 @@ func NewAddTransactionDialog(
 		accountID:        accountID,
 		categoryLabel:    widget.NewLabel("Ninguna seleccionada"),
 		attachmentLabel:  widget.NewLabel("Ninguno"),
+		currentUser:      currentUser,
 	}
 	d.dateEntry.SetText(time.Now().Format("01/02/2006"))
 
@@ -161,7 +164,7 @@ func (d *AddTransactionDialog) handleSubmit(valid bool) {
 		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 		defer cancel()
 
-		err := d.txService.CreateTransaction(ctx, tx)
+		err := d.txService.CreateTransaction(ctx, tx, d.currentUser)
 		if err != nil {
 			fyne.Do(func() {
 				progressDialog.Hide()

@@ -42,8 +42,8 @@ func (r *TransactionRepositoryImpl) CreateTransaction(ctx context.Context, trans
 
 	query := `
 		insert into transactions (transaction_number, description, amount, transaction_date, account_id, category_id, attachment_path, created_by_id, updated_by_id, created_at, updated_at)
-							values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
-		                  returning id, created_at, updated_at`
+						 values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+						  returning id, created_at, updated_at`
 
 	now := time.Now()
 	err = tx.QueryRow(ctx, query,
@@ -93,12 +93,12 @@ func (r *TransactionRepositoryImpl) FindTransactionsByAccount(
 
 	if totalCount == 0 {
 		return &domain.PaginatedResult[domain.Transaction]{
-			Data:       []domain.Transaction{},
-			TotalCount: 0,
-			Page:       page,
-			PageSize:   pageSize,
-		},
-		nil
+				Data:       []domain.Transaction{},
+				TotalCount: 0,
+				Page:       page,
+				PageSize:   pageSize,
+			},
+			nil
 	}
 
 	// --- Build the main query for fetching the paginated data ---
@@ -122,11 +122,13 @@ func (r *TransactionRepositoryImpl) FindTransactionsByAccount(
         t.voids_transaction_id,
         c.name AS category_name,
         c.type AS category_type,
+		uc.username AS created_by,
+		uu.username AS updated_by,
         (
             SELECT initial_balance FROM accounts WHERE id = t.account_id
         ) + (
             SELECT
-                COALESCE(SUM(CASE WHEN c_inner.type = 'Ingreso' THEN t_inner.amount ELSE -t_inner.amount END), 0)
+                COALESCE(SUM(CASE WHEN c_inner.type = '\'Ingreso\'' THEN t_inner.amount ELSE -t_inner.amount END), 0)
             FROM
                 transactions AS t_inner
             JOIN
@@ -139,6 +141,10 @@ func (r *TransactionRepositoryImpl) FindTransactionsByAccount(
         transactions AS t
     LEFT JOIN
         categories AS c ON t.category_id = c.id
+	LEFT JOIN
+		users AS uc ON t.created_by_id = uc.id
+	LEFT JOIN
+		users AS uu ON t.updated_by_id = uu.id
     WHERE %s
     ORDER BY
         t.transaction_date DESC, t.id DESC
@@ -156,12 +162,12 @@ func (r *TransactionRepositoryImpl) FindTransactionsByAccount(
 	}
 
 	return &domain.PaginatedResult[domain.Transaction]{
-		Data:       transactions,
-		TotalCount: totalCount,
-		Page:       page,
-		PageSize:   pageSize,
-	},
-	nil
+			Data:       transactions,
+			TotalCount: totalCount,
+			Page:       page,
+			PageSize:   pageSize,
+		},
+		nil
 }
 
 func (r *TransactionRepositoryImpl) FindAllTransactionsByAccount(
@@ -192,7 +198,7 @@ func (r *TransactionRepositoryImpl) FindAllTransactionsByAccount(
             SELECT initial_balance FROM accounts WHERE id = t.account_id
         ) + (
             SELECT
-                COALESCE(SUM(CASE WHEN c_inner.type = 'Ingreso' THEN t_inner.amount ELSE -t_inner.amount END), 0)
+                COALESCE(SUM(CASE WHEN c_inner.type = '\'Ingreso\'' THEN t_inner.amount ELSE -t_inner.amount END), 0)
             FROM
                 transactions AS t_inner
             JOIN
@@ -246,7 +252,7 @@ func (r *TransactionRepositoryImpl) FindAllTransactions(
             SELECT initial_balance FROM accounts WHERE id = t.account_id
         ) + (
             SELECT
-                COALESCE(SUM(CASE WHEN c_inner.type = 'Ingreso' THEN t_inner.amount ELSE -t_inner.amount END), 0)
+                COALESCE(SUM(CASE WHEN c_inner.type = '\'Ingreso\'' THEN t_inner.amount ELSE -t_inner.amount END), 0)
             FROM
                 transactions AS t_inner
             JOIN
@@ -361,7 +367,7 @@ func (r *TransactionRepositoryImpl) VoidTransaction(ctx context.Context, transac
 	  insert into transactions
 	    (description, amount, transaction_date, account_id,
 	  category_id, voids_transaction_id, created_at, updated_at, transaction_number)
-	  	values($1, $2, $3, $4, $5, $6, $7, $8, $9) returning id
+	  	 values($1, $2, $3, $4, $5, $6, $7, $8, $9) returning id
 	`
 
 	var voidTransactionID int
@@ -534,10 +540,10 @@ func (r *TransactionRepositoryImpl) UpdateTransaction(ctx context.Context, tx *d
 
 		query := `
 			UPDATE transactions
-			SET description = $1, transaction_date = $2, category_id = $3, transaction_number = $4, attachment_path = $5, updated_at = $6
-			WHERE id = $7
+			SET description = $1, transaction_date = $2, category_id = $3, transaction_number = $4, attachment_path = $5, updated_at = $6, updated_by_id = $7
+			WHERE id = $8
 		`
-		_, err = dbTx.Exec(ctx, query, tx.Description, tx.TransactionDate, tx.CategoryID, tx.TransactionNumber, tx.AttachmentPath, time.Now(), tx.ID)
+		_, err = dbTx.Exec(ctx, query, tx.Description, tx.TransactionDate, tx.CategoryID, tx.TransactionNumber, tx.AttachmentPath, time.Now(), tx.UpdatedByID, tx.ID)
 		if err != nil {
 			return fmt.Errorf("failed to update transaction with new number: %w", err)
 		}
@@ -545,10 +551,10 @@ func (r *TransactionRepositoryImpl) UpdateTransaction(ctx context.Context, tx *d
 		// If no regeneration is needed, just update the relevant fields
 		query := `
 			UPDATE transactions
-			SET description = $1, transaction_date = $2, category_id = $3, attachment_path = $4, updated_at = $5
-			WHERE id = $6
+			SET description = $1, transaction_date = $2, category_id = $3, attachment_path = $4, updated_at = $5, updated_by_id = $6
+			WHERE id = $7
 		`
-		_, err := dbTx.Exec(ctx, query, tx.Description, tx.TransactionDate, tx.CategoryID, tx.AttachmentPath, time.Now(), tx.ID)
+		_, err := dbTx.Exec(ctx, query, tx.Description, tx.TransactionDate, tx.CategoryID, tx.AttachmentPath, time.Now(), tx.UpdatedByID, tx.ID)
 		if err != nil {
 			return fmt.Errorf("failed to update transaction: %w", err)
 		}
@@ -679,7 +685,7 @@ func (r *TransactionRepositoryImpl) scanTransactions(rows pgx.Rows) ([]domain.Tr
 	transactions := make([]domain.Transaction, 0)
 	for rows.Next() {
 		var tx domain.Transaction
-		var categoryName, categoryType sql.NullString
+		var categoryName, categoryType, createdBy, updatedBy sql.NullString
 		var attachment sql.NullString
 		var voidedBy sql.NullInt64
 		var voids sql.NullInt64
@@ -697,6 +703,8 @@ func (r *TransactionRepositoryImpl) scanTransactions(rows pgx.Rows) ([]domain.Tr
 			&voids,
 			&categoryName,
 			&categoryType,
+			&createdBy,
+			&updatedBy,
 			&tx.RunningBalance,
 		)
 		if err != nil {
@@ -706,7 +714,7 @@ func (r *TransactionRepositoryImpl) scanTransactions(rows pgx.Rows) ([]domain.Tr
 			tx.AttachmentPath = &attachment.String
 		}
 		if voidedBy.Valid {
-				val := int(voidedBy.Int64)
+			val := int(voidedBy.Int64)
 			tx.VoidedByTransactionID = &val
 		}
 		if voids.Valid {
@@ -718,6 +726,12 @@ func (r *TransactionRepositoryImpl) scanTransactions(rows pgx.Rows) ([]domain.Tr
 				Name: categoryName.String,
 				Type: domain.CategoryType(categoryType.String),
 			}
+		}
+		if createdBy.Valid {
+			tx.CreatedByUser = &domain.User{Username: createdBy.String}
+		}
+		if updatedBy.Valid {
+			tx.UpdatedByUser = &domain.User{Username: updatedBy.String}
 		}
 		transactions = append(transactions, tx)
 	}

@@ -107,7 +107,7 @@ func (s *TransactionServiceImpl) GetTransactionByID(ctx context.Context, id int)
 	return tx, nil
 }
 
-func (s *TransactionServiceImpl) CreateTransaction(ctx context.Context, tx *domain.Transaction) error {
+func (s *TransactionServiceImpl) CreateTransaction(ctx context.Context, tx *domain.Transaction, currentUser *domain.User) error {
 	if tx == nil {
 		return fmt.Errorf("transacción no puede ser nula")
 	}
@@ -120,6 +120,9 @@ func (s *TransactionServiceImpl) CreateTransaction(ctx context.Context, tx *doma
 	if err != nil {
 		return err
 	}
+
+	tx.CreatedByID = currentUser.ID
+	tx.UpdatedByID = currentUser.ID
 
 	var sourcePath string
 	if tx.AttachmentPath != nil {
@@ -156,7 +159,7 @@ func (s *TransactionServiceImpl) VoidTransaction(ctx context.Context, transactio
 	return s.repo.VoidTransaction(ctx, transactionID)
 }
 
-func (s *TransactionServiceImpl) UpdateTransaction(ctx context.Context, tx *domain.Transaction) error {
+func (s *TransactionServiceImpl) UpdateTransaction(ctx context.Context, tx *domain.Transaction, currentUser *domain.User) error {
 	if tx == nil {
 		return fmt.Errorf("transacción no puede ser nula")
 	}
@@ -170,6 +173,8 @@ func (s *TransactionServiceImpl) UpdateTransaction(ctx context.Context, tx *doma
 	if err != nil {
 		return err
 	}
+
+	tx.UpdatedByID = currentUser.ID
 
 	if tx.AttachmentPath != nil {
 		sourcePath := *tx.AttachmentPath

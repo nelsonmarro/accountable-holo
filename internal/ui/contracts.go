@@ -39,7 +39,7 @@ type CategoryService interface {
 }
 
 type TransactionService interface {
-	CreateTransaction(ctx context.Context, transaction *domain.Transaction) error
+	CreateTransaction(ctx context.Context, transaction *domain.Transaction, currentUser *domain.User) error
 
 	FindTransactionsByAccount(
 		ctx context.Context,
@@ -58,7 +58,7 @@ type TransactionService interface {
 
 	GetTransactionByID(ctx context.Context, id int) (*domain.Transaction, error)
 	VoidTransaction(ctx context.Context, transactionID int) error
-	UpdateTransaction(ctx context.Context, tx *domain.Transaction) error
+	UpdateTransaction(ctx context.Context, tx *domain.Transaction, currentUser *domain.User) error
 	ReconcileAccount(
 		ctx context.Context,
 		accountID int,

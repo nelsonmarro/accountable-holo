@@ -82,7 +82,9 @@ func (ui *UI) makeTransactionUI() fyne.CanvasObject {
 			func() {
 				ui.loadTransactions(1, ui.transactionPaginator.GetPageSize())
 			},
-			ui.selectedAccountID)
+			ui.selectedAccountID,
+			ui.currentUser,
+		)
 
 		dialogHanlder.Show()
 	})
@@ -320,6 +322,7 @@ func (ui *UI) updateTransactionItem(i widget.ListItemID, o fyne.CanvasObject) {
 			},
 			tx.ID,
 			ui.selectedAccountID,
+			ui.currentUser,
 		)
 
 		dialigHandler.Show()

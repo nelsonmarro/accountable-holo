@@ -45,10 +45,11 @@ type EditTransactionDialog struct {
 	categories         []domain.Category
 	selectedCategoryID int
 	attachmentPath     string
+	currentUser        *domain.User
 }
 
 // NewEditTransactionDialog creates a new dialog handler for the edit action.
-func NewEditTransactionDialog(win fyne.Window, l *log.Logger, txs TransactionService, cs CategoryService, callback func(), txID int, accountID int) *EditTransactionDialog {
+func NewEditTransactionDialog(win fyne.Window, l *log.Logger, txs TransactionService, cs CategoryService, callback func(), txID int, accountID int, currentUser *domain.User) *EditTransactionDialog {
 	d := &EditTransactionDialog{
 		mainWin:          win,
 		logger:           l,
@@ -57,6 +58,7 @@ func NewEditTransactionDialog(win fyne.Window, l *log.Logger, txs TransactionSer
 		callbackAction:   callback,
 		txID:             txID,
 		accountID:        accountID,
+		currentUser:      currentUser,
 		txNumber:         widget.NewLabel(""),
 		descriptionEntry: widget.NewMultiLineEntry(),
 		amountEntry:      widget.NewLabel(""),
@@ -225,7 +227,7 @@ func (d *EditTransactionDialog) handleSubmit(valid bool) {
 		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 		defer cancel()
 
-		err := d.txService.UpdateTransaction(ctx, updatedTx)
+		err := d.txService.UpdateTransaction(ctx, updatedTx, d.currentUser)
 		if err != nil {
 			fyne.Do(func() {
 				progress.Hide()
