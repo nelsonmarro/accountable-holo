@@ -16,9 +16,13 @@ type Transaction struct {
 	// Relationships
 	AccountID  int `db:"account_id"`
 	CategoryID int `db:"category_id"`
+	CreatedByID int `db:"created_by_id"`
+	UpdatedByID int `db:"updated_by_id"`
 
 	Account  *Account
 	Category *Category
+	CreatedByUser *User
+	UpdatedByUser *User
 
 	// Calculated fields
 	RunningBalance      float64 `db:"-"`

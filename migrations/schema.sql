@@ -125,7 +125,9 @@ CREATE TABLE public.transactions (
     voids_transaction_id integer,
     transaction_date date DEFAULT CURRENT_DATE NOT NULL,
     transaction_number character varying(20) NOT NULL,
-    attachment_path text
+    attachment_path text,
+    created_by_id integer,
+    updated_by_id integer
 );
 
 
@@ -296,6 +298,22 @@ CREATE UNIQUE INDEX categories_name_type_idx ON public.categories USING btree (n
 --
 
 CREATE UNIQUE INDEX schema_migration_version_idx ON public.schema_migration USING btree (version);
+
+
+--
+-- Name: transactions fk_transactions_created_by; Type: FK CONSTRAINT; Schema: public; Owner: nelson
+--
+
+ALTER TABLE ONLY public.transactions
+    ADD CONSTRAINT fk_transactions_created_by FOREIGN KEY (created_by_id) REFERENCES public.users(id);
+
+
+--
+-- Name: transactions fk_transactions_updated_by; Type: FK CONSTRAINT; Schema: public; Owner: nelson
+--
+
+ALTER TABLE ONLY public.transactions
+    ADD CONSTRAINT fk_transactions_updated_by FOREIGN KEY (updated_by_id) REFERENCES public.users(id);
 
 
 --

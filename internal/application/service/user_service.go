@@ -76,6 +76,10 @@ func (s *UserServiceImpl) UpdateUser(ctx context.Context, id int, username, pass
 		return err
 	}
 
+	if user.Username == "admin" {
+		return fmt.Errorf("cannot update the default admin user")
+	}
+
 	user.Username = username
 	user.FirstName = firstName
 	user.LastName = lastName

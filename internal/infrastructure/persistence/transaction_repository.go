@@ -41,8 +41,8 @@ func (r *TransactionRepositoryImpl) CreateTransaction(ctx context.Context, trans
 	transaction.TransactionNumber = newTxNumber
 
 	query := `
-		insert into transactions (transaction_number, description, amount, transaction_date, account_id, category_id, attachment_path, created_at, updated_at)
-							values ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+		insert into transactions (transaction_number, description, amount, transaction_date, account_id, category_id, attachment_path, created_by_id, updated_by_id, created_at, updated_at)
+							values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
 		                  returning id, created_at, updated_at`
 
 	now := time.Now()
@@ -54,6 +54,8 @@ func (r *TransactionRepositoryImpl) CreateTransaction(ctx context.Context, trans
 		transaction.AccountID,
 		transaction.CategoryID,
 		transaction.AttachmentPath,
+		transaction.CreatedByID,
+		transaction.UpdatedByID,
 		now,
 		now,
 	).Scan(&transaction.ID, &transaction.CreatedAt, &transaction.UpdatedAt)
