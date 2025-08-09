@@ -95,6 +95,7 @@ func (d *ReconciliationDialog) makeFormCard() fyne.CanvasObject {
 
 	reconciliationForm := widget.NewForm(
 		widget.NewFormItem("Cuenta", d.accountsSelector),
+		widget.NewFormItem("Fecha de Inicio", d.startDateEntry),
 		widget.NewFormItem("Fecha de cierre", d.endingDateEntry),
 		widget.NewFormItem("Saldo Final Real", d.actualBalanceEntry),
 	)
@@ -115,6 +116,7 @@ func (d *ReconciliationDialog) makeFormCard() fyne.CanvasObject {
 		}
 
 		endingDate := d.endingDateEntry.Date
+		startDate := d.startDateEntry.Date
 
 		actualBalance, err := decimal.NewFromString(d.actualBalanceEntry.Text)
 		if err != nil {
@@ -122,7 +124,7 @@ func (d *ReconciliationDialog) makeFormCard() fyne.CanvasObject {
 			return
 		}
 
-		go d.initiateReconciliation(selectedAccountID, endingDate, actualBalance)
+		go d.initiateReconciliation(selectedAccountID, startDate, endingDate, actualBalance)
 	}
 
 	// Create the card itself
@@ -138,11 +140,11 @@ func (d *ReconciliationDialog) makeFormCard() fyne.CanvasObject {
 	return formCard
 }
 
-func (d *ReconciliationDialog) initiateReconciliation(accountID int, endingDate *time.Time, actualBalance decimal.Decimal) {
+func (d *ReconciliationDialog) initiateReconciliation(accountID int, startDate, endingDate *time.Time, actualBalance decimal.Decimal) {
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
 
-	reconciliation, err := d.TxService.ReconcileAccount(ctx, accountID, *endingDate, actualBalance)
+	reconciliation, err := d.TxService.ReconcileAccount(ctx, accountID, *startDate, *endingDate, actualBalance)
 	if err != nil {
 		fyne.Do(func() {
 			d.statementUI.Hide()

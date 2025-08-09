@@ -298,7 +298,7 @@ func (r *TransactionRepositoryImpl) GetBalanceAsOf(ctx context.Context, accountI
            FROM accounts a
            LEFT JOIN transactions t ON a.id = t.account_id AND t.transaction_date < $2
            LEFT JOIN categories c ON t.category_id = c.id
-           WHERE a.id = 1$
+           WHERE a.id = $1
            GROUP BY a.initial_balance;
 	`
 
