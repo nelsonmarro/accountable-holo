@@ -294,7 +294,7 @@ func (r *TransactionRepositoryImpl) FindAllTransactions(
 
 func (r *TransactionRepositoryImpl) GetBalanceAsOf(ctx context.Context, accountID int, date time.Time) (decimal.Decimal, error) {
 	query := `
-		       SELECT a.initial_balance + COALESCE(SUM(CASE WHEN type = 'Ingreso' THEN t.amount ELSE -t.amount END), 0)
+		       SELECT a.initial_balance + COALESCE(SUM(CASE WHEN c.type = 'Ingreso' THEN t.amount ELSE -t.amount END), 0)
            FROM accounts a
            LEFT JOIN transactions t ON a.id = t.account_id AND t.transaction_date < $2
            LEFT JOIN categories c ON t.category_id = c.id
