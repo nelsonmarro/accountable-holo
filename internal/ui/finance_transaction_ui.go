@@ -474,18 +474,25 @@ func (ui *UI) handleReportGeneration(progressTitle string, generationFunc func(c
 	})
 
 	go func() {
-		defer progressDialog.Hide()
 		err := generationFunc(ctx)
 		if err != nil {
 			select {
 			case <-ctx.Done():
+				fyne.Do(func() {
+					progressDialog.Hide()
+					dialog.ShowError(err, ui.mainWindow)
+				})
 				// Context was cancelled, so the error is expected.
 				return
 			default:
 				fyne.Do(func() {
+					progressDialog.Hide()
 					dialog.ShowError(err, ui.mainWindow)
 				})
 			}
 		}
+		fyne.Do(func() {
+			progressDialog.Show()
+		})
 	}()
 }
