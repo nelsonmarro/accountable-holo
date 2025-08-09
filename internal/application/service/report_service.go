@@ -14,6 +14,11 @@ type TransactionReportGenerator interface {
 	SelectedTransactionsReport(ctx context.Context, transactions []domain.Transaction, outputPath string) error
 }
 
+// ReconciliationReportGenerator defines an interface for generating a reconciliation statement report.
+type ReconciliationReportGenerator interface {
+	ReconciliationStatementReport(ctx context.Context, reconciliation *domain.Reconciliation, outputPath string) error
+}
+
 // DailyReportGenerator defines an interface for generating a daily financial report.
 type DailyReportGenerator interface {
 	DailyReport(ctx context.Context, report *domain.DailyReport, outputPath string) error
@@ -24,7 +29,7 @@ type ReportServiceImpl struct {
 	repo            ReportRepository
 	transactionRepo TransactionRepository
 	csvGenerator    TransactionReportGenerator
-	pdfGenerator    interface { // This generator must be able to handle both report types
+	pdfGenerator    interface { // This generator must be able to handle all report types
 		TransactionReportGenerator
 		ReconciliationReportGenerator
 		DailyReportGenerator
