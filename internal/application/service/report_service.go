@@ -145,7 +145,7 @@ func (s *ReportServiceImpl) GenerateDailyReport(ctx context.Context, accountID i
 	now := time.Now()
 	startOfDay := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
 
-	balance, err := s.repo.GetBalanceAsOf(ctx, accountID, now)
+	balance, err := s.transactionRepo.GetBalanceAsOf(ctx, accountID, now)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get current balance: %w", err)
 	}
