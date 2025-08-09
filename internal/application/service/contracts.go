@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/nelsonmarro/accountable-holo/internal/domain"
+	"github.com/shopspring/decimal"
 )
 
 type AccountRepository interface {
@@ -63,6 +64,7 @@ type TransactionRepository interface {
 		searchString *string,
 	) ([]domain.Transaction, error)
 
+	GetBalanceAsOf(ctx context.Context, accountID int, date time.Time) (decimal.Decimal, error)
 	GetTransactionByID(ctx context.Context, id int) (*domain.Transaction, error)
 	VoidTransaction(ctx context.Context, transactionID int, currentUser domain.User) error
 	UpdateTransaction(ctx context.Context, tx *domain.Transaction) error

@@ -10,6 +10,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/nelsonmarro/accountable-holo/internal/domain"
+	"github.com/shopspring/decimal"
 )
 
 type TransactionRepositoryImpl struct {
@@ -289,6 +290,33 @@ func (r *TransactionRepositoryImpl) FindAllTransactions(
 	defer rows.Close()
 
 	return r.scanTransactions(rows)
+}
+
+func (r *TransactionRepositoryImpl) GetBalanceAsOf(ctx context.Context, accountID int, date time.Time) (decimal.Decimal, error) {
+	query := `
+		       SELECT a.initial_balance + COALESCE(SUM(CASE WHEN type = 'Ingreso' THEN t.amount ELSE -t.amount END), 0)
+           FROM accounts a
+           LEFT JOIN transactions t ON a.id = t.account_id AND t.transaction_date < $2
+           LEFT JOIN categories c ON t.category_id = c.id
+           WHERE a.id = 1$
+           GROUP BY a.initial_balance;
+	`
+
+	var balance decimal.Decimal
+	err := r.db.QueryRow(ctx, query, accountID, date).Scan(&balance)
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			var initialBalance decimal.Decimal
+			err = r.db.QueryRow(ctx, "SELECT initial_balance FROM accounts WHERE id = $1", accountID).Scan(&initialBalance)
+			if err != nil {
+				return decimal.Zero, fmt.Errorf("failed to get initial balance for account %d: %w", accountID, err)
+			}
+			return initialBalance, nil
+		}
+		return decimal.Zero, fmt.Errorf("failed to get balance as of date: %w", err)
+	}
+
+	return balance, nil
 }
 
 func (r *TransactionRepositoryImpl) VoidTransaction(

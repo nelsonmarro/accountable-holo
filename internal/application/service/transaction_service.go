@@ -217,7 +217,7 @@ func (s *TransactionServiceImpl) ReconcileAccount(
 	}
 
 	// Calculate the ending balance from the transactions
-	calculatedEndingBalance := decimal.NewFromFloat(startingBalance)
+	calculatedEndingBalance := startingBalance
 	for _, tx := range transactions {
 		amount := decimal.NewFromFloat(tx.Amount)
 		if tx.Category.Type == domain.Income {
@@ -234,7 +234,7 @@ func (s *TransactionServiceImpl) ReconcileAccount(
 		AccountID:               accountID,
 		StartDate:               startDate,
 		EndDate:                 endDate,
-		StartingBalance:         decimal.NewFromFloat(startingBalance),
+		StartingBalance:         startingBalance,
 		CalculatedEndingBalance: calculatedEndingBalance,
 		EndingBalance:           actualEndingBalance,
 		Difference:              discrepancy,
