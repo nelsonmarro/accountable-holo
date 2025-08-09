@@ -203,27 +203,27 @@ func (s *TransactionServiceImpl) ReconcileAccount(
 	endDate time.Time,
 	actualEndingBalance decimal.Decimal,
 ) (*domain.Reconciliation, error) {
-	account, err := s.accountService.GetAccountByID(ctx, accountID)
+	// Get the starting balance as of the start date
+	startingBalance, err := s.repo.GetBalanceAsOf(ctx, accountID, startDate)
 	if err != nil {
-		return nil, fmt.Errorf("error al obtener la cuenta: %w", err)
+		return nil, fmt.Errorf("error al obtener el balance inicial: %w", err)
 	}
 
-	filters := domain.TransactionFilters{EndDate: &endDate, StartDate: &startDate}
+	filters := domain.TransactionFilters{StartDate: &startDate, EndDate: &endDate}
+
 	transactions, err := s.repo.FindAllTransactionsByAccount(ctx, accountID, filters, nil)
 	if err != nil {
 		return nil, fmt.Errorf("error al obtener las transacciones de la cuenta: %w", err)
 	}
 
-	// Calculate the startint balance
-	startingBalance := account.InitialBalance
-
 	// Calculate the ending balance from the transactions
 	calculatedEndingBalance := decimal.NewFromFloat(startingBalance)
 	for _, tx := range transactions {
+		amount := decimal.NewFromFloat(tx.Amount)
 		if tx.Category.Type == domain.Income {
-			calculatedEndingBalance = calculatedEndingBalance.Add(decimal.NewFromFloat(tx.Amount))
+			calculatedEndingBalance = calculatedEndingBalance.Add(amount)
 		} else {
-			calculatedEndingBalance = calculatedEndingBalance.Sub(decimal.NewFromFloat(tx.Amount))
+			calculatedEndingBalance = calculatedEndingBalance.Sub(amount)
 		}
 	}
 
@@ -232,6 +232,7 @@ func (s *TransactionServiceImpl) ReconcileAccount(
 	// Assemble the reconciliation object
 	reconciliation := &domain.Reconciliation{
 		AccountID:               accountID,
+		StartDate:               startDate,
 		EndDate:                 endDate,
 		StartingBalance:         decimal.NewFromFloat(startingBalance),
 		CalculatedEndingBalance: calculatedEndingBalance,
