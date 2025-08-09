@@ -199,6 +199,7 @@ func (s *TransactionServiceImpl) UpdateTransaction(ctx context.Context, tx *doma
 func (s *TransactionServiceImpl) ReconcileAccount(
 	ctx context.Context,
 	accountID int,
+	startDate time.Time,
 	endDate time.Time,
 	actualEndingBalance decimal.Decimal,
 ) (*domain.Reconciliation, error) {
@@ -207,17 +208,13 @@ func (s *TransactionServiceImpl) ReconcileAccount(
 		return nil, fmt.Errorf("error al obtener la cuenta: %w", err)
 	}
 
-	filters := domain.TransactionFilters{EndDate: &endDate}
+	filters := domain.TransactionFilters{EndDate: &endDate, StartDate: &startDate}
 	transactions, err := s.repo.FindAllTransactionsByAccount(ctx, accountID, filters, nil)
 	if err != nil {
 		return nil, fmt.Errorf("error al obtener las transacciones de la cuenta: %w", err)
 	}
 
 	// Calculate the startint balance
-	// Starting balance is the initial plus all tranactions before the account's creation date
-	// For simplicity in this step, we will assume the account's InitialBalance is the true starting point.
-	// TODO: A more complex implementation could calculate it based on transactions before a given start date.
-
 	startingBalance := account.InitialBalance
 
 	// Calculate the ending balance from the transactions

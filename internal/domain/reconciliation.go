@@ -16,4 +16,3 @@ type Reconciliation struct {
 	Difference              decimal.Decimal
 	Transactions            []Transaction
 }
-

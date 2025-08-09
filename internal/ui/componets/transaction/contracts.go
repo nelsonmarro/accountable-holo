@@ -17,6 +17,7 @@ type TransactionService interface {
 	ReconcileAccount(
 		ctx context.Context,
 		accountID int,
+		startDate time.Time,
 		endDate time.Time,
 		actualEndingBalance decimal.Decimal,
 	) (*domain.Reconciliation, error)
