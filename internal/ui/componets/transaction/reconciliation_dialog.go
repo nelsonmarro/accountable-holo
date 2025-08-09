@@ -44,6 +44,7 @@ type ReconciliationDialog struct {
 
 	// Form widgets
 	accountsSelector   *widget.SelectEntry
+	startDateEntry     *widget.DateEntry
 	endingDateEntry    *widget.DateEntry
 	actualBalanceEntry *widget.Entry
 }
@@ -86,6 +87,7 @@ func (d *ReconciliationDialog) Show() {
 func (d *ReconciliationDialog) makeFormCard() fyne.CanvasObject {
 	d.accountsSelector = widget.NewSelectEntry([]string{}) // we'll populate this later
 	d.endingDateEntry = widget.NewDateEntry()
+	d.startDateEntry = widget.NewDateEntry()
 	d.actualBalanceEntry = widget.NewEntry()
 
 	// Validations for the balance entry
