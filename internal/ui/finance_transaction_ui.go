@@ -492,7 +492,7 @@ func (ui *UI) handleReportGeneration(progressTitle string, generationFunc func(c
 			}
 		}
 		fyne.Do(func() {
-			progressDialog.Show()
+			progressDialog.Hide()
 		})
 	}()
 }

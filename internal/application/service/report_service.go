@@ -127,8 +127,7 @@ func (s *ReportServiceImpl) GenerateReconciliationReportFile(ctx context.Context
 func (s *ReportServiceImpl) GenerateDailyReportFile(ctx context.Context, report *domain.DailyReport, outputPath string, format string) error {
 	switch format {
 	case "CSV":
-		// TODO: Implement CSV generation for daily report
-		return fmt.Errorf("CSV format for daily report is not yet implemented")
+		return s.csvGenerator.DailyReport(ctx, report, outputPath)
 	case "PDF":
 		return s.pdfGenerator.DailyReport(ctx, report, outputPath)
 	default:

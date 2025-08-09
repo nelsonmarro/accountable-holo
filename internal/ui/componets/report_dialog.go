@@ -41,7 +41,7 @@ func (rd *ReportDialog) Show() {
 	)
 
 	rd.dialog = dialog.NewCustom("Generar Reporte", "Cerrar", tabs, rd.parentWindow)
-	rd.dialog.Resize(fyne.NewSize(400, 200))
+	rd.dialog.Resize(fyne.NewSize(600, 230))
 	rd.dialog.Show()
 }
 
@@ -70,6 +70,7 @@ func (rd *ReportDialog) createTransactionReportTab() fyne.CanvasObject {
 		fileSaveDialog.SetFileName("reporte_transacciones." + strings.ToLower(rd.transactionReportFormatSelect.Selected))
 		fileSaveDialog.Show()
 	})
+	generateBtn.Importance = widget.SuccessImportance
 
 	return container.NewVBox(form, generateBtn)
 }
@@ -99,6 +100,7 @@ func (rd *ReportDialog) createDailyReportTab() fyne.CanvasObject {
 		fileSaveDialog.SetFileName("reporte_diario." + strings.ToLower(rd.dailyReportFormatSelect.Selected))
 		fileSaveDialog.Show()
 	})
+	generateBtn.Importance = widget.SuccessImportance
 
 	return container.NewVBox(form, generateBtn)
 }

@@ -179,23 +179,23 @@ func (g *PDFReportGenerator) buildDailyReportSummary(m core.Maroto, report *doma
 	}
 
 	m.AddRow(8,
-		col.New(4).Add(text.New("Fecha del Reporte:", labelStyle)),
+		col.New(4).Add(text.New("Fecha del Reporte: ", labelStyle)),
 		col.New(8).Add(text.New(report.ReportDate.Format("2006-01-02 15:04:05"), valueStyle)),
 	)
 	m.AddRow(8,
-		col.New(4).Add(text.New("Saldo Actual:", labelStyle)),
+		col.New(4).Add(text.New("Saldo Actual: ", labelStyle)),
 		col.New(8).Add(text.New(fmt.Sprintf("$%s", report.CurrentBalance.StringFixed(2)), valueStyle)),
 	)
 	m.AddRow(8,
-		col.New(4).Add(text.New("Ingresos del Día:", labelStyle)),
+		col.New(4).Add(text.New("Ingresos del Día: ", labelStyle)),
 		col.New(8).Add(text.New(fmt.Sprintf("$%s", report.DailyIncome.StringFixed(2)), greenValueStyle)),
 	)
 	m.AddRow(8,
-		col.New(4).Add(text.New("Egresos del Día:", labelStyle)),
+		col.New(4).Add(text.New("Egresos del Día: ", labelStyle)),
 		col.New(8).Add(text.New(fmt.Sprintf("$%s", report.DailyExpenses.StringFixed(2)), redValueStyle)),
 	)
 	m.AddRow(8,
-		col.New(4).Add(text.New("Ganancia/Pérdida Neta:", labelStyle)),
+		col.New(4).Add(text.New("Ganancia/Pérdida Neta: ", labelStyle)),
 		col.New(8).Add(text.New(fmt.Sprintf("$%s", report.DailyProfitLoss.StringFixed(2)), profitLossStyle)),
 	)
 }
