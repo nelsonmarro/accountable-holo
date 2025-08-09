@@ -28,8 +28,12 @@ type DailyReportGenerator interface {
 type ReportServiceImpl struct {
 	repo            ReportRepository
 	transactionRepo TransactionRepository
-	csvGenerator    TransactionReportGenerator
-	pdfGenerator    interface { // This generator must be able to handle all report types
+	csvGenerator    interface { // <-- This is the
+
+		TransactionReportGenerator
+		DailyReportGenerator
+	}
+	pdfGenerator interface { // This generator must be able to handle all report types
 		TransactionReportGenerator
 		ReconciliationReportGenerator
 		DailyReportGenerator
@@ -40,7 +44,10 @@ type ReportServiceImpl struct {
 func NewReportService(
 	repo ReportRepository,
 	transactionRepo TransactionRepository,
-	csvGenerator TransactionReportGenerator,
+	csvGenerator interface {
+		TransactionReportGenerator
+		DailyReportGenerator
+	},
 	pdfGenerator interface {
 		TransactionReportGenerator
 		ReconciliationReportGenerator
