@@ -108,7 +108,7 @@ func (ui *UI) makeTransactionUI() fyne.CanvasObject {
 	advancedFiltersBtn.Importance = widget.HighImportance
 
 	// Report Buttom
-	generateReportBtn := widget.NewButtonWithIcon("Generar Reporte", theme.DocumentPrintIcon(), func() {
+	generateReportBtn := widget.NewButtonWithIcon("Reporte de Transacciones", theme.DocumentPrintIcon(), func() {
 		reportDialog := componets.NewReportDialog(ui.mainWindow, func(format string, outputPath string) {
 			go ui.generateReportFile(format, outputPath)
 		})
