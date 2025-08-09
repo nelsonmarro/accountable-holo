@@ -14,9 +14,9 @@ type TransactionReportGenerator interface {
 	SelectedTransactionsReport(ctx context.Context, transactions []domain.Transaction, outputPath string) error
 }
 
-// ReconciliationReportGenerator defines an interface for generating a reconciliation statement report.
-type ReconciliationReportGenerator interface {
-	ReconciliationStatementReport(ctx context.Context, reconciliation *domain.Reconciliation, outputPath string) error
+// DailyReportGenerator defines an interface for generating a daily financial report.
+type DailyReportGenerator interface {
+	DailyReport(ctx context.Context, report *domain.DailyReport, outputPath string) error
 }
 
 // ReportServiceImpl provides methods to generate financial reports.
@@ -27,6 +27,7 @@ type ReportServiceImpl struct {
 	pdfGenerator    interface { // This generator must be able to handle both report types
 		TransactionReportGenerator
 		ReconciliationReportGenerator
+		DailyReportGenerator
 	}
 }
 
@@ -38,6 +39,7 @@ func NewReportService(
 	pdfGenerator interface {
 		TransactionReportGenerator
 		ReconciliationReportGenerator
+		DailyReportGenerator
 	},
 ) *ReportServiceImpl {
 	return &ReportServiceImpl{
@@ -110,6 +112,18 @@ func (s *ReportServiceImpl) GenerateReconciliationReportFile(ctx context.Context
 	return s.pdfGenerator.ReconciliationStatementReport(ctx, reconciliation, outputPath)
 }
 
+func (s *ReportServiceImpl) GenerateDailyReportFile(ctx context.Context, report *domain.DailyReport, outputPath string, format string) error {
+	switch format {
+	case "CSV":
+		// TODO: Implement CSV generation for daily report
+		return fmt.Errorf("CSV format for daily report is not yet implemented")
+	case "PDF":
+		return s.pdfGenerator.DailyReport(ctx, report, outputPath)
+	default:
+		return fmt.Errorf("unsupported report format: %s", format)
+	}
+}
+
 func (s *ReportServiceImpl) GetReconciliation(ctx context.Context, accountID int, startDate, endDate time.Time, endingBalance decimal.Decimal) (*domain.Reconciliation, error) {
 	reconciliation, err := s.repo.GetReconciliation(ctx, accountID, startDate, endDate)
 	if err != nil {
@@ -120,4 +134,43 @@ func (s *ReportServiceImpl) GetReconciliation(ctx context.Context, accountID int
 	reconciliation.Difference = reconciliation.CalculatedEndingBalance.Sub(endingBalance)
 
 	return reconciliation, nil
+}
+
+func (s *ReportServiceImpl) GenerateDailyReport(ctx context.Context, accountID int) (*domain.DailyReport, error) {
+	now := time.Now()
+	startOfDay := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
+
+	balance, err := s.repo.GetBalanceAsOf(ctx, accountID, now)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get current balance: %w", err)
+	}
+
+	filters := domain.TransactionFilters{
+		StartDate: &startOfDay,
+		EndDate:   &now,
+	}
+	transactions, err := s.transactionRepo.FindAllTransactionsByAccount(ctx, accountID, filters, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get daily transactions: %w", err)
+	}
+
+	var dailyIncome, dailyExpenses decimal.Decimal
+	for _, tx := range transactions {
+		amount := decimal.NewFromFloat(tx.Amount)
+		if tx.Category.Type == domain.Income {
+			dailyIncome = dailyIncome.Add(amount)
+		} else {
+			dailyExpenses = dailyExpenses.Add(amount)
+		}
+	}
+
+	return &domain.DailyReport{
+		AccountID:       accountID,
+		ReportDate:      now,
+		CurrentBalance:  balance,
+		DailyIncome:     dailyIncome,
+		DailyExpenses:   dailyExpenses,
+		DailyProfitLoss: dailyIncome.Sub(dailyExpenses),
+		Transactions:    transactions,
+	}, nil
 }

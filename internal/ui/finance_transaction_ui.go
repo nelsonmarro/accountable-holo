@@ -108,10 +108,16 @@ func (ui *UI) makeTransactionUI() fyne.CanvasObject {
 	advancedFiltersBtn.Importance = widget.HighImportance
 
 	// Report Buttom
-	generateReportBtn := widget.NewButtonWithIcon("Reporte de Transacciones", theme.DocumentPrintIcon(), func() {
-		reportDialog := componets.NewReportDialog(ui.mainWindow, func(format string, outputPath string) {
-			go ui.generateReportFile(format, outputPath)
-		})
+	generateReportBtn := widget.NewButtonWithIcon("Reportes", theme.DocumentPrintIcon(), func() {
+		reportDialog := componets.NewReportDialog(
+			ui.mainWindow,
+			func(format string, outputPath string) {
+				go ui.generateReportFile(format, outputPath)
+			},
+			func(format string, outputPath string) {
+				go ui.generateDailyReportFile(format, outputPath)
+			},
+		)
 		reportDialog.Show()
 	})
 	generateReportBtn.Importance = widget.SuccessImportance
@@ -480,6 +486,61 @@ func (ui *UI) generateReportFile(format string, outputPath string) {
 			return
 		}
 	}
+	fyne.Do(func() {
+		progressDialog.Hide()
+	})
+}
+
+func (ui *UI) generateDailyReportFile(format string, outputPath string) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	// Show progress dialog with a cancel button
+	progressBar := widget.NewProgressBarInfinite()
+	cancelBtn := widget.NewButton("Cancelar", func() {
+		cancel()
+	})
+
+	progressContent := container.NewVBox(
+		widget.NewLabel("Generando Reporte Diario..."),
+		progressBar,
+		cancelBtn,
+	)
+
+	progressDialog := dialog.NewCustomWithoutButtons("Generando Reporte...", progressContent, ui.mainWindow)
+
+	fyne.Do(func() {
+		progressDialog.Show()
+	})
+
+	report, err := ui.Services.ReportService.GenerateDailyReport(ctx, ui.selectedAccountID)
+	if err != nil {
+		select {
+		case <-ctx.Done():
+			return
+		default:
+			fyne.Do(func() {
+				progressDialog.Hide()
+				dialog.ShowError(err, ui.mainWindow)
+			})
+			return
+		}
+	}
+
+	err = ui.Services.ReportService.GenerateDailyReportFile(ctx, report, outputPath, format)
+	if err != nil {
+		select {
+		case <-ctx.Done():
+			return
+		default:
+			fyne.Do(func() {
+				progressDialog.Hide()
+				dialog.ShowError(err, ui.mainWindow)
+			})
+			return
+		}
+	}
+
 	fyne.Do(func() {
 		progressDialog.Hide()
 	})

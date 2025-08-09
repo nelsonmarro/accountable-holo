@@ -124,6 +124,82 @@ func (g *PDFReportGenerator) buildReconciliationSummary(m core.Maroto, reconcili
 	)
 }
 
+func (g *PDFReportGenerator) DailyReport(ctx context.Context, report *domain.DailyReport, outputPath string) error {
+	cfg := config.NewBuilder().
+		WithPageNumber().
+		WithLeftMargin(10).
+		WithTopMargin(15).
+		WithRightMargin(10).
+		WithBottomMargin(20).
+		Build()
+
+	m := maroto.New(cfg)
+
+	if err := g.buildFooter(m); err != nil {
+		return err
+	}
+
+	g.buildTitle(m, "Reporte Financiero Diario")
+	g.buildDailyReportSummary(m, report)
+	m.AddRow(10) // Add some space
+
+	m.AddRow(
+		10,
+		col.New(12).Add(
+			text.New("Transacciones del Día", props.Text{
+				Top:   5,
+				Size:  12,
+				Style: fontstyle.Bold,
+				Align: align.Left,
+			}),
+		),
+	)
+
+	g.buildTransactionsTable(m, report.Transactions)
+
+	document, err := m.Generate()
+	if err != nil {
+		return fmt.Errorf("failed to generate PDF: %w", err)
+	}
+
+	return document.Save(outputPath)
+}
+
+func (g *PDFReportGenerator) buildDailyReportSummary(m core.Maroto, report *domain.DailyReport) {
+	labelStyle := props.Text{Style: fontstyle.Bold, Align: align.Right, Top: 1}
+	valueStyle := props.Text{Align: align.Left, Top: 1}
+	redValueStyle := props.Text{Align: align.Left, Top: 1, Color: &props.RedColor, Style: fontstyle.Bold}
+	greenValueStyle := props.Text{Align: align.Left, Top: 1, Color: &props.GreenColor, Style: fontstyle.Bold}
+
+	profitLossStyle := valueStyle
+	if report.DailyProfitLoss.IsPositive() {
+		profitLossStyle = greenValueStyle
+	} else if report.DailyProfitLoss.IsNegative() {
+		profitLossStyle = redValueStyle
+	}
+
+	m.AddRow(8,
+		col.New(4).Add(text.New("Fecha del Reporte:", labelStyle)),
+		col.New(8).Add(text.New(report.ReportDate.Format("2006-01-02 15:04:05"), valueStyle)),
+	)
+	m.AddRow(8,
+		col.New(4).Add(text.New("Saldo Actual:", labelStyle)),
+		col.New(8).Add(text.New(fmt.Sprintf("$%s", report.CurrentBalance.StringFixed(2)), valueStyle)),
+	)
+	m.AddRow(8,
+		col.New(4).Add(text.New("Ingresos del Día:", labelStyle)),
+		col.New(8).Add(text.New(fmt.Sprintf("$%s", report.DailyIncome.StringFixed(2)), greenValueStyle)),
+	)
+	m.AddRow(8,
+		col.New(4).Add(text.New("Egresos del Día:", labelStyle)),
+		col.New(8).Add(text.New(fmt.Sprintf("$%s", report.DailyExpenses.StringFixed(2)), redValueStyle)),
+	)
+	m.AddRow(8,
+		col.New(4).Add(text.New("Ganancia/Pérdida Neta:", labelStyle)),
+		col.New(8).Add(text.New(fmt.Sprintf("$%s", report.DailyProfitLoss.StringFixed(2)), profitLossStyle)),
+	)
+}
+
 // buildFooter creates a footer for the PDF report with legends for voided and voiding transactions.
 func (g *PDFReportGenerator) buildFooter(m core.Maroto) error {
 	voidedStyle := &props.Cell{BackgroundColor: &props.Color{Red: 255, Green: 220, Blue: 220}}

@@ -79,6 +79,8 @@ type ReportService interface {
 	GetReconciliation(ctx context.Context, accountID int, startDate, endDate time.Time, endingBalance decimal.Decimal) (*domain.Reconciliation, error)
 	GenerateReportFile(ctx context.Context, format string, transactions []domain.Transaction, outputPath string) error
 	GenerateReconciliationReportFile(ctx context.Context, reconciliation *domain.Reconciliation, outputPath string) error
+	GenerateDailyReport(ctx context.Context, accountID int) (*domain.DailyReport, error)
+	GenerateDailyReportFile(ctx context.Context, report *domain.DailyReport, outputPath string, format string) error
 }
 
 type UserService interface {

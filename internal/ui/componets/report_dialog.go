@@ -4,65 +4,101 @@ import (
 	"strings"
 
 	"fyne.io/fyne/v2"
+	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/widget"
 )
 
 type ReportDialog struct {
 	parentWindow fyne.Window
-	formatSelect *widget.Select
 	dialog       dialog.Dialog
-	onGenerate   func(format string, outputPath string)
+
+	// Transaction Report Tab
+	transactionReportFormatSelect *widget.Select
+	onGenerateTransactionReport   func(format string, outputPath string)
+
+	// Daily Report Tab
+	dailyReportFormatSelect *widget.Select
+	onGenerateDailyReport   func(format string, outputPath string)
 }
 
-func NewReportDialog(parentWindow fyne.Window, onGenerate func(format string,
-	outputPath string),
+func NewReportDialog(
+	parentWindow fyne.Window,
+	onGenerateTransactionReport func(format string, outputPath string),
+	onGenerateDailyReport func(format string, outputPath string),
 ) *ReportDialog {
-	rd := &ReportDialog{
-		parentWindow: parentWindow,
-		onGenerate:   onGenerate,
+	return &ReportDialog{
+		parentWindow:                parentWindow,
+		onGenerateTransactionReport: onGenerateTransactionReport,
+		onGenerateDailyReport:       onGenerateDailyReport,
 	}
-	return rd
 }
 
 func (rd *ReportDialog) Show() {
-	rd.formatSelect = widget.NewSelect([]string{"PDF", "CSV"}, nil)
-	rd.formatSelect.SetSelected("PDF") // Default selection
+	tabs := container.NewAppTabs(
+		container.NewTabItem("Reporte Financiero Diario", rd.createDailyReportTab()),
+		container.NewTabItem("Reporte de Transacciones", rd.createTransactionReportTab()),
+	)
 
-	formItems := []*widget.FormItem{
-		{Text: "Formato de Reporte", Widget: rd.formatSelect},
+	rd.dialog = dialog.NewCustom("Generar Reporte", "Cerrar", tabs, rd.parentWindow)
+	rd.dialog.Resize(fyne.NewSize(400, 200))
+	rd.dialog.Show()
+}
+
+func (rd *ReportDialog) createTransactionReportTab() fyne.CanvasObject {
+	rd.transactionReportFormatSelect = widget.NewSelect([]string{"PDF", "CSV"}, nil)
+	rd.transactionReportFormatSelect.SetSelected("PDF")
+
+	form := &widget.Form{
+		Items: []*widget.FormItem{
+			{Text: "Formato", Widget: rd.transactionReportFormatSelect},
+		},
 	}
 
-	callback := func(confirmed bool) {
-		if !confirmed {
-			return
-		}
+	generateBtn := widget.NewButton("Generar", func() {
 		fileSaveDialog := dialog.NewFileSave(func(writer fyne.URIWriteCloser, err error) {
 			if err != nil {
 				dialog.ShowError(err, rd.parentWindow)
 				return
 			}
-
-			if writer == nil { // User canceled the save dialog}
+			if writer == nil {
 				return
 			}
 			defer writer.Close()
-
-			rd.onGenerate(rd.formatSelect.Selected, writer.URI().Path())
+			rd.onGenerateTransactionReport(rd.transactionReportFormatSelect.Selected, writer.URI().Path())
 		}, rd.parentWindow)
-
-		fileSaveDialog.SetFileName("reporte." + strings.ToLower(rd.formatSelect.Selected))
+		fileSaveDialog.SetFileName("reporte_transacciones." + strings.ToLower(rd.transactionReportFormatSelect.Selected))
 		fileSaveDialog.Show()
+	})
+
+	return container.NewVBox(form, generateBtn)
+}
+
+func (rd *ReportDialog) createDailyReportTab() fyne.CanvasObject {
+	rd.dailyReportFormatSelect = widget.NewSelect([]string{"PDF", "CSV"}, nil)
+	rd.dailyReportFormatSelect.SetSelected("PDF")
+
+	form := &widget.Form{
+		Items: []*widget.FormItem{
+			{Text: "Formato", Widget: rd.dailyReportFormatSelect},
+		},
 	}
 
-	rd.dialog = dialog.NewForm(
-		"Generar Reporte",
-		"Generar",
-		"Cancelar",
-		formItems,
-		callback,
-		rd.parentWindow,
-	)
-	rd.dialog.Resize(fyne.NewSize(300, 200))
-	rd.dialog.Show()
+	generateBtn := widget.NewButton("Generar", func() {
+		fileSaveDialog := dialog.NewFileSave(func(writer fyne.URIWriteCloser, err error) {
+			if err != nil {
+				dialog.ShowError(err, rd.parentWindow)
+				return
+			}
+			if writer == nil {
+				return
+			}
+			defer writer.Close()
+			rd.onGenerateDailyReport(rd.dailyReportFormatSelect.Selected, writer.URI().Path())
+		}, rd.parentWindow)
+		fileSaveDialog.SetFileName("reporte_diario." + strings.ToLower(rd.dailyReportFormatSelect.Selected))
+		fileSaveDialog.Show()
+	})
+
+	return container.NewVBox(form, generateBtn)
 }
