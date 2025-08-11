@@ -430,15 +430,8 @@ func (ui *UI) loadAccountsForTx() {
 }
 
 func (ui *UI) generateReportFile(format string, outputPath string) {
-	progressDialog, cancelFunc := ui.showCancelableProgress("Generando Reporte de Transacciones...")
-
-	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
-	defer cancel()
-
-	go func() {
-		<-ctx.Done()
-		cancelFunc()
-	}()
+	ctx, cancel := context.WithCancel(context.Background())
+	progressDialog := ui.showCancelableProgress("Generando Reporte de Transacciones...", cancel)
 
 	transactions, err := ui.Services.TxService.FindAllTransactionsByAccount(
 		ctx,
@@ -446,62 +439,49 @@ func (ui *UI) generateReportFile(format string, outputPath string) {
 		ui.currentTransactionFilters,
 	)
 	if err != nil {
-		fyne.Do(func() {
-			progressDialog.Hide()
-			dialog.ShowError(err, ui.mainWindow)
-		})
+		fyne.Do(func() { progressDialog.Hide() })
+		if ctx.Err() == nil { // Don't show error if user cancelled
+			fyne.Do(func() { dialog.ShowError(err, ui.mainWindow) })
+		}
 		return
 	}
 
 	err = ui.Services.ReportService.GenerateReportFile(ctx, format, transactions, outputPath)
 	if err != nil {
-		fyne.Do(func() {
-			progressDialog.Hide()
-			dialog.ShowError(err, ui.mainWindow)
-		})
+		fyne.Do(func() { progressDialog.Hide() })
+		if ctx.Err() == nil {
+			fyne.Do(func() { dialog.ShowError(err, ui.mainWindow) })
+		}
 		return
 	}
-	progressDialog.Hide()
 }
 
 func (ui *UI) generateDailyReportFile(format string, outputPath string) {
-	progressDialog, cancelFunc := ui.showCancelableProgress("Generando Reporte Diario...")
-
-	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
-	defer cancel()
-
-	go func() {
-		<-ctx.Done()
-		cancelFunc()
-	}()
+	ctx, cancel := context.WithCancel(context.Background())
+	progressDialog := ui.showCancelableProgress("Generando Reporte Diario...", cancel)
 
 	report, err := ui.Services.ReportService.GenerateDailyReport(ctx, ui.selectedAccountID)
 	if err != nil {
-		fyne.Do(func() {
-			progressDialog.Hide()
-			dialog.ShowError(err, ui.mainWindow)
-		})
+		fyne.Do(func() { progressDialog.Hide() })
+		if ctx.Err() == nil {
+			fyne.Do(func() { dialog.ShowError(err, ui.mainWindow) })
+		}
 		return
 	}
 
 	err = ui.Services.ReportService.GenerateDailyReportFile(ctx, report, outputPath, format)
 	if err != nil {
-		fyne.Do(func() {
-			progressDialog.Hide()
-			dialog.ShowError(err, ui.mainWindow)
-		})
+		fyne.Do(func() { progressDialog.Hide() })
+		if ctx.Err() == nil {
+			fyne.Do(func() { dialog.ShowError(err, ui.mainWindow) })
+		}
 		return
 	}
-	progressDialog.Hide()
 }
 
-func (ui *UI) showCancelableProgress(title string) (dialog.Dialog, context.CancelFunc) {
-	_, cancel := context.WithCancel(context.Background())
-
+func (ui *UI) showCancelableProgress(title string, onCancel func()) dialog.Dialog {
 	progressBar := widget.NewProgressBarInfinite()
-	cancelBtn := widget.NewButton("Cancelar", func() {
-		cancel()
-	})
+	cancelBtn := widget.NewButton("Cancelar", onCancel)
 
 	progressContent := container.NewVBox(
 		widget.NewLabel(title),
@@ -512,5 +492,5 @@ func (ui *UI) showCancelableProgress(title string) (dialog.Dialog, context.Cance
 	progressDialog := dialog.NewCustomWithoutButtons("Generando Reporte...", progressContent, ui.mainWindow)
 	progressDialog.Show()
 
-	return progressDialog, cancel
+	return progressDialog
 }
