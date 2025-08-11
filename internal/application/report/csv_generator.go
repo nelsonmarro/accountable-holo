@@ -15,7 +15,7 @@ func NewCSVReportGenerator() *CSVReportGenerator {
 	return &CSVReportGenerator{}
 }
 
-func (g *CSVReportGenerator) SelectedTransactionsReport(ctx context.Context, transactions []domain.Transaction, outputPath string) error {
+func (g *CSVReportGenerator) SelectedTransactionsReport(ctx context.Context, transactions []domain.Transaction, outputPath string, currentUser *domain.User) error {
 	file, err := os.Create(outputPath)
 	if err != nil {
 		return fmt.Errorf("failed to create CSV file: %w", err)
@@ -52,10 +52,14 @@ func (g *CSVReportGenerator) SelectedTransactionsReport(ctx context.Context, tra
 		}
 	}
 
+	// Add footer
+	writer.Write([]string{}) // Spacer
+	writer.Write([]string{"Reporte Generado Por:", fmt.Sprintf("%s %s", currentUser.FirstName, currentUser.LastName)})
+
 	return nil
 }
 
-func (g *CSVReportGenerator) DailyReport(ctx context.Context, report *domain.DailyReport, outputPath string) error {
+func (g *CSVReportGenerator) DailyReport(ctx context.Context, report *domain.DailyReport, outputPath string, currentUser *domain.User) error {
 	file, err := os.Create(outputPath)
 	if err != nil {
 		return fmt.Errorf("failed to create CSV file: %w", err)
@@ -113,6 +117,10 @@ func (g *CSVReportGenerator) DailyReport(ctx context.Context, report *domain.Dai
 			return err
 		}
 	}
+
+	// Add footer
+	writer.Write([]string{}) // Spacer
+	writer.Write([]string{"Reporte Generado Por:", fmt.Sprintf("%s %s", currentUser.FirstName, currentUser.LastName)})
 
 	return nil
 }

@@ -11,17 +11,17 @@ import (
 
 // TransactionReportGenerator defines an interface for generating reports from a list of transactions.
 type TransactionReportGenerator interface {
-	SelectedTransactionsReport(ctx context.Context, transactions []domain.Transaction, outputPath string) error
+	SelectedTransactionsReport(ctx context.Context, transactions []domain.Transaction, outputPath string, currentUser *domain.User) error
 }
 
 // ReconciliationReportGenerator defines an interface for generating a reconciliation statement report.
 type ReconciliationReportGenerator interface {
-	ReconciliationStatementReport(ctx context.Context, reconciliation *domain.Reconciliation, outputPath string) error
+	ReconciliationStatementReport(ctx context.Context, reconciliation *domain.Reconciliation, outputPath string, currentUser *domain.User) error
 }
 
 // DailyReportGenerator defines an interface for generating a daily financial report.
 type DailyReportGenerator interface {
-	DailyReport(ctx context.Context, report *domain.DailyReport, outputPath string) error
+	DailyReport(ctx context.Context, report *domain.DailyReport, outputPath string, currentUser *domain.User) error
 }
 
 // ReportServiceImpl provides methods to generate financial reports.
@@ -109,27 +109,27 @@ func (s *ReportServiceImpl) GetFinancialSummary(
 	}, nil
 }
 
-func (s *ReportServiceImpl) GenerateReportFile(ctx context.Context, format string, transactions []domain.Transaction, outputPath string) error {
+func (s *ReportServiceImpl) GenerateReportFile(ctx context.Context, format string, transactions []domain.Transaction, outputPath string, currentUser *domain.User) error {
 	switch format {
 	case "CSV":
-		return s.csvGenerator.SelectedTransactionsReport(ctx, transactions, outputPath)
+		return s.csvGenerator.SelectedTransactionsReport(ctx, transactions, outputPath, currentUser)
 	case "PDF":
-		return s.pdfGenerator.SelectedTransactionsReport(ctx, transactions, outputPath)
+		return s.pdfGenerator.SelectedTransactionsReport(ctx, transactions, outputPath, currentUser)
 	default:
 		return fmt.Errorf("unsupported report format: %s", format)
 	}
 }
 
-func (s *ReportServiceImpl) GenerateReconciliationReportFile(ctx context.Context, reconciliation *domain.Reconciliation, outputPath string) error {
-	return s.pdfGenerator.ReconciliationStatementReport(ctx, reconciliation, outputPath)
+func (s *ReportServiceImpl) GenerateReconciliationReportFile(ctx context.Context, reconciliation *domain.Reconciliation, outputPath string, currentUser *domain.User) error {
+	return s.pdfGenerator.ReconciliationStatementReport(ctx, reconciliation, outputPath, currentUser)
 }
 
-func (s *ReportServiceImpl) GenerateDailyReportFile(ctx context.Context, report *domain.DailyReport, outputPath string, format string) error {
+func (s *ReportServiceImpl) GenerateDailyReportFile(ctx context.Context, report *domain.DailyReport, outputPath string, format string, currentUser *domain.User) error {
 	switch format {
 	case "CSV":
-		return s.csvGenerator.DailyReport(ctx, report, outputPath)
+		return s.csvGenerator.DailyReport(ctx, report, outputPath, currentUser)
 	case "PDF":
-		return s.pdfGenerator.DailyReport(ctx, report, outputPath)
+		return s.pdfGenerator.DailyReport(ctx, report, outputPath, currentUser)
 	default:
 		return fmt.Errorf("unsupported report format: %s", format)
 	}
