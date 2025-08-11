@@ -111,11 +111,11 @@ func (ui *UI) makeTransactionUI() fyne.CanvasObject {
 	generateReportBtn := widget.NewButtonWithIcon("Reportes", theme.DocumentPrintIcon(), func() {
 		reportDialog := componets.NewReportDialog(
 			ui.mainWindow,
-			func(format string, outputPath string) error {
-				return ui.generateReportFile(format, outputPath)
+			func(format string, outputPath string) {
+				go ui.generateReportFile(format, outputPath)
 			},
-			func(format string, outputPath string) error {
-				return ui.generateDailyReportFile(format, outputPath)
+			func(format string, outputPath string) {
+				go ui.generateDailyReportFile(format, outputPath)
 			},
 		)
 		reportDialog.Show()
@@ -429,11 +429,10 @@ func (ui *UI) loadAccountsForTx() {
 	go ui.loadTransactions(1, ui.transactionPaginator.GetPageSize())
 }
 
-func (ui *UI) generateReportFile(format string, outputPath string) error {
+func (ui *UI) generateReportFile(format string, outputPath string) {
 	progressDialog, cancelFunc := ui.showCancelableProgress("Generando Reporte de Transacciones...")
-	defer progressDialog.Hide()
 
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
 
 	go func() {
@@ -447,17 +446,28 @@ func (ui *UI) generateReportFile(format string, outputPath string) error {
 		ui.currentTransactionFilters,
 	)
 	if err != nil {
-		return err
+		fyne.Do(func() {
+			progressDialog.Hide()
+			dialog.ShowError(err, ui.mainWindow)
+		})
+		return
 	}
-	return ui.Services.ReportService.GenerateReportFile(ctx, format, transactions, outputPath)
+
+	err = ui.Services.ReportService.GenerateReportFile(ctx, format, transactions, outputPath)
+	if err != nil {
+		fyne.Do(func() {
+			progressDialog.Hide()
+			dialog.ShowError(err, ui.mainWindow)
+		})
+		return
+	}
+	progressDialog.Hide()
 }
 
-func (ui *UI) generateDailyReportFile(format string, outputPath string) error {
+func (ui *UI) generateDailyReportFile(format string, outputPath string) {
 	progressDialog, cancelFunc := ui.showCancelableProgress("Generando Reporte Diario...")
 
-	progressDialog.Hide()
-
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
 
 	go func() {
@@ -467,9 +477,22 @@ func (ui *UI) generateDailyReportFile(format string, outputPath string) error {
 
 	report, err := ui.Services.ReportService.GenerateDailyReport(ctx, ui.selectedAccountID)
 	if err != nil {
-		return err
+		fyne.Do(func() {
+			progressDialog.Hide()
+			dialog.ShowError(err, ui.mainWindow)
+		})
+		return
 	}
-	return ui.Services.ReportService.GenerateDailyReportFile(ctx, report, outputPath, format)
+
+	err = ui.Services.ReportService.GenerateDailyReportFile(ctx, report, outputPath, format)
+	if err != nil {
+		fyne.Do(func() {
+			progressDialog.Hide()
+			dialog.ShowError(err, ui.mainWindow)
+		})
+		return
+	}
+	progressDialog.Hide()
 }
 
 func (ui *UI) showCancelableProgress(title string) (dialog.Dialog, context.CancelFunc) {
