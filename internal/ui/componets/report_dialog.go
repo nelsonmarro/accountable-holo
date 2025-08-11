@@ -15,17 +15,17 @@ type ReportDialog struct {
 
 	// Transaction Report Tab
 	transactionReportFormatSelect *widget.Select
-	onGenerateTransactionReport   func(format string, outputPath string)
+	onGenerateTransactionReport   func(format string, outputPath string) error
 
 	// Daily Report Tab
 	dailyReportFormatSelect *widget.Select
-	onGenerateDailyReport   func(format string, outputPath string)
+	onGenerateDailyReport   func(format string, outputPath string) error
 }
 
 func NewReportDialog(
 	parentWindow fyne.Window,
-	onGenerateTransactionReport func(format string, outputPath string),
-	onGenerateDailyReport func(format string, outputPath string),
+	onGenerateTransactionReport func(format string, outputPath string) error,
+	onGenerateDailyReport func(format string, outputPath string) error,
 ) *ReportDialog {
 	return &ReportDialog{
 		parentWindow:                parentWindow,
@@ -65,7 +65,14 @@ func (rd *ReportDialog) createTransactionReportTab() fyne.CanvasObject {
 				return
 			}
 			defer writer.Close()
-			rd.onGenerateTransactionReport(rd.transactionReportFormatSelect.Selected, writer.URI().Path())
+			go func() {
+				err := rd.onGenerateTransactionReport(rd.transactionReportFormatSelect.Selected, writer.URI().Path())
+				if err != nil {
+					fyne.Do(func() {
+						dialog.ShowError(err, rd.parentWindow)
+					})
+				}
+			}()
 		}, rd.parentWindow)
 		fileSaveDialog.SetFileName("reporte_transacciones." + strings.ToLower(rd.transactionReportFormatSelect.Selected))
 		fileSaveDialog.Show()
@@ -95,7 +102,14 @@ func (rd *ReportDialog) createDailyReportTab() fyne.CanvasObject {
 				return
 			}
 			defer writer.Close()
-			rd.onGenerateDailyReport(rd.dailyReportFormatSelect.Selected, writer.URI().Path())
+			go func() {
+				err := rd.onGenerateDailyReport(rd.dailyReportFormatSelect.Selected, writer.URI().Path())
+				if err != nil {
+					fyne.Do(func() {
+						dialog.ShowError(err, rd.parentWindow)
+					})
+				}
+			}()
 		}, rd.parentWindow)
 		fileSaveDialog.SetFileName("reporte_diario." + strings.ToLower(rd.dailyReportFormatSelect.Selected))
 		fileSaveDialog.Show()

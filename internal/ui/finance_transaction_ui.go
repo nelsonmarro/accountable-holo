@@ -111,11 +111,11 @@ func (ui *UI) makeTransactionUI() fyne.CanvasObject {
 	generateReportBtn := widget.NewButtonWithIcon("Reportes", theme.DocumentPrintIcon(), func() {
 		reportDialog := componets.NewReportDialog(
 			ui.mainWindow,
-			func(format string, outputPath string) {
-				go ui.generateReportFile(format, outputPath)
+			func(format string, outputPath string) error {
+				return ui.generateReportFile(format, outputPath)
 			},
-			func(format string, outputPath string) {
-				go ui.generateDailyReportFile(format, outputPath)
+			func(format string, outputPath string) error {
+				return ui.generateDailyReportFile(format, outputPath)
 			},
 		)
 		reportDialog.Show()
