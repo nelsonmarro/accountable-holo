@@ -446,7 +446,7 @@ func (ui *UI) generateReportFile(format string, outputPath string) {
 		return
 	}
 
-	err = ui.Services.ReportService.GenerateReportFile(ctx, format, transactions, outputPath)
+	err = ui.Services.ReportService.GenerateReportFile(ctx, format, transactions, outputPath, ui.currentUser)
 	if err != nil {
 		fyne.Do(func() { progressDialog.Hide() })
 		if ctx.Err() == nil {
@@ -454,6 +454,7 @@ func (ui *UI) generateReportFile(format string, outputPath string) {
 		}
 		return
 	}
+	fyne.Do(func() { progressDialog.Hide() })
 }
 
 func (ui *UI) generateDailyReportFile(format string, outputPath string) {
@@ -469,7 +470,7 @@ func (ui *UI) generateDailyReportFile(format string, outputPath string) {
 		return
 	}
 
-	err = ui.Services.ReportService.GenerateDailyReportFile(ctx, report, outputPath, format)
+	err = ui.Services.ReportService.GenerateDailyReportFile(ctx, report, outputPath, format, ui.currentUser)
 	if err != nil {
 		fyne.Do(func() { progressDialog.Hide() })
 		if ctx.Err() == nil {
@@ -477,6 +478,7 @@ func (ui *UI) generateDailyReportFile(format string, outputPath string) {
 		}
 		return
 	}
+	fyne.Do(func() { progressDialog.Hide() })
 }
 
 func (ui *UI) showCancelableProgress(title string, onCancel func()) dialog.Dialog {

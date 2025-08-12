@@ -237,7 +237,7 @@ func (d *ReconciliationDialog) makeStatementCard() fyne.CanvasObject {
 				ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 				defer cancel()
 
-				err := d.ReportService.GenerateReconciliationReportFile(ctx, d.data, writer.URI().Path())
+				err := d.ReportService.GenerateReconciliationReportFile(ctx, d.data, writer.URI().Path(), d.currentUser)
 				if err != nil {
 					fyne.Do(func() {
 						dialog.ShowError(fmt.Errorf("error al generar el reporte: %w", err), d.mainWindow)

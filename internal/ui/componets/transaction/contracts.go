@@ -48,5 +48,5 @@ type StorageService interface {
 }
 
 type ReportService interface {
-	GenerateReconciliationReportFile(ctx context.Context, reconciliation *domain.Reconciliation, outputPath string) error
+	GenerateReconciliationReportFile(ctx context.Context, reconciliation *domain.Reconciliation, outputPath string, currentUser *domain.User) error
 }
