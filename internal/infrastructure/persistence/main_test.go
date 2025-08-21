@@ -18,9 +18,10 @@ import (
 )
 
 var (
-	testRepo    *AccountRepositoryImpl
-	testCatRepo *CategoryRepositoryImpl
-	dbPool      *pgxpool.Pool // Make the pool accessible to helpers
+	testRepo       *AccountRepositoryImpl
+	testCatRepo    *CategoryRepositoryImpl
+	testReportRepo *ReportRepositoryImpl
+	dbPool         *pgxpool.Pool // Make the pool accessible to helpers
 )
 
 // TestMain is the entry point for all tests in this package.
@@ -87,6 +88,8 @@ func TestMain(m *testing.M) {
 
 	// Create the repository instance that all tests will use.
 	testRepo = NewAccountRepository(dbPool)
+	testCatRepo = NewCategoryRepository(dbPool)
+	testReportRepo = NewReportRepository(dbPool)
 
 	// --- Run the tests ---
 	code := m.Run()
