@@ -18,8 +18,9 @@ import (
 )
 
 var (
-	testRepo *AccountRepositoryImpl
-	dbPool   *pgxpool.Pool // Make the pool accessible to helpers
+	testRepo    *AccountRepositoryImpl
+	testCatRepo *CategoryRepositoryImpl
+	dbPool      *pgxpool.Pool // Make the pool accessible to helpers
 )
 
 // TestMain is the entry point for all tests in this package.
