@@ -21,6 +21,7 @@ var (
 	testRepo       *AccountRepositoryImpl
 	testCatRepo    *CategoryRepositoryImpl
 	testReportRepo *ReportRepositoryImpl
+	testUserRepo   *UserRepositoryImpl
 	dbPool         *pgxpool.Pool // Make the pool accessible to helpers
 )
 
@@ -90,6 +91,7 @@ func TestMain(m *testing.M) {
 	testRepo = NewAccountRepository(dbPool)
 	testCatRepo = NewCategoryRepository(dbPool)
 	testReportRepo = NewReportRepository(dbPool)
+	testUserRepo = NewUserRepository(dbPool)
 
 	// --- Run the tests ---
 	code := m.Run()
