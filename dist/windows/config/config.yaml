@@ -1,0 +1,17 @@
+app:
+  name: "AccountableHolo"
+  environment: "development"
+  version: "1.0.0"
+
+database:
+  host: "localhost"
+  port: 5432
+  user: "nelson"
+  password: "password"
+  name: "accountableholodb"
+  sslmode: "disable"
+  timezone: "UTC"
+
+storage:
+  attachment_path: "attachments"
+
