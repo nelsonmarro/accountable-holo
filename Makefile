@@ -7,3 +7,12 @@ run-desktop-app: ## Run the desktop application
 
 build-desktop-app: ## Build the desktop application
 	go build -o ./build/desktop_app $(DESKTOP_APP_SRC)
+
+db-up: ## Start the database container
+	docker-compose up -d
+
+db-down: ## Stop the database container
+	docker-compose down
+
+db-logs: ## View database logs
+	docker-compose logs -f db

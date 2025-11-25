@@ -6,11 +6,11 @@ app:
 database:
   host: "localhost"
   port: 5432
-  user: "user"
+  user: "nelson"
   password: "password"
   name: "accountableholodb"
   sslmode: "disable"
-  timezone: YourTimezoneHere
+  timezone: "UTC"
 
 storage:
   attachment_path: "attachments"
