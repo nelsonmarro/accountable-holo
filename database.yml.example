@@ -1,7 +1,7 @@
 development:
   dialect: postgres
   database: accountableholodb
-  user: nelson
+  user: postgres
   password: password
   host: 127.0.0.1
   port: 5432
@@ -10,7 +10,7 @@ development:
 test:
   dialect: postgres
   database: accountableholodb_test
-  user: nelson
+  user: postgres
   password: password
   host: 127.0.0.1
   port: 5432
@@ -19,7 +19,7 @@ test:
 production:
   dialect: postgres
   database: accountableholodb_production
-  user: nelson
+  user: postgres
   password: password
   host: 127.0.0.1
   port: 5432
