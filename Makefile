@@ -25,14 +25,27 @@ dist-windows: ## Build and package for Windows
 	# 1. Cross-compile the binary
 	CC=x86_64-w64-mingw32-gcc CXX=x86_64-w64-mingw32-g++ GOOS=windows GOARCH=amd64 CGO_ENABLED=1 go build -ldflags -H=windowsgui -o dist/windows/AccountableHolo.exe $(DESKTOP_APP_SRC)
 	
-	# 2. Copy Assets and Config
-	@cp -r assets dist/windows/
-	@mkdir -p dist/windows/config
-	@cp config/config.yaml dist/windows/config/config.yaml || cp config/config.yaml.example dist/windows/config/config.yaml
+	        # 2. Copy Assets and Config                                                                   
 	
-	# 3. Generate Database Schema (requires running DB)
-	@echo "Generating database schema..."
-	@docker-compose exec -T db pg_dump -U nelson -d accountableholodb --schema-only > dist/windows/schema.sql
+	        @cp -r assets dist/windows/                                                                   
+	
+	        @mkdir -p dist/windows/config                                                                 
+	
+	        @cp config/config.yaml dist/windows/config/config.yaml || cp config/config.yaml.example dist/w
+	
+	indows/config/config.yaml                                                                             
+	
+	        @sed -i 's/user: nelson/user: postgres/g' dist/windows/config/config.yaml                      
+	
+	                                                                                                      
+	
+	        # 3. Generate Database Schema (requires running DB)                                           
+	
+	        @echo "Generating database schema..."                                                         
+	
+	        @docker-compose exec -T db pg_dump -U postgres -d accountableholodb --schema-only > dist/windo
+	
+	ws/schema.sql
 	
 	# 4. Create Windows Setup Script
 	@echo "@echo off" > dist/windows/setup_db.bat
