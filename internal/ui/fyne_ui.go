@@ -3,7 +3,6 @@ package ui
 
 import (
 	"log"
-	"os"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/canvas"
@@ -66,11 +65,11 @@ type UI struct {
 	errorLogger *log.Logger
 }
 
-func NewUI(services *Services) *UI {
+func NewUI(services *Services, infoLogger, errorLogger *log.Logger) *UI {
 	return &UI{
 		Services:    services,
-		infoLogger:  log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime),
-		errorLogger: log.New(os.Stderr, "ERROR\t", log.Ldate|log.Ltime|log.Lshortfile),
+		infoLogger:  infoLogger,
+		errorLogger: errorLogger,
 		categories:  &domain.PaginatedResult[domain.Category]{},
 	}
 }
