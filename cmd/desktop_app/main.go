@@ -23,7 +23,10 @@ func main() {
 		log.Fatalf("failed to initialize logger: %v", err)
 	}
 
-	conf := config.LoadConfig("configss")
+	conf, err := config.LoadConfig("configss")
+	if err != nil {
+		errorLogger.Fatalf("failed to load configuration: %v", err)
+	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()

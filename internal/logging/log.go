@@ -1,4 +1,4 @@
-// package logging provides logging utilities for the application.
+// Package logging provides logging utilities for the application.
 package logging
 
 import (
