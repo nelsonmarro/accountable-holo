@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"log"
+	"runtime/debug"
 	"time"
 
 	"fyne.io/fyne/v2/app"
@@ -22,6 +23,16 @@ func main() {
 	if err != nil {
 		log.Fatalf("failed to initialize logger: %v", err)
 	}
+
+	// --- Panic Recovery ---
+	// This ensures that if the app crashes, we capture the error in the log file.
+	defer func() {
+		if r := recover(); r != nil {
+			errorLogger.Printf("CRITICAL ERROR (PANIC): %v\nStack Trace:\n%s", r, debug.Stack())
+		}
+	}()
+
+	infoLogger.Println("Application starting...")
 
 	conf, err := config.LoadConfig("config")
 	if err != nil {
