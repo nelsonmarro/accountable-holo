@@ -52,12 +52,20 @@ dist-windows: ## Build and package for Windows
 	@echo "echo Done! You can now run AccountableHolo.exe" >> dist/windows/setup_db.bat
 	@echo "pause" >> dist/windows/setup_db.bat
 
-	# 6. Create Debug Run Script
-	@echo "@echo off" > dist/windows/run_debug.bat
-	@echo "echo Starting Accountable Holo in Debug Mode..." >> dist/windows/run_debug.bat
-	@echo "set FYNE_DEBUG=1" >> dist/windows/run_debug.bat
-	@echo "set FYNE_GL_VERSION=2.1" >> dist/windows/run_debug.bat
-	@echo "AccountableHolo.exe" >> dist/windows/run_debug.bat
-	@echo "pause" >> dist/windows/run_debug.bat
-
 	@echo "Windows distribution package created in dist/windows"
+
+dist-windows-debug: ## Build debug version for Windows (With Console)
+	@echo "Building DEBUG version for Windows (Console Enabled)..."
+	@rm -rf dist/windows-debug
+	@mkdir -p dist/windows-debug
+
+	# Build with console enabled (no -H=windowsgui)
+	CC=x86_64-w64-mingw32-gcc CXX=x86_64-w64-mingw32-g++ GOOS=windows GOARCH=amd64 CGO_ENABLED=1 \
+	go build -o dist/windows-debug/AccountableHoloDebug.exe $(DESKTOP_APP_SRC)
+
+	@cp -r assets dist/windows-debug/
+	@mkdir -p dist/windows-debug/config
+	@cp config/config.yaml dist/windows-debug/config/config.yaml || cp config/config.yaml.example dist/windows-debug/config/config.yaml
+	@sed -i 's/user: nelson/user: postgres/g' dist/windows-debug/config/config.yaml
+	
+	@echo "Debug build created in dist/windows-debug. Run AccountableHoloDebug.exe from a command prompt."
