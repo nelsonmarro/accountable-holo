@@ -18,24 +18,28 @@ db-logs: ## View database logs
 	docker-compose logs -f db
 
 dist-windows: ## Build and package for Windows
-	@echo "Building for Windows..."
+	@echo "Building for Windows using fyne tool..."
 	@rm -rf dist/windows
 	@mkdir -p dist/windows
 
-	# 1. Cross-compile the binary
-	CC=x86_64-w64-mingw32-gcc CXX=x86_64-w64-mingw32-g++ GOOS=windows GOARCH=amd64 CGO_ENABLED=1 go build -ldflags -H=windowsgui -o dist/windows/AccountableHolo.exe $(DESKTOP_APP_SRC)
+	# 1. Package using fyne tool
+	# We pass the cross-compiler and target OS information
+	CC=x86_64-w64-mingw32-gcc CXX=x86_64-w64-mingw32-g++ GOOS=windows GOARCH=amd64 CGO_ENABLED=1 \
+	fyne package -os windows -icon assets/transaction_tab_icon_dark.png -name AccountableHolo -src cmd/desktop_app
 
-	# 2. Copy Assets and Config
-	@cp -r assets dist/windows/
+	# 2. Move the resulting executable to the dist folder
+	@mv AccountableHolo.exe dist/windows/
+
+	# 3. Copy Config
 	@mkdir -p dist/windows/config
 	@cp config/config.yaml dist/windows/config/config.yaml || cp config/config.yaml.example dist/windows/config/config.yaml
 	@sed -i 's/user: nelson/user: postgres/g' dist/windows/config/config.yaml
 
-	# 3. Generate Database Schema (requires running DB)
+	# 4. Generate Database Schema (requires running DB)
 	@echo "Generating database schema..."
 	@docker compose exec -T db pg_dump -U postgres -d accountableholodb --schema-only > dist/windows/schema.sql
 
-	# 4. Create Windows Setup Script
+	# 5. Create Windows Setup Script
 	@echo "@echo off" > dist/windows/setup_db.bat
 	@echo "echo Setting up Accountable Holo Database..." >> dist/windows/setup_db.bat
 	@echo "set /p PGPASSWORD=Enter the password you set for the 'postgres' user during installation: " >> dist/windows/setup_db.bat
