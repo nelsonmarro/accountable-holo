@@ -23,7 +23,7 @@ func main() {
 		log.Fatalf("failed to initialize logger: %v", err)
 	}
 
-	conf, err := config.LoadConfig("configss")
+	conf, err := config.LoadConfig("config")
 	if err != nil {
 		errorLogger.Fatalf("failed to load configuration: %v", err)
 	}
