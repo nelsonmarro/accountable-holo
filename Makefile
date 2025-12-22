@@ -23,12 +23,12 @@ dist-windows: ## Build and package for Windows
 	@mkdir -p dist/windows
 
 	# 1. Package using fyne tool
-	# We pass the cross-compiler and target OS information
+	# We MUST keep the cross-compiler and target OS information for CGO to work
 	CC=x86_64-w64-mingw32-gcc CXX=x86_64-w64-mingw32-g++ GOOS=windows GOARCH=amd64 CGO_ENABLED=1 \
-	fyne package -os windows -icon assets/transaction_tab_icon_dark.png -name AccountableHolo -src cmd/desktop_app
+	fyne package -os windows -icon $(shell pwd)/assets/accounts_tab_icon_dark.png -name AccountableHolo -src cmd/desktop_app
 
 	# 2. Move the resulting executable to the dist folder
-	@mv AccountableHolo.exe dist/windows/
+	@mv cmd/desktop_app/AccountableHolo.exe dist/windows/
 
 	# 3. Copy Config
 	@mkdir -p dist/windows/config
