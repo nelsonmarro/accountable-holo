@@ -18,19 +18,19 @@ db-logs: ## View database logs
 	docker-compose logs -f db
 
 dist-windows: ## Build and package for Windows
-	@echo "Building for Windows using fyne tool..."
+	@echo "Building for Windows using fyne tool and metadata..."
 	@rm -rf dist/windows
 	@mkdir -p dist/windows
 
-	# 1. Package using fyne tool
-	# We MUST keep the cross-compiler and target OS information for CGO to work
+	# 1. Package using fyne tool (uses FyneApp.toml)
 	CC=x86_64-w64-mingw32-gcc CXX=x86_64-w64-mingw32-g++ GOOS=windows GOARCH=amd64 CGO_ENABLED=1 \
-	fyne package -os windows -icon $(shell pwd)/assets/accounts_tab_icon_dark.png -name AccountableHolo -src cmd/desktop_app
+	fyne package -os windows -src cmd/desktop_app
 
 	# 2. Move the resulting executable to the dist folder
-	@mv cmd/desktop_app/AccountableHolo.exe dist/windows/
+	@mv "cmd/desktop_app/Accountable Holo.exe" dist/windows/AccountableHolo.exe
 
-	# 3. Copy Config
+	# 3. Copy Assets and Config
+	@cp -r assets dist/windows/
 	@mkdir -p dist/windows/config
 	@cp config/config.yaml dist/windows/config/config.yaml || cp config/config.yaml.example dist/windows/config/config.yaml
 	@sed -i 's/user: nelson/user: postgres/g' dist/windows/config/config.yaml
@@ -51,5 +51,13 @@ dist-windows: ## Build and package for Windows
 	@echo "psql -d accountableholodb -f schema.sql" >> dist/windows/setup_db.bat
 	@echo "echo Done! You can now run AccountableHolo.exe" >> dist/windows/setup_db.bat
 	@echo "pause" >> dist/windows/setup_db.bat
+
+	# 6. Create Debug Run Script
+	@echo "@echo off" > dist/windows/run_debug.bat
+	@echo "echo Starting Accountable Holo in Debug Mode..." >> dist/windows/run_debug.bat
+	@echo "set FYNE_DEBUG=1" >> dist/windows/run_debug.bat
+	@echo "set FYNE_GL_VERSION=2.1" >> dist/windows/run_debug.bat
+	@echo "AccountableHolo.exe" >> dist/windows/run_debug.bat
+	@echo "pause" >> dist/windows/run_debug.bat
 
 	@echo "Windows distribution package created in dist/windows"
