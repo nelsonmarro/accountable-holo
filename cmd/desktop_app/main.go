@@ -34,7 +34,10 @@ func main() {
 
 	infoLogger.Println("Application starting...")
 
-	conf := config.LoadConfig("config")
+	conf, err := config.LoadConfig("config")
+	if err != nil {
+		errorLogger.Fatalf("failed to load configuration: %v", err)
+	}
 	infoLogger.Println("Config loaded.")
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)

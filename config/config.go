@@ -2,6 +2,7 @@
 package config
 
 import (
+	"fmt"
 	"sync"
 
 	"github.com/spf13/viper"
@@ -36,9 +37,10 @@ type Storage struct {
 var (
 	one            sync.Once
 	configInstance *Config
+	configErr      error
 )
 
-func LoadConfig(path string) *Config {
+func LoadConfig(path string) (*Config, error) {
 	one.Do(func() {
 		viper.AddConfigPath(path)
 		viper.SetConfigName("config")
@@ -47,13 +49,15 @@ func LoadConfig(path string) *Config {
 		viper.SetEnvPrefix("HOLO")
 
 		if err := viper.ReadInConfig(); err != nil {
-			panic("Error reading config file: " + err.Error())
+			configErr = fmt.Errorf("error reading config file: %w", err)
+			return
 		}
 
 		if err := viper.Unmarshal(&configInstance); err != nil {
-			panic("Error unmarshalling config: " + err.Error())
+			configErr = fmt.Errorf("unable to decode into struct: %w", err)
+			return
 		}
 	})
 
-	return configInstance
+	return configInstance, configErr
 }

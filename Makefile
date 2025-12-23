@@ -52,11 +52,6 @@ dist-windows: ## Build and package for Windows
 	@echo "echo Done! You can now run AccountableHolo.exe" >> dist/windows/setup_db.bat
 	@echo "pause" >> dist/windows/setup_db.bat
 
-	# 6. Create Safe Mode Launcher (for OpenGL issues)
-	@echo "@echo off" > dist/windows/SafeMode.bat
-	@echo "set FYNE_SAFE_MODE=1" >> dist/windows/SafeMode.bat
-	@echo "start AccountableHolo.exe" >> dist/windows/SafeMode.bat
-
 	@echo "Windows distribution package created in dist/windows"
 
 dist-windows-debug: ## Build debug version for Windows (With Console)
