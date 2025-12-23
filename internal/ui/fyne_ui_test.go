@@ -44,12 +44,28 @@ func TestUI_Init(t *testing.T) {
 
 	// Assert
 	assert.Equal(t, testApp, ui.app, "Fyne app should be set")
-	assert.NotNil(t, ui.mainWindow, "Main window should be initialized")
-	assert.Equal(t, "Accountable Holo", ui.mainWindow.Title())
 
 	// Check if our custom theme was applied correctly
 	_, ok := ui.app.Settings().Theme().(*AppTheme)
 	assert.True(t, ok, "Expected custom AppTheme to be set")
+}
+
+func TestUI_openLoginWindow(t *testing.T) {
+	// Arrange
+	testApp := test.NewApp()
+	mockService := new(mocks.MockAccountService)
+	services := &Services{
+		AccService: mockService,
+	}
+	ui := NewUI(services, log.Default(), log.Default())
+	ui.Init(testApp)
+
+	// Act
+	ui.openLoginWindow()
+
+	// Assert
+	assert.NotNil(t, ui.mainWindow, "Login window should be initialized")
+	assert.Equal(t, "Login - Accountable Holo", ui.mainWindow.Title())
 }
 
 // TODO: Refator TestBuildMainUI
