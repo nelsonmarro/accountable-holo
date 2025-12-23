@@ -7,6 +7,7 @@ import (
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/canvas"
 	"fyne.io/fyne/v2/container"
+	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 	"github.com/nelsonmarro/accountable-holo/internal/domain"
 	"github.com/nelsonmarro/accountable-holo/internal/ui/componets"
@@ -27,7 +28,7 @@ type UI struct {
 
 	// ---- Fyne App Objects ----
 	app        fyne.App
-	// mainWindow field is removed as we manage multiple windows dynamically
+	mainWindow fyne.Window // Reference to the currently active window
 
 	// ---- Auth State ----
 	currentUser *domain.User
@@ -83,6 +84,15 @@ func (ui *UI) Init(a fyne.App) {
 func (ui *UI) Run() {
 	ui.openLoginWindow()
 	ui.app.Run()
+}
+
+func (ui *UI) openLoginWindow() {
+	loginWindow := ui.app.NewWindow("Login - Accountable Holo")
+	ui.mainWindow = loginWindow // Update the reference so dialogs work
+	loginWindow.SetContent(ui.makeLoginUI(loginWindow))
+	loginWindow.Resize(fyne.NewSize(400, 300))
+	loginWindow.CenterOnScreen()
+	loginWindow.Show()
 }
 
 func (ui *UI) openMainWindow() {
