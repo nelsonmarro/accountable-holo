@@ -58,6 +58,9 @@ func (ui *UI) makeLoginUI() fyne.CanvasObject {
 					ui.mainWindow.SetContent(newContent)
 					ui.mainWindow.Resize(fyne.NewSize(1280, 720))
 					ui.mainWindow.CenterOnScreen()
+
+					// Now that the UI is visible, load the initial data
+					go ui.loadAccountsForSummary()
 				})
 			}()
 		},
