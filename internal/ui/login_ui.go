@@ -8,7 +8,9 @@ import (
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/layout"
+	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
+	"github.com/nelsonmarro/accountable-holo/internal/domain"
 )
 
 func (ui *UI) makeLoginUI() fyne.CanvasObject {
@@ -33,34 +35,47 @@ func (ui *UI) makeLoginUI() fyne.CanvasObject {
 				dialog.ShowError(err, ui.mainWindow)
 				return
 			}
+			ui.currentUser = user
 
-			// 1. Show a loading screen immediately to keep the UI responsive
-			loadingContent := container.NewCenter(
-				container.NewVBox(
-					widget.NewLabelWithStyle("Cargando...", fyne.TextAlignCenter, fyne.TextStyle{Bold: true}),
-					widget.NewProgressBarInfinite(),
-				),
-			)
-			ui.mainWindow.SetContent(loadingContent)
+			// 1. Create and set the empty tab container immediately
+			tabs := ui.buildMainUI()
+			ui.mainWindow.SetContent(tabs)
+			ui.mainWindow.Resize(fyne.NewSize(1280, 720))
+			ui.mainWindow.CenterOnScreen()
 
-			// 2. Perform the heavy lifting (building the main UI) in a goroutine
+			// 2. Build and append each tab asynchronously
 			go func() {
-				// Give the UI a moment to render the loading screen
-				time.Sleep(200 * time.Millisecond)
-
-				ui.currentUser = user
-				// Build the complex UI tree off the main thread
-				newContent := ui.buildMainUI()
-
-				// 3. Switch to the main UI on the main thread
+				// Summary Tab
+				summaryTabContent := ui.makeSummaryTab()
 				fyne.Do(func() {
-					ui.mainWindow.SetMainMenu(ui.makeMainMenu())
-					ui.mainWindow.SetContent(newContent)
-					ui.mainWindow.Resize(fyne.NewSize(1280, 720))
-					ui.mainWindow.CenterOnScreen()
-
-					// Now that the UI is visible, load the initial data
+					tabs.Append(container.NewTabItemWithIcon("Resumen Financiero", theme.HomeIcon(), summaryTabContent))
+					// Since this is the first tab, load its data
 					go ui.loadAccountsForSummary()
+				})
+
+				// Accounts Tab
+				accountsTabContent := ui.makeAccountTab()
+				fyne.Do(func() {
+					tabs.Append(container.NewTabItemWithIcon("Cuentas", theme.StorageIcon(), accountsTabContent))
+				})
+
+				// Transactions Tab
+				txTabContent := ui.makeFinancesTab()
+				fyne.Do(func() {
+					tabs.Append(container.NewTabItemWithIcon("Transacciones", theme.ListIcon(), txTabContent))
+				})
+
+				// User Tab (conditional)
+				if ui.currentUser.Role == domain.AdminRole {
+					userTabContent := ui.makeUserTab()
+					fyne.Do(func() {
+						tabs.Append(container.NewTabItemWithIcon("Usuarios", theme.AccountIcon(), userTabContent))
+					})
+				}
+
+				// Finally, set up the lazy loading for subsequent clicks
+				fyne.Do(func() {
+					lazyLoadDbCalls(tabs, ui)
 				})
 			}()
 		},

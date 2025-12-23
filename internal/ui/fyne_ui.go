@@ -7,7 +7,6 @@ import (
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/canvas"
 	"fyne.io/fyne/v2/container"
-	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 	"github.com/nelsonmarro/accountable-holo/internal/domain"
 	"github.com/nelsonmarro/accountable-holo/internal/ui/componets"
@@ -81,28 +80,10 @@ func (ui *UI) Init(a fyne.App) {
 	ui.mainWindow = ui.app.NewWindow("Accountable Holo")
 }
 
-// buildMainUI creates all the main UI components and returns the main container.
-func (ui *UI) buildMainUI() fyne.CanvasObject {
-	accountIcon := NewThemeAwareResource(resourceAccountstabiconlightPng, resourceAccountstabicondarkPng)
-	transactionIcon := NewThemeAwareResource(resourceTransactionstabiconlightPng, resourceTransactiontabicondarkPng)
-	reportIcon := NewThemeAwareResource(resourceReportstabiconlightPng, resourceReportstabicondarkPng)
-
-	summaryTab := container.NewTabItemWithIcon("Resumen Financiero", reportIcon, ui.makeSummaryTab())
-	accountTab := container.NewTabItemWithIcon("Cuentas", accountIcon, ui.makeAccountTab())
-	txTab := container.NewTabItemWithIcon("Transacciones", transactionIcon, ui.makeFinancesTab())
-
-	tabs := container.NewAppTabs(
-		summaryTab,
-		accountTab,
-		txTab,
-	)
-
-	if ui.currentUser.Role == domain.AdminRole {
-		tabs.Append(container.NewTabItemWithIcon("Usuarios", theme.AccountIcon(), ui.makeUserTab()))
-	}
-
-	lazyLoadDbCalls(tabs, ui)
-
+// buildMainUI creates the main application layout and menu.
+func (ui *UI) buildMainUI() *container.AppTabs {
+	tabs := container.NewAppTabs()
+	ui.mainWindow.SetMainMenu(ui.makeMainMenu())
 	return tabs
 }
 
