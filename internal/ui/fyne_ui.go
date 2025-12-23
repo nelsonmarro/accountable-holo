@@ -81,8 +81,8 @@ func (ui *UI) Init(a fyne.App) {
 	ui.mainWindow = ui.app.NewWindow("Accountable Holo")
 }
 
-// buildMainUI creates all the main UI components and sets them on the window.
-func (ui *UI) buildMainUI() {
+// buildMainUI creates all the main UI components and returns the main container.
+func (ui *UI) buildMainUI() fyne.CanvasObject {
 	accountIcon := NewThemeAwareResource(resourceAccountstabiconlightPng, resourceAccountstabicondarkPng)
 	transactionIcon := NewThemeAwareResource(resourceTransactionstabiconlightPng, resourceTransactiontabicondarkPng)
 	reportIcon := NewThemeAwareResource(resourceReportstabiconlightPng, resourceReportstabicondarkPng)
@@ -103,13 +103,13 @@ func (ui *UI) buildMainUI() {
 
 	lazyLoadDbCalls(tabs, ui)
 
-	ui.mainWindow.SetContent(tabs)
-	ui.mainWindow.Resize(fyne.NewSize(1280, 720))
-	ui.mainWindow.CenterOnScreen()
 	ui.mainWindow.SetMainMenu(ui.makeMainMenu())
+	ui.mainWindow.SetMaster()
 
 	// Initial load for summary tab
 	go ui.loadAccountsForSummary()
+
+	return tabs
 }
 
 func lazyLoadDbCalls(tabs *container.AppTabs, ui *UI) {

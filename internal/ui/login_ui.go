@@ -43,14 +43,20 @@ func (ui *UI) makeLoginUI() fyne.CanvasObject {
 			)
 			ui.mainWindow.SetContent(loadingContent)
 
+			// 2. Perform the heavy lifting (building the main UI) in a goroutine
 			go func() {
 				// Give the UI a moment to render the loading screen
-				time.Sleep(500 * time.Millisecond)
+				time.Sleep(200 * time.Millisecond)
 
 				ui.currentUser = user
+				// Build the complex UI tree off the main thread
+				newContent := ui.buildMainUI()
 
+				// 3. Switch to the main UI on the main thread
 				fyne.Do(func() {
-					ui.buildMainUI()
+					ui.mainWindow.SetContent(newContent)
+					ui.mainWindow.Resize(fyne.NewSize(1280, 720))
+					ui.mainWindow.CenterOnScreen()
 				})
 			}()
 		},
