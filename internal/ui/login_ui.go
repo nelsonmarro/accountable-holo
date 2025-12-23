@@ -37,19 +37,41 @@ func (ui *UI) makeLoginUI() fyne.CanvasObject {
 			}
 			ui.currentUser = user
 
-			// 1. Create and set the empty tab container immediately
-			tabs := ui.buildMainUI()
-			ui.mainWindow.SetContent(tabs)
-			ui.mainWindow.Resize(fyne.NewSize(1280, 720))
-			ui.mainWindow.CenterOnScreen()
+			// 1. Show a lightweight loading screen immediately
+			// This keeps the UI responsive while we prepare the main view.
+			loadingContent := container.NewCenter(
+				container.NewVBox(
+					widget.NewLabelWithStyle("Cargando...", fyne.TextAlignCenter, fyne.TextStyle{Bold: true}),
+					widget.NewProgressBarInfinite(),
+				),
+			)
+			ui.mainWindow.SetContent(loadingContent)
 
-			// 2. Build and append each tab asynchronously
+			// 2. Build the UI in a background goroutine to avoid blocking the main thread
 			go func() {
+				// Give the loading screen a moment to render
+				time.Sleep(300 * time.Millisecond)
+
+				// Create the base tab container
+				tabs := container.NewAppTabs()
+
+				// Update the window to show the empty tabs and resize (still lightweight)
+				fyne.Do(func() {
+					ui.mainWindow.SetContent(tabs)
+					ui.mainWindow.SetMainMenu(ui.makeMainMenu())
+					ui.mainWindow.Resize(fyne.NewSize(1280, 720))
+					ui.mainWindow.CenterOnScreen()
+					ui.mainWindow.SetFullScreen(true) // Enter fullscreen smoothly
+				})
+
+				// 3. Build and add tabs one by one
+				// This breaks the heavy lifting into smaller chunks for the renderer
+
 				// Summary Tab
 				summaryTabContent := ui.makeSummaryTab()
 				fyne.Do(func() {
 					tabs.Append(container.NewTabItemWithIcon("Resumen Financiero", theme.HomeIcon(), summaryTabContent))
-					// Since this is the first tab, load its data
+					// Load data for the first visible tab
 					go ui.loadAccountsForSummary()
 				})
 
@@ -73,7 +95,7 @@ func (ui *UI) makeLoginUI() fyne.CanvasObject {
 					})
 				}
 
-				// Finally, set up the lazy loading for subsequent clicks
+				// 4. Finally, attach the lazy loading logic
 				fyne.Do(func() {
 					lazyLoadDbCalls(tabs, ui)
 				})

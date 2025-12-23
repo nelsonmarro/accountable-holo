@@ -120,7 +120,10 @@ func (ui *UI) Run() {
 
 func (ui *UI) makeMainMenu() *fyne.MainMenu {
 	logoutItem := fyne.NewMenuItem("Cerrar Sesión", func() {
-		// Now, reset the state and UI
+		// IMPORTANT: Exit fullscreen/maximized state BEFORE changing content/size
+		// This prevents the Windows UI thread from freezing during the transition.
+		ui.mainWindow.SetFullScreen(false)
+
 		ui.currentUser = nil
 		ui.mainWindow.SetMainMenu(nil)
 		ui.mainWindow.SetContent(ui.makeLoginUI())
