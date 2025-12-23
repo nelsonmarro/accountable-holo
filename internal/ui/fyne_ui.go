@@ -104,9 +104,9 @@ func (ui *UI) buildMainUI() {
 	lazyLoadDbCalls(tabs, ui)
 
 	ui.mainWindow.SetContent(tabs)
+	ui.mainWindow.Resize(fyne.NewSize(1280, 720))
+	ui.mainWindow.CenterOnScreen()
 	ui.mainWindow.SetMainMenu(ui.makeMainMenu())
-	ui.mainWindow.SetFullScreen(true)
-	ui.mainWindow.SetMaster()
 
 	// Initial load for summary tab
 	go ui.loadAccountsForSummary()
@@ -145,7 +145,9 @@ func (ui *UI) Run() {
 
 func (ui *UI) makeMainMenu() *fyne.MainMenu {
 	logoutItem := fyne.NewMenuItem("Cerrar Sesión", func() {
+		// Now, reset the state and UI
 		ui.currentUser = nil
+		ui.mainWindow.SetMainMenu(nil)
 		ui.mainWindow.SetContent(ui.makeLoginUI())
 		ui.mainWindow.Resize(fyne.NewSize(500, 300))
 		ui.mainWindow.CenterOnScreen()
