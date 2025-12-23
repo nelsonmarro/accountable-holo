@@ -87,10 +87,14 @@ func (ui *UI) buildMainUI() {
 	transactionIcon := NewThemeAwareResource(resourceTransactionstabiconlightPng, resourceTransactiontabicondarkPng)
 	reportIcon := NewThemeAwareResource(resourceReportstabiconlightPng, resourceReportstabicondarkPng)
 
+	summaryTab := container.NewTabItemWithIcon("Resumen Financiero", reportIcon, ui.makeSummaryTab())
+	accountTab := container.NewTabItemWithIcon("Cuentas", accountIcon, ui.makeAccountTab())
+	txTab := container.NewTabItemWithIcon("Transacciones", transactionIcon, ui.makeFinancesTab())
+
 	tabs := container.NewAppTabs(
-		container.NewTabItemWithIcon("Resumen Financiero", reportIcon, ui.makeSummaryTab()),
-		container.NewTabItemWithIcon("Cuentas", accountIcon, ui.makeAccountTab()),
-		container.NewTabItemWithIcon("Transacciones", transactionIcon, ui.makeFinancesTab()),
+		summaryTab,
+		accountTab,
+		txTab,
 	)
 
 	if ui.currentUser.Role == domain.AdminRole {
