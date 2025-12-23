@@ -37,7 +37,6 @@ type AddTransactionDialog struct {
 
 	// Data
 	accountID        int
-	categories       []domain.Category
 	selectedCategory *domain.Category
 	attachmentPath   string
 	currentUser      domain.User
