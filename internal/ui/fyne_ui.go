@@ -115,7 +115,7 @@ func (ui *UI) openMainWindow() {
 
 	// Summary Tab (Load immediately)
 	summaryTabContent := ui.makeSummaryTab()
-	
+
 	// Placeholders
 	accountsTabContent := widget.NewLabel("Cargando Cuentas...")
 	txTabContent := widget.NewLabel("Cargando Transacciones...")
@@ -136,7 +136,6 @@ func (ui *UI) openMainWindow() {
 	mainWindow.SetContent(tabs)
 	mainWindow.Resize(fyne.NewSize(1280, 720))
 	mainWindow.CenterOnScreen()
-	mainWindow.SetFullScreen(true)
 	mainWindow.Show()
 
 	// Initial data load
