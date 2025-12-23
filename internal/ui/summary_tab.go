@@ -17,5 +17,8 @@ func (ui *UI) makeSummaryTab() fyne.CanvasObject {
 		container.NewPadded(summaryCard),
 	)
 
+	// Initial load for summary tab
+	go ui.loadAccountsForSummary()
+
 	return mainLayout
 }

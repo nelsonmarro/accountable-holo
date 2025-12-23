@@ -70,7 +70,6 @@ func (ui *UI) makeTransactionUI() fyne.CanvasObject {
 			}
 		},
 	)
-	go ui.loadAccountsForTx()
 
 	// Add Transaction Button
 	txAddBtn := widget.NewButtonWithIcon("Agregar Transacción", theme.ContentAddIcon(), func() {

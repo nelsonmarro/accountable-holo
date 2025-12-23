@@ -32,7 +32,6 @@ func (ui *UI) makeAccountTab() fyne.CanvasObject {
 		ui.makeAccountListUI,
 		ui.fillAccountListData,
 	)
-	go ui.loadAccounts()
 
 	// Add Account Button
 	accountAddBtn := widget.NewButtonWithIcon("Agregar Cuenta", theme.ContentAddIcon(), func() {

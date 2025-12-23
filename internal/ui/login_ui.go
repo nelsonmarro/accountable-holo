@@ -43,10 +43,9 @@ func (ui *UI) makeLoginUI() fyne.CanvasObject {
 			)
 			ui.mainWindow.SetContent(loadingContent)
 
-			// 2. Perform the heavy lifting (building the main UI) in a goroutine
 			go func() {
 				// Give the UI a moment to render the loading screen
-				time.Sleep(350 * time.Millisecond)
+				time.Sleep(200 * time.Millisecond)
 
 				ui.currentUser = user
 

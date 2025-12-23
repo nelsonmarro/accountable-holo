@@ -107,8 +107,6 @@ func (ui *UI) buildMainUI() {
 	ui.mainWindow.SetMainMenu(ui.makeMainMenu())
 	ui.mainWindow.SetFullScreen(true)
 	ui.mainWindow.SetMaster()
-
-	go ui.loadAccountsForSummary()
 }
 
 func lazyLoadDbCalls(tabs *container.AppTabs, ui *UI) {
@@ -120,6 +118,7 @@ func lazyLoadDbCalls(tabs *container.AppTabs, ui *UI) {
 			go ui.loadAccounts()
 		case "Transacciones":
 			go ui.loadAccountsForTx()
+			go ui.loadCategories(1, ui.categoryPaginator.GetPageSize())
 		case "Usuarios":
 			go ui.loadUsers()
 		}

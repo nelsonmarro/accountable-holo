@@ -43,7 +43,6 @@ func (ui *UI) makeCategoryUI() fyne.CanvasObject {
 			return len(ui.categories.Data)
 		}, ui.makeCategoryListUI, ui.fillCategoryListData,
 	)
-	go ui.loadCategories(1, ui.categoryPaginator.GetPageSize())
 
 	// Add Category Button
 	catAddBtn := widget.NewButtonWithIcon("Agregar Categoría", theme.ContentAddIcon(), func() {
