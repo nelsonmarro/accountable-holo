@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"log"
 	"testing"
 
 	"fyne.io/fyne/v2/test"
@@ -17,7 +18,7 @@ func TestNewUI(t *testing.T) {
 	}
 
 	// Act
-	ui := NewUI(services)
+	ui := NewUI(services, log.Default(), log.Default())
 
 	// Assert
 	assert.NotNil(t, ui, "UI object should not be nil")
@@ -36,7 +37,7 @@ func TestUI_Init(t *testing.T) {
 	services := &Services{
 		AccService: mockService,
 	}
-	ui := NewUI(services)
+	ui := NewUI(services, log.Default(), log.Default())
 
 	// Act
 	ui.Init(testApp)

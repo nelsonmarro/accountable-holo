@@ -50,14 +50,11 @@ func setupUITest() (*UI, *mocks.MockAccountService) {
 		AccService: mockService,
 	}
 
-	ui := NewUI(services)
+	discardLogger := log.New(io.Discard, "", 0)
+	ui := NewUI(services, discardLogger, discardLogger)
 
 	a := test.NewApp()
 	ui.Init(a)
-
-	// Replace the real loggers with silent ones for clean test output
-	ui.infoLogger = log.New(io.Discard, "", 0)
-	ui.errorLogger = log.New(io.Discard, "", 0)
 
 	return ui, mockService
 }
