@@ -3,6 +3,8 @@ package main
 import (
 	"context"
 	"log"
+	"os"
+	"path/filepath"
 	"runtime/debug"
 	"time"
 
@@ -32,6 +34,18 @@ func main() {
 		}
 	}()
 
+	// --- Fix Working Directory for Windows ---
+	// On Windows, double-clicking an EXE doesn't always set the CWD to the EXE's folder.
+	exePath, err := os.Executable()
+	if err == nil {
+		exeDir := filepath.Dir(exePath)
+		if err := os.Chdir(exeDir); err != nil {
+			errorLogger.Printf("Failed to change working directory to %s: %v", exeDir, err)
+		} else {
+			infoLogger.Printf("Changed working directory to: %s", exeDir)
+		}
+	}
+
 	infoLogger.Println("Application starting...")
 
 	conf, err := config.LoadConfig("config")
@@ -53,10 +67,10 @@ func main() {
 	infoLogger.Println("Connected to the database successfully")
 
 	// ---- UI (Fyne) ----
-	infoLogger.Println("Initializing Fyne App...")
+	infoLogger.Println("Initializing Fyne App (OpenGL context)...")
 	// 1. Create the Fyne App first.
 	a := app.NewWithID("51af2ee4-c61c-4608-a3f1-d8576343af14")
-	infoLogger.Println("Fyne App initialized.")
+	infoLogger.Println("Fyne App initialized successfully.")
 
 	// ---- Infrastructure (Storage) ----
 	infoLogger.Println("Initializing Storage Service...")
