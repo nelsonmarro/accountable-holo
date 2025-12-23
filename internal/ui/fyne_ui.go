@@ -120,11 +120,11 @@ func lazyLoadDbCalls(tabs *container.AppTabs, ui *UI) {
 				go ui.loadAccounts()
 			}
 		case "Transacciones":
-			if ui.transactions.Data == nil || len(ui.transactions.Data) == 0 {
+			if ui.transactions == nil || len(ui.transactions.Data) == 0 {
 				go ui.loadAccountsForTx()
 			}
 
-			if ui.categories.Data == nil || len(ui.categories.Data) == 0 {
+			if ui.categories == nil || len(ui.categories.Data) == 0 {
 				go ui.loadCategories(1, ui.categoryPaginator.GetPageSize())
 			}
 		case "Usuarios":
@@ -146,8 +146,6 @@ func (ui *UI) Run() {
 func (ui *UI) makeMainMenu() *fyne.MainMenu {
 	logoutItem := fyne.NewMenuItem("Cerrar Sesión", func() {
 		ui.currentUser = nil
-		ui.mainWindow.SetFullScreen(false)
-		ui.mainWindow.SetMainMenu(nil)
 		ui.mainWindow.SetContent(ui.makeLoginUI())
 		ui.mainWindow.Resize(fyne.NewSize(500, 300))
 		ui.mainWindow.CenterOnScreen()
