@@ -23,7 +23,6 @@ dist-windows: ## Build and package for Windows
 	@mkdir -p dist/windows
 
 	# 1. Package using fyne tool (uses FyneApp.toml)
-	CC=x86_64-w64-mingw32-gcc CXX=x86_64-w64-mingw32-g++ GOOS=windows GOARCH=amd64 CGO_ENABLED=1 \
 	fyne package -os windows -src cmd/desktop_app
 
 	# 2. Move the resulting executable to the dist folder
