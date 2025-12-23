@@ -45,7 +45,7 @@ func (ui *UI) makeLoginUI() fyne.CanvasObject {
 
 			go func() {
 				// Give the UI a moment to render the loading screen
-				time.Sleep(200 * time.Millisecond)
+				time.Sleep(500 * time.Millisecond)
 
 				ui.currentUser = user
 
