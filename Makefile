@@ -35,9 +35,10 @@ dist-windows: ## Build and package for Windows
 	@cp config/config.yaml dist/windows/config/config.yaml || cp config/config.yaml.example dist/windows/config/config.yaml
 	@sed -i 's/user: nelson/user: postgres/g' dist/windows/config/config.yaml
 
-	# 4. Generate Database Schema (requires running DB)
-	@echo "Generating database schema..."
-	@docker compose exec -T db pg_dump -U postgres -d accountableholodb --schema-only > dist/windows/schema.sql
+	# 4. Generate Database Schema and Seed Data from migrations
+	# This ensures we get a clean initial state without any local test data.
+	@echo "Generating clean database schema from migrations..."
+	@cat migrations/2*.up.sql > dist/windows/schema.sql
 
 	# 5. Create Windows Setup Script
 	@echo "@echo off" > dist/windows/setup_db.bat
