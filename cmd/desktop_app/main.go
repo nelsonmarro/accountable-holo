@@ -38,11 +38,13 @@ func main() {
 	if err != nil {
 		errorLogger.Fatalf("failed to load configuration: %v", err)
 	}
+	infoLogger.Println("Config loaded.")
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
 	// ---- Infrastructure (Database) ----
+	infoLogger.Println("Connecting to database...")
 	pool, err := database.Connect(ctx, conf)
 	if err != nil {
 		errorLogger.Fatalf("failed to connect to the database: %v", err)
@@ -51,13 +53,18 @@ func main() {
 	infoLogger.Println("Connected to the database successfully")
 
 	// ---- UI (Fyne) ----
+	infoLogger.Println("Initializing Fyne App...")
+	// 1. Create the Fyne App first.
 	a := app.NewWithID("51af2ee4-c61c-4608-a3f1-d8576343af14")
+	infoLogger.Println("Fyne App initialized.")
 
 	// ---- Infrastructure (Storage) ----
+	infoLogger.Println("Initializing Storage Service...")
 	storageService, err := storage.NewLocalStorageService(conf.Storage.AttachmentPath)
 	if err != nil {
 		errorLogger.Fatalf("failed to create storage service: %v", err)
 	}
+	infoLogger.Println("Storage Service initialized.")
 
 	// ---- Infrastructure (Repositories) ----
 	accRepo := persistence.NewAccountRepository(pool)
@@ -87,8 +94,11 @@ func main() {
 	}, infoLogger, errorLogger)
 
 	// ---- App Initialization ----
+	infoLogger.Println("Creating Main Window...")
 	gui.Init(a)
+	infoLogger.Println("Main Window created.")
 
 	// ---- Run Application ----
+	infoLogger.Println("Starting UI Loop...")
 	gui.Run()
 }
