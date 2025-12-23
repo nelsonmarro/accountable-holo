@@ -115,15 +115,22 @@ func (ui *UI) buildMainUI() {
 func lazyLoadDbCalls(tabs *container.AppTabs, ui *UI) {
 	tabs.OnSelected = func(item *container.TabItem) {
 		switch item.Text {
-		case "Resumen Financiero":
-			go ui.loadAccountsForSummary()
 		case "Cuentas":
-			go ui.loadAccounts()
+			if ui.accounts == nil || len(ui.accounts) == 0 {
+				go ui.loadAccounts()
+			}
 		case "Transacciones":
-			go ui.loadAccountsForTx()
-			go ui.loadCategories(1, ui.categoryPaginator.GetPageSize())
+			if ui.transactions.Data == nil || len(ui.transactions.Data) == 0 {
+				go ui.loadAccountsForTx()
+			}
+
+			if ui.categories.Data == nil || len(ui.categories.Data) == 0 {
+				go ui.loadCategories(1, ui.categoryPaginator.GetPageSize())
+			}
 		case "Usuarios":
-			go ui.loadUsers()
+			if ui.users == nil || len(ui.users) == 0 {
+				go ui.loadUsers()
+			}
 		}
 	}
 }
