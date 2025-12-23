@@ -34,8 +34,24 @@ func (ui *UI) makeLoginUI() fyne.CanvasObject {
 				return
 			}
 
-			ui.currentUser = user
-			ui.buildMainUI()
+			// 1. Show a loading screen immediately to keep the UI responsive
+			loadingContent := container.NewCenter(
+				container.NewVBox(
+					widget.NewLabelWithStyle("Cargando...", fyne.TextAlignCenter, fyne.TextStyle{Bold: true}),
+					widget.NewProgressBarInfinite(),
+				),
+			)
+			ui.mainWindow.SetContent(loadingContent)
+
+			// 2. Perform the heavy lifting (building the main UI) in a goroutine
+			go func() {
+				// Give the UI a moment to render the loading screen
+				time.Sleep(200 * time.Millisecond)
+
+				ui.currentUser = user
+				// Build the complex UI tree
+				ui.buildMainUI()
+			}()
 		},
 	}
 

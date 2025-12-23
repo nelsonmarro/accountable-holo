@@ -101,6 +101,7 @@ func (ui *UI) buildMainUI() {
 	ui.mainWindow.SetMainMenu(ui.makeMainMenu())
 	ui.mainWindow.SetFullScreen(true)
 	ui.mainWindow.SetMaster()
+	tabs.Refresh()
 }
 
 // Run now simply builds and then runs the application.
