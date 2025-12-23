@@ -107,6 +107,9 @@ func (ui *UI) buildMainUI() {
 	ui.mainWindow.SetMainMenu(ui.makeMainMenu())
 	ui.mainWindow.SetFullScreen(true)
 	ui.mainWindow.SetMaster()
+
+	// Initial load for summary tab
+	go ui.loadAccountsForSummary()
 }
 
 func lazyLoadDbCalls(tabs *container.AppTabs, ui *UI) {
