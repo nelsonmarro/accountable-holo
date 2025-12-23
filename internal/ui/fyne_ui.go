@@ -131,7 +131,7 @@ func (ui *UI) openMainWindow() {
 		tabs.Append(container.NewTabItemWithIcon("Usuarios", theme.AccountIcon(), userTabContent))
 	}
 
-	ui.lazyLoadDbCalls(tabs)
+	ui.lazyLoadTabsContent(tabs)
 
 	mainWindow.SetContent(tabs)
 	mainWindow.Resize(fyne.NewSize(1280, 720))
@@ -142,7 +142,7 @@ func (ui *UI) openMainWindow() {
 	go ui.loadAccountsForSummary()
 }
 
-func (ui *UI) lazyLoadDbCalls(tabs *container.AppTabs) {
+func (ui *UI) lazyLoadTabsContent(tabs *container.AppTabs) {
 	tabs.OnSelected = func(item *container.TabItem) {
 		// Helper to check if content is a placeholder label
 		isPlaceholder := func(obj fyne.CanvasObject) bool {

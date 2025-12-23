@@ -51,7 +51,9 @@ dist-windows: ## Build and package for Windows
 	@echo "REM Check if psql is in PATH, otherwise try default location" >> dist/windows/setup_db.bat
 	@echo "where psql >nul 2>nul" >> dist/windows/setup_db.bat
 	@echo "if %ERRORLEVEL% NEQ 0 set PATH=%%PATH%%;C:\Program Files\PostgreSQL\16\bin" >> dist/windows/setup_db.bat
-	@echo "createdb -w accountableholodb" >> dist/windows/setup_db.bat
+	@echo "REM Set client encoding to UTF8 to correctly handle special characters" >> dist/windows/setup_db.bat
+	@echo "set PGCLIENTENCODING=UTF8" >> dist/windows/setup_db.bat
+	@echo "createdb -w -E UTF8 accountableholodb" >> dist/windows/setup_db.bat
 	@echo "psql -d accountableholodb -f schema.sql" >> dist/windows/setup_db.bat
 	@echo "echo Done! You can now run AccountableHolo.exe" >> dist/windows/setup_db.bat
 	@echo "pause" >> dist/windows/setup_db.bat
