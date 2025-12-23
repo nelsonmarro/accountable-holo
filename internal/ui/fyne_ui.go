@@ -27,7 +27,7 @@ type UI struct {
 
 	// ---- Fyne App Objects ----
 	app        fyne.App
-	mainWindow fyne.Window
+	// mainWindow field is removed as we manage multiple windows dynamically
 
 	// ---- Auth State ----
 	currentUser *domain.User
@@ -73,21 +73,67 @@ func NewUI(services *Services, infoLogger, errorLogger *log.Logger) *UI {
 	}
 }
 
-// Init creates the Fyne app and window objects. This is where the Fyne-specific
+// Init sets the Fyne app object.
 func (ui *UI) Init(a fyne.App) {
 	ui.app = a
 	ui.app.Settings().SetTheme(NewAppTheme())
-	ui.mainWindow = ui.app.NewWindow("Accountable Holo")
 }
 
-// buildMainUI creates the main application layout and menu.
-func (ui *UI) buildMainUI() *container.AppTabs {
-	tabs := container.NewAppTabs()
-	ui.mainWindow.SetMainMenu(ui.makeMainMenu())
-	return tabs
+// Run starts the application by opening the login window.
+func (ui *UI) Run() {
+	ui.openLoginWindow()
+	ui.app.Run()
 }
 
-func lazyLoadDbCalls(tabs *container.AppTabs, ui *UI) {
+func (ui *UI) openMainWindow() {
+	mainWindow := ui.app.NewWindow("Accountable Holo")
+	ui.mainWindow = mainWindow // Update the reference for dialogs
+
+	// Create the menu with logout logic
+	logoutItem := fyne.NewMenuItem("Cerrar Sesión", func() {
+		ui.currentUser = nil
+		mainWindow.Close()
+		ui.openLoginWindow()
+	})
+	fileMenu := fyne.NewMenu("Sesión", logoutItem)
+	mainWindow.SetMainMenu(fyne.NewMainMenu(fileMenu))
+
+	// Build tabs
+	accountIcon := NewThemeAwareResource(resourceAccountstabiconlightPng, resourceAccountstabicondarkPng)
+	transactionIcon := NewThemeAwareResource(resourceTransactionstabiconlightPng, resourceTransactiontabicondarkPng)
+	reportIcon := NewThemeAwareResource(resourceReportstabiconlightPng, resourceReportstabicondarkPng)
+
+	// Summary Tab (Load immediately)
+	summaryTabContent := ui.makeSummaryTab()
+	
+	// Placeholders
+	accountsTabContent := widget.NewLabel("Cargando Cuentas...")
+	txTabContent := widget.NewLabel("Cargando Transacciones...")
+
+	tabs := container.NewAppTabs(
+		container.NewTabItemWithIcon("Resumen Financiero", reportIcon, summaryTabContent),
+		container.NewTabItemWithIcon("Cuentas", accountIcon, accountsTabContent),
+		container.NewTabItemWithIcon("Transacciones", transactionIcon, txTabContent),
+	)
+
+	if ui.currentUser.Role == domain.AdminRole {
+		userTabContent := widget.NewLabel("Cargando Usuarios...")
+		tabs.Append(container.NewTabItemWithIcon("Usuarios", theme.AccountIcon(), userTabContent))
+	}
+
+	ui.lazyLoadDbCalls(tabs)
+
+	mainWindow.SetContent(tabs)
+	mainWindow.Resize(fyne.NewSize(1280, 720))
+	mainWindow.CenterOnScreen()
+	mainWindow.SetFullScreen(true)
+	mainWindow.Show()
+
+	// Initial data load
+	go ui.loadAccountsForSummary()
+}
+
+func (ui *UI) lazyLoadDbCalls(tabs *container.AppTabs) {
 	tabs.OnSelected = func(item *container.TabItem) {
 		// Helper to check if content is a placeholder label
 		isPlaceholder := func(obj fyne.CanvasObject) bool {
@@ -103,7 +149,7 @@ func lazyLoadDbCalls(tabs *container.AppTabs, ui *UI) {
 		case "Cuentas":
 			if isPlaceholder(item.Content) {
 				item.Content = ui.makeAccountTab()
-				tabs.Refresh() // Force redraw of the tab content
+				tabs.Refresh()
 			}
 			if ui.accounts == nil || len(ui.accounts) == 0 {
 				go ui.loadAccounts()
@@ -130,26 +176,4 @@ func lazyLoadDbCalls(tabs *container.AppTabs, ui *UI) {
 			}
 		}
 	}
-}
-
-// Run now simply builds and then runs the application.
-func (ui *UI) Run() {
-	ui.mainWindow.SetContent(ui.makeLoginUI())
-	ui.mainWindow.Resize(fyne.NewSize(500, 300))
-	ui.mainWindow.CenterOnScreen()
-	ui.mainWindow.ShowAndRun()
-}
-
-func (ui *UI) makeMainMenu() *fyne.MainMenu {
-	logoutItem := fyne.NewMenuItem("Cerrar Sesión", func() {
-		ui.currentUser = nil
-		ui.mainWindow.SetMainMenu(nil)
-		ui.mainWindow.SetContent(ui.makeLoginUI())
-		ui.mainWindow.Resize(fyne.NewSize(500, 300))
-		ui.mainWindow.CenterOnScreen()
-	})
-
-	fileMenu := fyne.NewMenu("Sesión", logoutItem)
-
-	return fyne.NewMainMenu(fileMenu)
 }
