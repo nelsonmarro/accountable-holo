@@ -36,9 +36,12 @@ dist-windows: ## Build and package for Windows
 	@sed -i 's/user: nelson/user: postgres/g' dist/windows/config/config.yaml
 
 	# 4. Generate Database Schema and Seed Data from migrations
-	# This ensures we get a clean initial state without any local test data.
 	@echo "Generating clean database schema from migrations..."
-	@cat migrations/2*.up.sql > dist/windows/schema.sql
+	@rm -f dist/windows/schema.sql
+	@for f in migrations/2*.up.sql; do \
+		cat "$$f" >> dist/windows/schema.sql; \
+		echo "" >> dist/windows/schema.sql; \
+	done
 
 	# 5. Create Windows Setup Script
 	@echo "@echo off" > dist/windows/setup_db.bat

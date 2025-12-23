@@ -99,7 +99,7 @@ func (ui *UI) buildMainUI() {
 
 	ui.mainWindow.SetContent(tabs)
 	ui.mainWindow.SetMainMenu(ui.makeMainMenu())
-	ui.mainWindow.SetFullScreen(true)
+	ui.mainWindow.Resize(fyne.NewSize(1270, 720))
 	ui.mainWindow.CenterOnScreen()
 	ui.mainWindow.SetMaster()
 }
