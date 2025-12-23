@@ -98,14 +98,32 @@ func (ui *UI) buildMainUI() {
 	)
 
 	if ui.currentUser.Role == domain.AdminRole {
-		tabs.Append(container.NewTabItemWithIcon("Users", theme.AccountIcon(), ui.makeUserTab()))
+		tabs.Append(container.NewTabItemWithIcon("Usuarios", theme.AccountIcon(), ui.makeUserTab()))
 	}
+
+	lazyLoadDbCalls(tabs, ui)
 
 	ui.mainWindow.SetContent(tabs)
 	ui.mainWindow.SetMainMenu(ui.makeMainMenu())
 	ui.mainWindow.SetFullScreen(true)
 	ui.mainWindow.SetMaster()
-	tabs.Refresh()
+
+	go ui.loadAccountsForSummary()
+}
+
+func lazyLoadDbCalls(tabs *container.AppTabs, ui *UI) {
+	tabs.OnSelected = func(item *container.TabItem) {
+		switch item.Text {
+		case "Resumen Financiero":
+			go ui.loadAccountsForSummary()
+		case "Cuentas":
+			go ui.loadAccounts()
+		case "Transacciones":
+			go ui.loadAccountsForTx()
+		case "Usuarios":
+			go ui.loadUsers()
+		}
+	}
 }
 
 // Run now simply builds and then runs the application.

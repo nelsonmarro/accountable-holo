@@ -25,7 +25,6 @@ func (ui *UI) makeFilterCard() fyne.CanvasObject {
 	ui.summaryDateRangeSelect.SetSelected(dateRangeOptions[0]) // Default to "This Month"
 
 	ui.summaryAccountSelect = widget.NewSelect([]string{}, nil)
-	go ui.loadAccountsForSummary()
 
 	generateBtn := widget.NewButtonWithIcon("Generar Resumen", theme.ViewRefreshIcon(), func() {
 		go ui.generateSummary()
