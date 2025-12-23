@@ -54,6 +54,7 @@ func (ui *UI) makeLoginUI() fyne.CanvasObject {
 
 				// 3. Switch to the main UI on the main thread
 				fyne.Do(func() {
+					ui.mainWindow.SetMainMenu(ui.makeMainMenu())
 					ui.mainWindow.SetContent(newContent)
 					ui.mainWindow.Resize(fyne.NewSize(1280, 720))
 					ui.mainWindow.CenterOnScreen()

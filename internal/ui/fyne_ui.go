@@ -103,8 +103,6 @@ func (ui *UI) buildMainUI() fyne.CanvasObject {
 
 	lazyLoadDbCalls(tabs, ui)
 
-	ui.mainWindow.SetMainMenu(ui.makeMainMenu())
-
 	// Initial load for summary tab
 	go ui.loadAccountsForSummary()
 
