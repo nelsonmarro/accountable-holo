@@ -89,12 +89,30 @@ func (ui *UI) buildMainUI() *container.AppTabs {
 
 func lazyLoadDbCalls(tabs *container.AppTabs, ui *UI) {
 	tabs.OnSelected = func(item *container.TabItem) {
+		// Helper to check if content is a placeholder label
+		isPlaceholder := func(obj fyne.CanvasObject) bool {
+			if lbl, ok := obj.(*widget.Label); ok {
+				return lbl.Text == "Cargando Cuentas..." ||
+					lbl.Text == "Cargando Transacciones..." ||
+					lbl.Text == "Cargando Usuarios..."
+			}
+			return false
+		}
+
 		switch item.Text {
 		case "Cuentas":
+			if isPlaceholder(item.Content) {
+				item.Content = ui.makeAccountTab()
+				tabs.Refresh() // Force redraw of the tab content
+			}
 			if ui.accounts == nil || len(ui.accounts) == 0 {
 				go ui.loadAccounts()
 			}
 		case "Transacciones":
+			if isPlaceholder(item.Content) {
+				item.Content = ui.makeFinancesTab()
+				tabs.Refresh()
+			}
 			if ui.transactions == nil || len(ui.transactions.Data) == 0 {
 				go ui.loadAccountsForTx()
 			}
@@ -103,6 +121,10 @@ func lazyLoadDbCalls(tabs *container.AppTabs, ui *UI) {
 				go ui.loadCategories(1, ui.categoryPaginator.GetPageSize())
 			}
 		case "Usuarios":
+			if isPlaceholder(item.Content) {
+				item.Content = ui.makeUserTab()
+				tabs.Refresh()
+			}
 			if ui.users == nil || len(ui.users) == 0 {
 				go ui.loadUsers()
 			}
@@ -120,10 +142,6 @@ func (ui *UI) Run() {
 
 func (ui *UI) makeMainMenu() *fyne.MainMenu {
 	logoutItem := fyne.NewMenuItem("Cerrar Sesión", func() {
-		// IMPORTANT: Exit fullscreen/maximized state BEFORE changing content/size
-		// This prevents the Windows UI thread from freezing during the transition.
-		ui.mainWindow.SetFullScreen(false)
-
 		ui.currentUser = nil
 		ui.mainWindow.SetMainMenu(nil)
 		ui.mainWindow.SetContent(ui.makeLoginUI())
