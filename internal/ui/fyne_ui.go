@@ -160,7 +160,7 @@ func (ui *UI) lazyLoadTabsContent(tabs *container.AppTabs) {
 				item.Content = ui.makeAccountTab()
 				tabs.Refresh()
 			}
-			if ui.accounts == nil || len(ui.accounts) == 0 {
+			if len(ui.accounts) == 0 {
 				go ui.loadAccounts()
 			}
 		case "Transacciones":
@@ -180,7 +180,7 @@ func (ui *UI) lazyLoadTabsContent(tabs *container.AppTabs) {
 				item.Content = ui.makeUserTab()
 				tabs.Refresh()
 			}
-			if ui.users == nil || len(ui.users) == 0 {
+			if len(ui.users) == 0 {
 				go ui.loadUsers()
 			}
 		}
