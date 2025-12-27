@@ -413,7 +413,7 @@ func (r *TransactionRepositoryImpl) VoidTransaction(
            (description, amount, transaction_date, account_id,
             category_id, voids_transaction_id, created_at, updated_at, transaction_number,
             created_by_id, updated_by_id)
-            values1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) returning id
+            values($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) returning id
      `
 
 	var voidTransactionID int
