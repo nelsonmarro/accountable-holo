@@ -168,9 +168,7 @@ func (ui *UI) lazyLoadTabsContent(tabs *container.AppTabs) {
 				item.Content = ui.makeFinancesTab()
 				tabs.Refresh()
 			}
-			if ui.transactions == nil || len(ui.transactions.Data) == 0 {
-				go ui.loadAccountsForTx()
-			}
+			go ui.loadAccountsForTx()
 
 			if ui.categories == nil || len(ui.categories.Data) == 0 {
 				go ui.loadCategories(1, ui.categoryPaginator.GetPageSize())
