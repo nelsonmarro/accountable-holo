@@ -56,7 +56,9 @@ func (r *ReportRepositoryImpl) GetFinancialSummary(ctx context.Context, startDat
 func (r *ReportRepositoryImpl) GetReconciliation(ctx context.Context, accountID int, startDate, endDate time.Time) (*domain.Reconciliation, error) {
 	query := `
 	WITH initial_balance AS (
-		SELECT COALESCE(SUM(CASE WHEN c.type = 'Ingreso' THEN t.amount ELSE -t.amount END), 0) as balance
+		SELECT 
+			(SELECT initial_balance FROM accounts WHERE id = $1) + 
+			COALESCE(SUM(CASE WHEN c.type = 'Ingreso' THEN t.amount ELSE -t.amount END), 0) as balance
 		FROM transactions t
 		JOIN categories c ON c.id = t.category_id
 		WHERE t.account_id = $1 AND t.transaction_date < $2

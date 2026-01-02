@@ -12,25 +12,16 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// Helper function to create a test category
-func createTestCategory(t *testing.T, repo *CategoryRepositoryImpl, name string, catType domain.CategoryType) *domain.Category {
-	cat := &domain.Category{
-		Name: name,
-		Type: catType,
-	}
-	err := repo.CreateCategory(context.Background(), cat)
-	require.NoError(t, err, "Failed to create test category")
-	return cat
-}
-
 // Helper function to create a test transaction
-func createTestTransaction(t *testing.T, txRepo *TransactionRepositoryImpl, accID, catID int, amount float64, date time.Time) *domain.Transaction {
+func createTestTransaction(t *testing.T, txRepo *TransactionRepositoryImpl, accID, catID int, amount float64, date time.Time, userID int) *domain.Transaction {
 	tx := &domain.Transaction{
 		Description:     "Test Transaction",
 		Amount:          amount,
 		TransactionDate: date,
 		AccountID:       accID,
 		CategoryID:      catID,
+		CreatedByID:     userID,
+		UpdatedByID:     userID,
 	}
 	err := txRepo.CreateTransaction(context.Background(), tx)
 	require.NoError(t, err, "Failed to create test transaction")
@@ -47,9 +38,10 @@ func TestUpdateTransaction(t *testing.T) {
 	t.Run("should update description without changing transaction number", func(t *testing.T) {
 		// Arrange
 		truncateTables(t)
+		user := createTestUser(t, testUserRepo, "testuser_update1", domain.AdminRole)
 		acc := createTestAccount(t, accountRepo)
 		cat := createTestCategory(t, categoryRepo, "Salary", domain.Income)
-		tx := createTestTransaction(t, txRepo, acc.ID, cat.ID, 100.0, time.Now())
+		tx := createTestTransaction(t, txRepo, acc.ID, cat.ID, 100.0, time.Now(), user.ID)
 		originalTxNumber := tx.TransactionNumber
 
 		// Act
@@ -67,12 +59,13 @@ func TestUpdateTransaction(t *testing.T) {
 	t.Run("should regenerate transaction number when date changes to a different month", func(t *testing.T) {
 		// Arrange
 		truncateTables(t)
+		user := createTestUser(t, testUserRepo, "testuser_update2", domain.AdminRole)
 		acc := createTestAccount(t, accountRepo)
 		cat := createTestCategory(t, categoryRepo, "Salary", domain.Income)
 
 		// Create a transaction in a past month to avoid future date errors
 		lastMonth := time.Now().AddDate(0, -1, 0)
-		tx := createTestTransaction(t, txRepo, acc.ID, cat.ID, 100.0, lastMonth)
+		tx := createTestTransaction(t, txRepo, acc.ID, cat.ID, 100.0, lastMonth, user.ID)
 		originalTxNumber := tx.TransactionNumber
 
 		// Act
@@ -91,10 +84,11 @@ func TestUpdateTransaction(t *testing.T) {
 	t.Run("should regenerate transaction number when category type changes", func(t *testing.T) {
 		// Arrange
 		truncateTables(t)
+		user := createTestUser(t, testUserRepo, "testuser_update3", domain.AdminRole)
 		acc := createTestAccount(t, accountRepo)
 		incomeCat := createTestCategory(t, categoryRepo, "Salary", domain.Income)
 		outcomeCat := createTestCategory(t, categoryRepo, "Rent", domain.Outcome)
-		tx := createTestTransaction(t, txRepo, acc.ID, incomeCat.ID, 100.0, time.Now())
+		tx := createTestTransaction(t, txRepo, acc.ID, incomeCat.ID, 100.0, time.Now(), user.ID)
 		originalTxNumber := tx.TransactionNumber
 		require.Contains(t, originalTxNumber, "ING", "Initial transaction should be of type Income")
 
@@ -113,10 +107,11 @@ func TestUpdateTransaction(t *testing.T) {
 	t.Run("should fail to update a voided transaction", func(t *testing.T) {
 		// Arrange
 		truncateTables(t)
+		user := createTestUser(t, testUserRepo, "testuser_update4", domain.AdminRole)
 		acc := createTestAccount(t, accountRepo)
 		cat := createTestCategory(t, categoryRepo, "Salary", domain.Income)
 		_ = createTestCategory(t, categoryRepo, "Anular Transacción Ingreso", domain.Outcome)
-		tx := createTestTransaction(t, txRepo, acc.ID, cat.ID, 100.0, time.Now())
+		tx := createTestTransaction(t, txRepo, acc.ID, cat.ID, 100.0, time.Now(), user.ID)
 
 		// Manually void the transaction for the test
 		_, err := dbPool.Exec(context.Background(), "UPDATE transactions SET is_voided = TRUE WHERE id = $1", tx.ID)
@@ -141,6 +136,7 @@ func TestFindTransactionsByAccount(t *testing.T) {
 
 	// --- Test Data Setup ---
 	truncateTables(t) // Clear database before test
+	user := createTestUser(t, testUserRepo, "testuser_find", domain.AdminRole)
 	acc := createTestAccount(t, accountRepo)
 	catIncome := createTestCategory(t, categoryRepo, "Salary", domain.Income)
 	catOutcome := createTestCategory(t, categoryRepo, "Groceries", domain.Outcome)
@@ -148,12 +144,12 @@ func TestFindTransactionsByAccount(t *testing.T) {
 
 	// Create a set of transactions to test against
 	now := time.Now().Truncate(time.Second)
-	createTestTransaction(t, txRepo, acc.ID, catIncome.ID, 2000.00, now.AddDate(0, 0, -10))              // 1
-	createTestTransaction(t, txRepo, acc.ID, catOutcome.ID, 50.00, now.AddDate(0, 0, -8))                // 2
-	createTestTransaction(t, txRepo, acc.ID, catOutcome.ID, 75.00, now.AddDate(0, 0, -6))                // 3 - "Special Groceries"
-	txToFind := createTestTransaction(t, txRepo, acc.ID, catFreelance.ID, 500.00, now.AddDate(0, 0, -5)) // 4
-	createTestTransaction(t, txRepo, acc.ID, catOutcome.ID, 25.00, now.AddDate(0, 0, -3))                // 5
-	createTestTransaction(t, txRepo, acc.ID, catIncome.ID, 2000.00, now.AddDate(0, 0, -1))               // 6
+	createTestTransaction(t, txRepo, acc.ID, catIncome.ID, 2000.00, now.AddDate(0, 0, -10), user.ID)              // 1
+	createTestTransaction(t, txRepo, acc.ID, catOutcome.ID, 50.00, now.AddDate(0, 0, -8), user.ID)                // 2
+	createTestTransaction(t, txRepo, acc.ID, catOutcome.ID, 75.00, now.AddDate(0, 0, -6), user.ID)                // 3 - "Special Groceries"
+	txToFind := createTestTransaction(t, txRepo, acc.ID, catFreelance.ID, 500.00, now.AddDate(0, 0, -5), user.ID) // 4
+	createTestTransaction(t, txRepo, acc.ID, catOutcome.ID, 25.00, now.AddDate(0, 0, -3), user.ID)                // 5
+	createTestTransaction(t, txRepo, acc.ID, catIncome.ID, 2000.00, now.AddDate(0, 0, -1), user.ID)               // 6
 
 	// Manually update one description for search testing
 	txToFind.Description = "Special Freelance Project"
@@ -340,6 +336,7 @@ func TestFindAllTransactionsByAccount(t *testing.T) {
 
 	// --- Test Data Setup ---
 	truncateTables(t) // Clear database before test
+	user := createTestUser(t, testUserRepo, "testuser_findall_acc", domain.AdminRole)
 	acc := createTestAccount(t, accountRepo)
 	catIncome := createTestCategory(t, categoryRepo, "Salary", domain.Income)
 	catOutcome := createTestCategory(t, categoryRepo, "Groceries", domain.Outcome)
@@ -347,11 +344,11 @@ func TestFindAllTransactionsByAccount(t *testing.T) {
 
 	// Create a set of transactions to test against
 	now := time.Now().Truncate(time.Second)
-	createTestTransaction(t, txRepo, acc.ID, catIncome.ID, 2000.00, now.AddDate(0, 0, -10))
-	createTestTransaction(t, txRepo, acc.ID, catOutcome.ID, 50.00, now.AddDate(0, 0, -8))
-	txToFind := createTestTransaction(t, txRepo, acc.ID, catFreelance.ID, 500.00, now.AddDate(0, 0, -5))
-	createTestTransaction(t, txRepo, acc.ID, catOutcome.ID, 25.00, now.AddDate(0, 0, -3))
-	createTestTransaction(t, txRepo, acc.ID, catIncome.ID, 2000.00, now.AddDate(0, 0, -1))
+	createTestTransaction(t, txRepo, acc.ID, catIncome.ID, 2000.00, now.AddDate(0, 0, -10), user.ID)
+	createTestTransaction(t, txRepo, acc.ID, catOutcome.ID, 50.00, now.AddDate(0, 0, -8), user.ID)
+	txToFind := createTestTransaction(t, txRepo, acc.ID, catFreelance.ID, 500.00, now.AddDate(0, 0, -5), user.ID)
+	createTestTransaction(t, txRepo, acc.ID, catOutcome.ID, 25.00, now.AddDate(0, 0, -3), user.ID)
+	createTestTransaction(t, txRepo, acc.ID, catIncome.ID, 2000.00, now.AddDate(0, 0, -1), user.ID)
 
 	// Manually update one description for search testing
 	txToFind.Description = "Special Freelance Project"
@@ -365,7 +362,7 @@ func TestFindAllTransactionsByAccount(t *testing.T) {
 		filters := domain.TransactionFilters{}
 
 		// Act
-		result, err := txRepo.FindAllTransactionsByAccount(ctx, acc.ID, filters)
+		result, err := txRepo.FindAllTransactionsByAccount(ctx, acc.ID, filters, nil)
 
 		// Assert
 		require.NoError(t, err)
@@ -378,7 +375,7 @@ func TestFindAllTransactionsByAccount(t *testing.T) {
 		filters := domain.TransactionFilters{Description: &desc}
 
 		// Act
-		result, err := txRepo.FindAllTransactionsByAccount(ctx, acc.ID, filters)
+		result, err := txRepo.FindAllTransactionsByAccount(ctx, acc.ID, filters, nil)
 
 		// Assert
 		require.NoError(t, err)
@@ -393,7 +390,7 @@ func TestFindAllTransactionsByAccount(t *testing.T) {
 		filters := domain.TransactionFilters{StartDate: &startDate, EndDate: &endDate}
 
 		// Act
-		result, err := txRepo.FindAllTransactionsByAccount(ctx, acc.ID, filters)
+		result, err := txRepo.FindAllTransactionsByAccount(ctx, acc.ID, filters, nil)
 
 		// Assert
 		require.NoError(t, err)
@@ -405,7 +402,7 @@ func TestFindAllTransactionsByAccount(t *testing.T) {
 		filters := domain.TransactionFilters{CategoryID: &catOutcome.ID}
 
 		// Act
-		result, err := txRepo.FindAllTransactionsByAccount(ctx, acc.ID, filters)
+		result, err := txRepo.FindAllTransactionsByAccount(ctx, acc.ID, filters, nil)
 
 		// Assert
 		require.NoError(t, err)
@@ -418,7 +415,7 @@ func TestFindAllTransactionsByAccount(t *testing.T) {
 		filters := domain.TransactionFilters{CategoryType: &incomeType}
 
 		// Act
-		result, err := txRepo.FindAllTransactionsByAccount(ctx, acc.ID, filters)
+		result, err := txRepo.FindAllTransactionsByAccount(ctx, acc.ID, filters, nil)
 
 		// Assert
 		require.NoError(t, err)
@@ -435,7 +432,7 @@ func TestFindAllTransactionsByAccount(t *testing.T) {
 		filters := domain.TransactionFilters{Description: &desc}
 
 		// Act
-		result, err := txRepo.FindAllTransactionsByAccount(ctx, acc.ID, filters)
+		result, err := txRepo.FindAllTransactionsByAccount(ctx, acc.ID, filters, nil)
 
 		// Assert
 		require.NoError(t, err)
@@ -452,6 +449,7 @@ func TestFindAllTransactions(t *testing.T) {
 
 	// --- Test Data Setup ---
 	truncateTables(t)                         // Clear database before test
+	user := createTestUser(t, testUserRepo, "testuser_findall", domain.AdminRole)
 	acc1 := createTestAccount(t, accountRepo) // acc1
 	acc2 := createTestAccount(t, accountRepo) // acc2
 	catIncome := createTestCategory(t, categoryRepo, "Salary", domain.Income)
@@ -459,10 +457,10 @@ func TestFindAllTransactions(t *testing.T) {
 
 	// Create transactions for both accounts
 	now := time.Now().Truncate(time.Second)
-	createTestTransaction(t, txRepo, acc1.ID, catIncome.ID, 1000, now.AddDate(0, 0, -5))
-	createTestTransaction(t, txRepo, acc1.ID, catOutcome.ID, 100, now.AddDate(0, 0, -4))
-	createTestTransaction(t, txRepo, acc2.ID, catIncome.ID, 2000, now.AddDate(0, 0, -3))
-	txToFind := createTestTransaction(t, txRepo, acc2.ID, catOutcome.ID, 200, now.AddDate(0, 0, -2))
+	createTestTransaction(t, txRepo, acc1.ID, catIncome.ID, 1000, now.AddDate(0, 0, -5), user.ID)
+	createTestTransaction(t, txRepo, acc1.ID, catOutcome.ID, 100, now.AddDate(0, 0, -4), user.ID)
+	createTestTransaction(t, txRepo, acc2.ID, catIncome.ID, 2000, now.AddDate(0, 0, -3), user.ID)
+	txToFind := createTestTransaction(t, txRepo, acc2.ID, catOutcome.ID, 200, now.AddDate(0, 0, -2), user.ID)
 
 	// Manually update one description for search testing
 	txToFind.Description = "Unique Project Description"
@@ -476,7 +474,7 @@ func TestFindAllTransactions(t *testing.T) {
 		filters := domain.TransactionFilters{}
 
 		// Act
-		result, err := txRepo.FindAllTransactions(ctx, filters)
+		result, err := txRepo.FindAllTransactions(ctx, filters, nil)
 
 		// Assert
 		require.NoError(t, err)
@@ -489,7 +487,7 @@ func TestFindAllTransactions(t *testing.T) {
 		filters := domain.TransactionFilters{Description: &desc}
 
 		// Act
-		result, err := txRepo.FindAllTransactions(ctx, filters)
+		result, err := txRepo.FindAllTransactions(ctx, filters, nil)
 
 		// Assert
 		require.NoError(t, err)
@@ -504,7 +502,7 @@ func TestFindAllTransactions(t *testing.T) {
 		filters := domain.TransactionFilters{StartDate: &startDate, EndDate: &endDate}
 
 		// Act
-		result, err := txRepo.FindAllTransactions(ctx, filters)
+		result, err := txRepo.FindAllTransactions(ctx, filters, nil)
 
 		// Assert
 		require.NoError(t, err)
@@ -516,7 +514,7 @@ func TestFindAllTransactions(t *testing.T) {
 		filters := domain.TransactionFilters{CategoryID: &catOutcome.ID}
 
 		// Act
-		result, err := txRepo.FindAllTransactions(ctx, filters)
+		result, err := txRepo.FindAllTransactions(ctx, filters, nil)
 
 		// Assert
 		require.NoError(t, err)
@@ -529,7 +527,7 @@ func TestFindAllTransactions(t *testing.T) {
 		filters := domain.TransactionFilters{CategoryType: &incomeType}
 
 		// Act
-		result, err := txRepo.FindAllTransactions(ctx, filters)
+		result, err := txRepo.FindAllTransactions(ctx, filters, nil)
 
 		// Assert
 		require.NoError(t, err)
@@ -542,10 +540,11 @@ func TestFindAllTransactions(t *testing.T) {
 		filters := domain.TransactionFilters{Description: &desc}
 
 		// Act
-		result, err := txRepo.FindAllTransactions(ctx, filters)
+		result, err := txRepo.FindAllTransactions(ctx, filters, nil)
 
 		// Assert
 		require.NoError(t, err)
 		assert.Len(t, result, 0)
 	})
 }
+

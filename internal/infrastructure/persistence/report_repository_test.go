@@ -23,6 +23,7 @@ func TestGetFinancialSummary(t *testing.T) {
 
 	// --- Test Data Setup ---
 	truncateTables(t) // Clear database before test
+	user := createTestUser(t, testUserRepo, "testuser_report_sum", domain.AdminRole)
 	acc1 := createTestAccount(t, accountRepo)
 	acc2 := createTestAccount(t, accountRepo)
 	catIncome := createTestCategory(t, categoryRepo, "Salary", domain.Income)
@@ -30,10 +31,10 @@ func TestGetFinancialSummary(t *testing.T) {
 
 	// Create transactions for both accounts
 	now := time.Now().Truncate(time.Second)
-	createTestTransaction(t, txRepo, acc1.ID, catIncome.ID, 1000, now.AddDate(0, 0, -5))
-	createTestTransaction(t, txRepo, acc1.ID, catOutcome.ID, 100, now.AddDate(0, 0, -4))
-	createTestTransaction(t, txRepo, acc2.ID, catIncome.ID, 2000, now.AddDate(0, 0, -3))
-	createTestTransaction(t, txRepo, acc2.ID, catOutcome.ID, 200, now.AddDate(0, 0, -2))
+	createTestTransaction(t, txRepo, acc1.ID, catIncome.ID, 1000, now.AddDate(0, 0, -5), user.ID)
+	createTestTransaction(t, txRepo, acc1.ID, catOutcome.ID, 100, now.AddDate(0, 0, -4), user.ID)
+	createTestTransaction(t, txRepo, acc2.ID, catIncome.ID, 2000, now.AddDate(0, 0, -3), user.ID)
+	createTestTransaction(t, txRepo, acc2.ID, catOutcome.ID, 200, now.AddDate(0, 0, -2), user.ID)
 
 	// --- Test Scenarios ---
 	t.Run("should get financial summary for all accounts", func(t *testing.T) {
@@ -77,17 +78,18 @@ func TestGetReconciliation(t *testing.T) {
 
 	// --- Test Data Setup ---
 	truncateTables(t) // Clear database before test
+	user := createTestUser(t, testUserRepo, "testuser_report_rec", domain.AdminRole)
 	acc := createTestAccount(t, accountRepo)
 	catIncome := createTestCategory(t, categoryRepo, "Salary", domain.Income)
 	catOutcome := createTestCategory(t, categoryRepo, "Groceries", domain.Outcome)
 
 	// Create transactions for the account
 	now := time.Now().Truncate(time.Second)
-	createTestTransaction(t, txRepo, acc.ID, catIncome.ID, 1000, now.AddDate(0, 0, -10)) // Before period
-	createTestTransaction(t, txRepo, acc.ID, catOutcome.ID, 50, now.AddDate(0, 0, -9))   // Before period
-	createTestTransaction(t, txRepo, acc.ID, catIncome.ID, 500, now.AddDate(0, 0, -5))   // In period
-	createTestTransaction(t, txRepo, acc.ID, catOutcome.ID, 100, now.AddDate(0, 0, -4))  // In period
-	createTestTransaction(t, txRepo, acc.ID, catIncome.ID, 200, now.AddDate(0, 0, -1))   // In period
+	createTestTransaction(t, txRepo, acc.ID, catIncome.ID, 1000, now.AddDate(0, 0, -10), user.ID) // Before period
+	createTestTransaction(t, txRepo, acc.ID, catOutcome.ID, 50, now.AddDate(0, 0, -9), user.ID)   // Before period
+	createTestTransaction(t, txRepo, acc.ID, catIncome.ID, 500, now.AddDate(0, 0, -5), user.ID)   // In period
+	createTestTransaction(t, txRepo, acc.ID, catOutcome.ID, 100, now.AddDate(0, 0, -4), user.ID)  // In period
+	createTestTransaction(t, txRepo, acc.ID, catIncome.ID, 200, now.AddDate(0, 0, -1), user.ID)   // In period
 
 	// --- Test Scenarios ---
 	t.Run("should get reconciliation data correctly", func(t *testing.T) {

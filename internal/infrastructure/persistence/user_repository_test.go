@@ -13,20 +13,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// Helper function to create a test user to avoid repetition
-func createTestUser(t *testing.T, repo *UserRepositoryImpl, username string, role domain.UserRole) *domain.User {
-	user := &domain.User{
-		Username:     username,
-		PasswordHash: "$2a$10$g.3a/wF.y.mCgCZT7c965u2a.d3j.1x3.Z3j.1x3.Z3j.1x3.Z3j.", // "password"
-		FirstName:    "Test",
-		LastName:     "User",
-		Role:         role,
-	}
-	err := repo.CreateUser(context.Background(), user)
-	require.NoError(t, err, "Failed to create test user")
-	return user
-}
-
 func TestCreateUser(t *testing.T) {
 	// Arrange: Clean the DB before the test
 	truncateTables(t)

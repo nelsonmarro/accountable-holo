@@ -13,8 +13,10 @@ import (
 	_ "github.com/golang-migrate/migrate/v4/database/postgres" // Import the postgres driver
 	_ "github.com/golang-migrate/migrate/v4/source/file"       // Import the file source driver
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/nelsonmarro/accountable-holo/internal/domain"
 	"github.com/ory/dockertest/v3"
 	"github.com/ory/dockertest/v3/docker"
+	"github.com/stretchr/testify/require"
 )
 
 var (
@@ -23,6 +25,7 @@ var (
 	testReportRepo *ReportRepositoryImpl
 	testUserRepo   *UserRepositoryImpl
 	dbPool         *pgxpool.Pool // Make the pool accessible to helpers
+	testUser       *domain.User  // Global test user
 )
 
 // TestMain is the entry point for all tests in this package.
@@ -106,8 +109,22 @@ func TestMain(m *testing.M) {
 
 // truncateTables cleans the database tables between test runs for isolation.
 func truncateTables(t *testing.T) {
-	_, err := dbPool.Exec(context.Background(), "TRUNCATE TABLE accounts, categories, transactions RESTART IDENTITY")
+	_, err := dbPool.Exec(context.Background(), "TRUNCATE TABLE accounts, categories, transactions, users RESTART IDENTITY CASCADE")
 	if err != nil {
 		t.Fatalf("Failed to truncate tables: %v", err)
 	}
+}
+
+// Helper function to create a test user
+func createTestUser(t *testing.T, repo *UserRepositoryImpl, username string, role domain.UserRole) *domain.User {
+	user := &domain.User{
+		Username:     username,
+		PasswordHash: "hashed_password",
+		FirstName:    "Test",
+		LastName:     "User",
+		Role:         role,
+	}
+	err := repo.CreateUser(context.Background(), user)
+	require.NoError(t, err, "Failed to create test user")
+	return user
 }
