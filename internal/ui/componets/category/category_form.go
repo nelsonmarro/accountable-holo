@@ -9,18 +9,21 @@ import (
 func CategoryForm(
 	nameEntry fyne.CanvasObject,
 	tipoSelect fyne.CanvasObject,
+	monthlyBudgetEntry fyne.CanvasObject,
 ) []*widget.FormItem {
-	addFormValidation(nameEntry, tipoSelect)
+	addFormValidation(nameEntry, tipoSelect, monthlyBudgetEntry)
 
 	return []*widget.FormItem{
 		{Text: "Nombre", Widget: nameEntry},
 		{Text: "Tipo", Widget: tipoSelect},
+		{Text: "Presupuesto Mensual (Opcional)", Widget: monthlyBudgetEntry},
 	}
 }
 
 func addFormValidation(
 	nameEntry fyne.CanvasObject,
 	tipoSelect fyne.CanvasObject,
+	monthlyBudgetEntry fyne.CanvasObject,
 ) {
 	name, ok := nameEntry.(*widget.Entry)
 	if ok {
@@ -35,5 +38,18 @@ func addFormValidation(
 		tipoValidator := uivalidators.NewValidator()
 		tipoValidator.Required()
 		tipo.Validator = tipoValidator.Validate
+	}
+
+	budget, ok := monthlyBudgetEntry.(*widget.Entry)
+	if ok {
+		budgetValidator := uivalidators.NewValidator()
+		budgetValidator.IsFloat() // This likely enforces it IS a float. We need "If not empty, must be float"
+
+		budget.Validator = func(s string) error {
+			if s == "" {
+				return nil
+			}
+			return budgetValidator.Validate(s)
+		}
 	}
 }

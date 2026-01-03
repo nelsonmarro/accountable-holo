@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"fmt"
+	"sort"
 	"time"
 
 	"github.com/nelsonmarro/accountable-holo/internal/domain"
@@ -28,6 +29,7 @@ type DailyReportGenerator interface {
 type ReportServiceImpl struct {
 	repo            ReportRepository
 	transactionRepo TransactionRepository
+	categoryRepo    CategoryRepository
 	csvGenerator    interface { // <-- This is the
 
 		TransactionReportGenerator
@@ -44,6 +46,7 @@ type ReportServiceImpl struct {
 func NewReportService(
 	repo ReportRepository,
 	transactionRepo TransactionRepository,
+	categoryRepo CategoryRepository,
 	csvGenerator interface {
 		TransactionReportGenerator
 		DailyReportGenerator
@@ -57,6 +60,7 @@ func NewReportService(
 	return &ReportServiceImpl{
 		repo:            repo,
 		transactionRepo: transactionRepo,
+		categoryRepo:    categoryRepo,
 		csvGenerator:    csvGenerator,
 		pdfGenerator:    pdfGenerator,
 	}
@@ -88,14 +92,19 @@ func (s *ReportServiceImpl) GetFinancialSummary(
 
 	var totalIncome decimal.Decimal
 	var totalExpenses decimal.Decimal
+	incomeMap := make(map[string]decimal.Decimal)
+	expenseMap := make(map[string]decimal.Decimal)
 
 	for _, tx := range transactions {
 		if tx.Category != nil {
+			amount := decimal.NewFromFloat(tx.Amount)
 			switch tx.Category.Type {
 			case domain.Income:
-				totalIncome = totalIncome.Add(decimal.NewFromFloat(tx.Amount))
+				totalIncome = totalIncome.Add(amount)
+				incomeMap[tx.Category.Name] = incomeMap[tx.Category.Name].Add(amount)
 			case domain.Outcome:
-				totalExpenses = totalExpenses.Add(decimal.NewFromFloat(tx.Amount))
+				totalExpenses = totalExpenses.Add(amount)
+				expenseMap[tx.Category.Name] = expenseMap[tx.Category.Name].Add(amount)
 			}
 		}
 	}
@@ -103,10 +112,27 @@ func (s *ReportServiceImpl) GetFinancialSummary(
 	netProfitLoss := totalIncome.Sub(totalExpenses)
 
 	return domain.FinancialSummary{
-		TotalIncome:   totalIncome,
-		TotalExpenses: totalExpenses,
-		NetProfitLoss: netProfitLoss,
+		TotalIncome:        totalIncome,
+		TotalExpenses:      totalExpenses,
+		NetProfitLoss:      netProfitLoss,
+		IncomeByCategory:   mapToSortedSlice(incomeMap),
+		ExpensesByCategory: mapToSortedSlice(expenseMap),
 	}, nil
+}
+
+func mapToSortedSlice(data map[string]decimal.Decimal) []domain.CategoryAmount {
+	var result []domain.CategoryAmount
+	for name, amount := range data {
+		result = append(result, domain.CategoryAmount{
+			CategoryName: name,
+			Amount:       amount,
+		})
+	}
+	// Sort by Amount descending
+	sort.Slice(result, func(i, j int) bool {
+		return result[i].Amount.GreaterThan(result[j].Amount)
+	})
+	return result
 }
 
 func (s *ReportServiceImpl) GenerateReportFile(ctx context.Context, format string, transactions []domain.Transaction, outputPath string, currentUser *domain.User) error {
@@ -184,4 +210,86 @@ func (s *ReportServiceImpl) GenerateDailyReport(ctx context.Context, accountID i
 		DailyProfitLoss: dailyIncome.Sub(dailyExpenses),
 		Transactions:    transactions,
 	}, nil
+}
+
+func (s *ReportServiceImpl) GetBudgetOverview(
+	ctx context.Context,
+	startDate, endDate time.Time,
+) ([]domain.BudgetStatus, error) {
+	// 1. Get all categories
+	categories, err := s.categoryRepo.GetAllCategories(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get categories for budget: %w", err)
+	}
+
+	// 2. Filter categories with budget
+	var budgetedCategories []domain.Category
+	for _, cat := range categories {
+		if cat.MonthlyBudget != nil && !cat.MonthlyBudget.IsZero() && cat.Type == domain.Outcome {
+			budgetedCategories = append(budgetedCategories, cat)
+		}
+	}
+
+	if len(budgetedCategories) == 0 {
+		return []domain.BudgetStatus{}, nil
+	}
+
+	// 3. Calculate "Months" in the range to adjust the budget
+	days := endDate.Sub(startDate).Hours() / 24
+	monthsFactor := decimal.NewFromFloat(1.0)
+	if days > 32 {
+		months := days / 30.0
+		monthsFactor = decimal.NewFromFloat(months)
+	}
+
+	// 4. Calculate status for each
+	var statuses []domain.BudgetStatus
+	filters := domain.TransactionFilters{
+		StartDate: &startDate,
+		EndDate:   &endDate,
+	}
+	
+	transactions, err := s.transactionRepo.FindAllTransactions(ctx, filters, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get transactions for budget: %w", err)
+	}
+
+	// Aggregate expenses by Category ID
+	expensesMap := make(map[int]decimal.Decimal)
+	for _, tx := range transactions {
+		if tx.CategoryID != 0 && tx.Category != nil && tx.Category.Type == domain.Outcome {
+			amount := decimal.NewFromFloat(tx.Amount)
+			expensesMap[tx.CategoryID] = expensesMap[tx.CategoryID].Add(amount)
+		}
+	}
+
+	for _, cat := range budgetedCategories {
+		spent := expensesMap[cat.ID]
+		adjustedBudget := cat.MonthlyBudget.Mul(monthsFactor)
+
+		percentage := 0.0
+		if !adjustedBudget.IsZero() {
+			percentage, _ = spent.Div(adjustedBudget).Float64()
+			percentage = percentage * 100
+		}
+
+		remaining := adjustedBudget.Sub(spent)
+		isOver := spent.GreaterThan(adjustedBudget)
+
+		statuses = append(statuses, domain.BudgetStatus{
+			CategoryName:   cat.Name,
+			BudgetAmount:   adjustedBudget,
+			SpentAmount:    spent,
+			PercentageUsed: percentage,
+			Remaining:      remaining,
+			IsOverBudget:   isOver,
+		})
+	}
+
+	// Sort by Percentage Used Descending
+	sort.Slice(statuses, func(i, j int) bool {
+		return statuses[i].PercentageUsed > statuses[j].PercentageUsed
+	})
+
+	return statuses, nil
 }

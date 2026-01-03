@@ -11,6 +11,7 @@ import (
 	"fyne.io/fyne/v2/widget"
 	"github.com/nelsonmarro/accountable-holo/internal/application/helpers"
 	"github.com/nelsonmarro/accountable-holo/internal/domain"
+	"github.com/shopspring/decimal"
 )
 
 // EditCategoryDialog holds the state and logic for the 'Edit Account' dialog.
@@ -22,8 +23,9 @@ type EditCategoryDialog struct {
 	catID          int
 
 	// UI Components for the form
-	nameEntry  *widget.Entry
-	tipoSelect *widget.SelectEntry
+	nameEntry   *widget.Entry
+	tipoSelect  *widget.SelectEntry
+	budgetEntry *widget.Entry
 }
 
 // NewEditCategoryDialog creates a new dialog handler for the edit action.
@@ -41,8 +43,9 @@ func NewEditCategoryDialog(
 		callbackAction: callback,
 		catID:          catID,
 		// Initialize components
-		nameEntry:  widget.NewEntry(),
-		tipoSelect: widget.NewSelectEntry([]string{string(domain.Income), string(domain.Outcome)}),
+		nameEntry:   widget.NewEntry(),
+		tipoSelect:  widget.NewSelectEntry([]string{string(domain.Income), string(domain.Outcome)}),
+		budgetEntry: widget.NewEntry(),
 	}
 }
 
@@ -96,20 +99,41 @@ func (d *EditCategoryDialog) fetchCategory(onSuccess func(acc *domain.Category),
 }
 
 // showEditForm displays the actual form, pre-populated with account data.
-func (d *EditCategoryDialog) showEditForm(acc *domain.Category) {
+func (d *EditCategoryDialog) showEditForm(cat *domain.Category) {
 	// Populate the widgets with the fetched data
-	d.nameEntry.SetText(acc.Name)
-	d.tipoSelect.SetText(string(acc.Type))
+	d.nameEntry.SetText(cat.Name)
+	d.tipoSelect.SetText(string(cat.Type))
+	if cat.MonthlyBudget != nil {
+		d.budgetEntry.SetText(cat.MonthlyBudget.String())
+	}
 
-	formDialog := dialog.NewForm("Editar Cuenta", "Guardar", "Cancelar",
-		CategoryForm(
-			d.nameEntry,
-			d.tipoSelect,
-		),
+	// Initial visibility check
+	if cat.Type == domain.Income {
+		d.budgetEntry.Hide()
+	}
+
+	formItems := CategoryForm(
+		d.nameEntry,
+		d.tipoSelect,
+		d.budgetEntry,
+	)
+
+	// Dynamic visibility
+	d.tipoSelect.OnChanged = func(selected string) {
+		if selected == string(domain.Outcome) {
+			d.budgetEntry.Show()
+		} else {
+			d.budgetEntry.SetText("")
+			d.budgetEntry.Hide()
+		}
+	}
+
+	formDialog := dialog.NewForm("Editar Categoria", "Guardar", "Cancelar",
+		formItems,
 		d.handleSubmit, // The submit callback
 		d.mainWin,
 	)
-	formDialog.Resize(fyne.NewSize(380, 200))
+	formDialog.Resize(fyne.NewSize(450, 300)) // Increased size
 	formDialog.Show()
 }
 
@@ -129,6 +153,13 @@ func (d *EditCategoryDialog) handleSubmit(valid bool) {
 			},
 			Name: d.nameEntry.Text,
 			Type: helpers.GetCategoryTypeFromString(d.tipoSelect.Text),
+		}
+
+		if d.budgetEntry.Text != "" {
+			budget, err := decimal.NewFromString(d.budgetEntry.Text)
+			if err == nil {
+				updatedCategory.MonthlyBudget = &budget
+			}
 		}
 
 		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)

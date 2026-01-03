@@ -12,6 +12,7 @@ import (
 	"fyne.io/fyne/v2/widget"
 	"github.com/nelsonmarro/accountable-holo/internal/application/helpers"
 	"github.com/nelsonmarro/accountable-holo/internal/domain"
+	"github.com/shopspring/decimal"
 )
 
 // AddCategoryDialog holds the state and logic for the 'Add Account' dialog.
@@ -25,8 +26,7 @@ type AddCategoryDialog struct {
 	// UI Components
 	nameEntry   *widget.Entry
 	tipoSelect  *widget.SelectEntry
-	amountEntry *widget.Entry
-	numberEntry *widget.Entry
+	budgetEntry *widget.Entry
 }
 
 // NewAddCategoryDialog creates a new dialog handler.
@@ -38,24 +38,42 @@ func NewAddCategoryDialog(win fyne.Window, l *log.Logger, service CategoryServic
 		callbackAction: callback,
 
 		// Initialize components
-		nameEntry:  widget.NewEntry(),
-		tipoSelect: widget.NewSelectEntry([]string{string(domain.Income), string(domain.Outcome)}),
+		nameEntry:   widget.NewEntry(),
+		tipoSelect:  widget.NewSelectEntry([]string{string(domain.Income), string(domain.Outcome)}),
+		budgetEntry: widget.NewEntry(),
 	}
 }
 
 // Show creates and displays the Fyne form dialog.
 func (d *AddCategoryDialog) Show() {
 	d.tipoSelect.SetText(string(domain.Income))
+
+	// Start with budget hidden if default is Income
+	d.budgetEntry.Hide()
+
+	formItems := CategoryForm(
+		d.nameEntry,
+		d.tipoSelect,
+		d.budgetEntry,
+	)
+
+	// Custom visibility logic: Only show budget for Outcome (Egreso)
+	d.tipoSelect.OnChanged = func(selected string) {
+		if selected == string(domain.Outcome) {
+			d.budgetEntry.Show()
+		} else {
+			d.budgetEntry.SetText("") // Clear budget if switching to Income
+			d.budgetEntry.Hide()
+		}
+	}
+
 	formDialog := dialog.NewForm("Crear Categoria", "Guardar", "Cancelar",
-		CategoryForm(
-			d.nameEntry,
-			d.tipoSelect,
-		),
+		formItems,
 		d.handleSubmit, // Pass the method as the callback
 		d.mainWin,
 	)
 
-	formDialog.Resize(fyne.NewSize(380, 200))
+	formDialog.Resize(fyne.NewSize(450, 300)) // Increased size
 	formDialog.Show()
 }
 
@@ -74,6 +92,13 @@ func (d *AddCategoryDialog) handleSubmit(valid bool) {
 		cat := &domain.Category{
 			Name: name,
 			Type: helpers.GetCategoryTypeFromString(tipo),
+		}
+
+		if d.budgetEntry.Text != "" {
+			budget, err := decimal.NewFromString(d.budgetEntry.Text)
+			if err == nil {
+				cat.MonthlyBudget = &budget
+			}
 		}
 
 		cxt, cancel := context.WithTimeout(context.Background(), 15*time.Second)

@@ -1,0 +1,1 @@
+ALTER TABLE categories ADD COLUMN monthly_budget NUMERIC DEFAULT NULL;

@@ -76,6 +76,7 @@ type StorageService interface {
 
 type ReportService interface {
 	GetFinancialSummary(ctx context.Context, startDate, endDate time.Time, accountID *int) (domain.FinancialSummary, error)
+	GetBudgetOverview(ctx context.Context, startDate, endDate time.Time) ([]domain.BudgetStatus, error)
 	GetReconciliation(ctx context.Context, accountID int, startDate, endDate time.Time, endingBalance decimal.Decimal) (*domain.Reconciliation, error)
 	GenerateReportFile(ctx context.Context, format string, transactions []domain.Transaction, outputPath string, currentUser *domain.User) error
 	GenerateReconciliationReportFile(ctx context.Context, reconciliation *domain.Reconciliation, outputPath string, currentUser *domain.User) error

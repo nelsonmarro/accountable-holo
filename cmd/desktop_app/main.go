@@ -82,7 +82,7 @@ func main() {
 	catService := service.NewCategoryService(catRepo)
 	txService := service.NewTransactionService(txRepo, storageService, accService)
 	userService := service.NewUserService(userRepo)
-	reportService := service.NewReportService(reportRepo, txRepo, csvGen, pdfGen)
+	reportService := service.NewReportService(reportRepo, txRepo, catRepo, csvGen, pdfGen)
 
 	// ---- UI Struct ----
 	gui := ui.NewUI(&ui.Services{

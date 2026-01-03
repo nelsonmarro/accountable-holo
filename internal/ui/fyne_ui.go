@@ -55,10 +55,14 @@ type UI struct {
 
 	// ---- Summary Tab State ----
 	summaryDateRangeSelect *widget.Select
+	summaryStartDateEntry  *widget.DateEntry
+	summaryEndDateEntry    *widget.DateEntry
 	summaryAccountSelect   *widget.Select
 	summaryTotalIncome     *canvas.Text
 	summaryTotalExpenses   *canvas.Text
 	summaryNetProfitLoss   *canvas.Text
+	summaryChartsContainer *fyne.Container
+	summaryBudgetContainer *fyne.Container
 
 	// ---- Debug ----
 	infoLogger  *log.Logger

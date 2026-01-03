@@ -22,6 +22,16 @@ Sigue las instrucciones según tu sistema operativo.
 
 Fyne requiere **Go (mínimo 1.19)**, un **compilador de C** para conectar con los drivers de gráficos y los **drivers del sistema**.
 
+> 📘 **Documentación de Fyne:** Para aprender más sobre el framework, visita [developer.fyne.io](https://developer.fyne.io/).
+
+#### 🐹 Instalación de Go (Golang)
+
+Si aún no tienes Go instalado, puedes descargarlo desde el sitio oficial:
+
+- **Descargar Go:** [go.dev/dl](https://go.dev/dl/)
+
+_Nota: Los pasos siguientes para Windows y Linux incluyen comandos para instalar Go y las herramientas de compilación C necesarias para Fyne._
+
 #### 🪟 Windows (Vía MSYS2)
 
 Es la forma recomendada para evitar errores de compilación con CGO.
@@ -30,16 +40,16 @@ Es la forma recomendada para evitar errores de compilación con CGO.
 2. Al finalizar, busca en el menú de inicio **"MSYS2 MinGW 64-bit"** y ábrelo.
 3. Ejecuta los siguientes comandos (elige "all" si se te pregunta):
 
-    ```bash
-    pacman -Syu
-    pacman -S git mingw-w64-x86_64-toolchain mingw-w64-x86_64-go
-    ```
+   ```bash
+   pacman -Syu
+   pacman -S git mingw-w64-x86_64-toolchain mingw-w64-x86_64-go
+   ```
 
 4. Configura el **PATH** en MSYS2:
 
-    ```bash
-    echo "export PATH=\$PATH:~/Go/bin" >> ~/.bashrc
-    ```
+   ```bash
+   echo "export PATH=\$PATH:~/Go/bin" >> ~/.bashrc
+   ```
 
 5. **Variables de Entorno de Windows:** Para usar otros terminales (PowerShell/CMD/VS Code), ve al "Panel de Control" -> "Editar las variables de entorno del sistema" -> "Variables de entorno" -> Busca `Path` -> Agrega: `C:\msys64\mingw64\bin`.
 

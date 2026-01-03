@@ -2,6 +2,7 @@ package ui
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"fyne.io/fyne/v2"
@@ -10,6 +11,7 @@ import (
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 	"github.com/nelsonmarro/accountable-holo/internal/domain"
+	"github.com/nelsonmarro/accountable-holo/internal/ui/componets"
 )
 
 var dateRangeOptions = []string{
@@ -17,10 +19,20 @@ var dateRangeOptions = []string{
 	"Mes Pasado",
 	"Este Trimestre",
 	"Este Año",
+	"Personalizado",
 }
 
 // makeFilterCard creates a card with filters for generating financial summaries.
 func (ui *UI) makeFilterCard() fyne.CanvasObject {
+	ui.summaryStartDateEntry = widget.NewDateEntry()
+	ui.summaryEndDateEntry = widget.NewDateEntry()
+
+	// Default to current month for custom entries
+	now := time.Now()
+	firstOfMonth := time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, now.Location())
+	ui.summaryStartDateEntry.SetDate(&firstOfMonth)
+	ui.summaryEndDateEntry.SetDate(&now)
+
 	ui.summaryDateRangeSelect = widget.NewSelect(dateRangeOptions, nil)
 	ui.summaryDateRangeSelect.SetSelected(dateRangeOptions[0]) // Default to "This Month"
 
@@ -31,8 +43,31 @@ func (ui *UI) makeFilterCard() fyne.CanvasObject {
 	})
 	generateBtn.Importance = widget.HighImportance
 
+	// We wrap the custom dates in a container to manage their visibility together
+	// though they are also FormItems.
+	// Fyne's Form doesn't hide labels when widgets are hidden, so we'll use a VBox
+	// for the optional part.
+
 	form := widget.NewForm(
 		widget.NewFormItem("Rango de Fecha", ui.summaryDateRangeSelect),
+	)
+
+	customDatesForm := widget.NewForm(
+		widget.NewFormItem("Fecha Inicial", ui.summaryStartDateEntry),
+		widget.NewFormItem("Fecha Final", ui.summaryEndDateEntry),
+	)
+	customDatesForm.Hide()
+
+	// Update the select callback to handle the form visibility
+	ui.summaryDateRangeSelect.OnChanged = func(selected string) {
+		if selected == "Personalizado" {
+			customDatesForm.Show()
+		} else {
+			customDatesForm.Hide()
+		}
+	}
+
+	accountForm := widget.NewForm(
 		widget.NewFormItem("Cuenta", ui.summaryAccountSelect),
 	)
 
@@ -41,7 +76,11 @@ func (ui *UI) makeFilterCard() fyne.CanvasObject {
 		container.NewPadded(generateBtn),
 		nil,
 		nil,
-		form,
+		container.NewVBox(
+			form,
+			customDatesForm,
+			accountForm,
+		),
 	)
 }
 
@@ -56,6 +95,7 @@ func (ui *UI) loadAccountsForSummary() {
 		return
 	}
 
+	ui.accounts = accounts // Keep a reference to the accounts slice in UI struct
 	options := []string{"Todas las Cuentas"}
 	for _, acc := range accounts {
 		options = append(options, acc.Name)
@@ -77,7 +117,18 @@ func (ui *UI) generateSummary() {
 
 	// Get selected date range
 	selectedRange := ui.summaryDateRangeSelect.Selected
-	startDate, endDate := getDatesForRange(selectedRange)
+	var startDate, endDate time.Time
+
+	if selectedRange == "Personalizado" {
+		if ui.summaryStartDateEntry.Date == nil || ui.summaryEndDateEntry.Date == nil {
+			dialog.ShowError(fmt.Errorf("por favor seleccione ambas fechas para el rango personalizado"), ui.mainWindow)
+			return
+		}
+		startDate = *ui.summaryStartDateEntry.Date
+		endDate = *ui.summaryEndDateEntry.Date
+	} else {
+		startDate, endDate = getDatesForRange(selectedRange)
+	}
 
 	// Get selected account
 	selectedAccountName := ui.summaryAccountSelect.Selected
@@ -99,11 +150,46 @@ func (ui *UI) generateSummary() {
 		return
 	}
 
+	budgetStatuses, err := ui.Services.ReportService.GetBudgetOverview(ctx, startDate, endDate)
+	if err != nil {
+		ui.errorLogger.Printf("Error getting budget overview: %v", err)
+		// We don't block the UI, just show an error or empty budget section
+	}
+
 	// Update the UI
 	fyne.Do(func() {
 		updateMetricText(ui.summaryTotalIncome, summary.TotalIncome, domain.Income)
 		updateMetricText(ui.summaryTotalExpenses, summary.TotalExpenses, domain.Outcome)
 		updateMetricText(ui.summaryNetProfitLoss, summary.NetProfitLoss, "Net")
+
+		// Update Charts
+		ui.summaryChartsContainer.Objects = nil // Clear previous charts
+
+		// Chart 1: Income vs Expense with Title
+		barChart := componets.NewIncomeExpenseChart(summary.TotalIncome, summary.TotalExpenses)
+		chart1Container := container.NewVBox(
+			widget.NewLabelWithStyle("Comparativa Global: Ingresos vs Egresos", fyne.TextAlignCenter, fyne.TextStyle{Bold: true}),
+			barChart,
+		)
+
+		// Chart 2: Expenses Breakdown with Title
+		expenseChart := componets.NewCategoryBreakdownChart(summary.ExpensesByCategory, summary.TotalExpenses)
+		chart2Container := container.NewVBox(
+			widget.NewLabelWithStyle("Distribución de Gastos: ¿A dónde va el dinero?", fyne.TextAlignCenter, fyne.TextStyle{Bold: true}),
+			expenseChart,
+		)
+
+		ui.summaryChartsContainer.Add(container.NewPadded(chart1Container))
+		ui.summaryChartsContainer.Add(container.NewPadded(chart2Container))
+		ui.summaryChartsContainer.Refresh()
+
+		// Update Budget
+		ui.summaryBudgetContainer.Objects = nil
+		ui.summaryBudgetContainer.Add(widget.NewLabelWithStyle("Seguimiento de Presupuestos: Controla tus límites de gasto mensual.", fyne.TextAlignCenter, fyne.TextStyle{Italic: true}))
+		
+		budgetChart := componets.NewBudgetStatusChart(budgetStatuses)
+		ui.summaryBudgetContainer.Add(budgetChart)
+		ui.summaryBudgetContainer.Refresh()
 	})
 }
 

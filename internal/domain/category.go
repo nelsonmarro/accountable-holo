@@ -1,5 +1,7 @@
 package domain
 
+import "github.com/shopspring/decimal"
+
 // CategoryType defines if a transaction is an income or an outcome.
 type CategoryType string
 
@@ -10,6 +12,7 @@ const (
 
 type Category struct {
 	BaseEntity
-	Type CategoryType `db:"type"`
-	Name string       `db:"name"`
+	Type          CategoryType     `db:"type"`
+	Name          string           `db:"name"`
+	MonthlyBudget *decimal.Decimal `db:"monthly_budget"`
 }
