@@ -2,6 +2,7 @@ package transaction
 
 import (
 	"fyne.io/fyne/v2"
+	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/widget"
 	"github.com/nelsonmarro/accountable-holo/internal/application/uivalidators"
 )
@@ -12,6 +13,9 @@ func TransactionForm(
 	date fyne.CanvasObject,
 	category fyne.CanvasObject,
 	attachment fyne.CanvasObject,
+	isRecurring fyne.CanvasObject,
+	interval fyne.CanvasObject,
+	isRecurringLabel fyne.CanvasObject, // New
 ) []*widget.FormItem {
 	addFormValidation(description, amount, category)
 
@@ -21,6 +25,8 @@ func TransactionForm(
 		{Text: "Fecha", Widget: date},
 		{Text: "Categoria", Widget: category},
 		{Text: "Adjunto", Widget: attachment},
+		{Text: "", Widget: container.NewBorder(nil, nil, isRecurringLabel, nil, isRecurring)},
+		{Text: "Frecuencia", Widget: interval},
 	}
 }
 

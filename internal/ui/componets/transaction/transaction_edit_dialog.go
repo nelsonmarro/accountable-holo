@@ -17,6 +17,7 @@ import (
 	"fyne.io/fyne/v2/widget"
 	"github.com/nelsonmarro/accountable-holo/internal/application/validator"
 	"github.com/nelsonmarro/accountable-holo/internal/domain"
+	"github.com/nelsonmarro/accountable-holo/internal/ui/componets"
 	"github.com/nelsonmarro/accountable-holo/internal/ui/componets/category"
 )
 
@@ -25,6 +26,7 @@ type EditTransactionDialog struct {
 	mainWin         fyne.Window
 	logger          *log.Logger
 	txService       TransactionService
+	recurService    RecurringTransactionService // New
 	categoryService CategoryService
 	callbackAction  func()
 	txID            int
@@ -40,6 +42,10 @@ type EditTransactionDialog struct {
 	attachmentLabel  *widget.Label
 	searchFileBtn    *widget.Button
 
+	// Recurrence UI
+	isRecurringCheck *widget.Check
+	intervalSelect   *widget.Select
+
 	// Data
 	accountID          int
 	categories         []domain.Category
@@ -53,6 +59,7 @@ func NewEditTransactionDialog(
 	win fyne.Window,
 	l *log.Logger,
 	txs TransactionService,
+	rs RecurringTransactionService, // New
 	cs CategoryService,
 	callback func(),
 	txID int,
@@ -63,6 +70,7 @@ func NewEditTransactionDialog(
 		mainWin:          win,
 		logger:           l,
 		txService:        txs,
+		recurService:     rs,
 		categoryService:  cs,
 		callbackAction:   callback,
 		txID:             txID,
@@ -74,7 +82,20 @@ func NewEditTransactionDialog(
 		dateEntry:        widget.NewDateEntry(),
 		categoryLabel:    widget.NewLabel(""),
 		attachmentLabel:  widget.NewLabel("Ninguno"),
+		isRecurringCheck: widget.NewCheck("", nil),
+		intervalSelect:   widget.NewSelect([]string{"Mensual", "Semanal"}, nil),
 	}
+	d.intervalSelect.SetSelected("Mensual")
+	d.intervalSelect.Hide()
+
+	d.isRecurringCheck.OnChanged = func(checked bool) {
+		if checked {
+			d.intervalSelect.Show()
+		} else {
+			d.intervalSelect.Hide()
+		}
+	}
+
 	d.categoryButton = widget.NewButtonWithIcon("", theme.SearchIcon(), d.openCategorySearch)
 	d.searchDialog = category.NewCategorySearchDialog(win, l, cs, d.handleCategorySelect)
 	d.searchFileBtn = widget.NewButtonWithIcon("", theme.FileIcon(), func() {
@@ -176,12 +197,19 @@ func (d *EditTransactionDialog) showEditForm(tx *domain.Transaction) {
 
 	categoryContainer := container.NewBorder(nil, nil, nil, d.categoryButton, d.categoryLabel)
 	attachmentContainer := container.NewBorder(nil, nil, nil, d.searchFileBtn, d.attachmentLabel)
+
+	recurLabel := componets.NewHoverableLabel("¿Es Recurrente?", d.mainWin.Canvas())
+	recurLabel.SetTooltip("Crea esta transacción automáticamente cada periodo (mes/semana).\nSe calculara a partir de la fecha de la transacción.")
+
 	txFormItems := TransactionForm(
 		d.descriptionEntry,
 		d.amountEntry,
 		d.dateEntry,
 		categoryContainer,
 		attachmentContainer,
+		d.isRecurringCheck,
+		d.intervalSelect,
+		recurLabel,
 	)
 
 	txNumberFormItem := widget.NewFormItem("Número de Transacción", d.txNumber)
@@ -192,7 +220,7 @@ func (d *EditTransactionDialog) showEditForm(tx *domain.Transaction) {
 		d.handleSubmit, // The submit callback
 		d.mainWin,
 	)
-	formDialog.Resize(fyne.NewSize(560, 420))
+	formDialog.Resize(fyne.NewSize(560, 450))
 	formDialog.Show()
 }
 
@@ -244,6 +272,40 @@ func (d *EditTransactionDialog) handleSubmit(valid bool) {
 			})
 			d.logger.Printf("Error updating transaction %d: %v", d.txID, err)
 			return
+		}
+
+		// Handle Recurrence Creation
+		if d.isRecurringCheck.Checked {
+			interval := domain.IntervalMonthly
+			if d.intervalSelect.Selected == "Semanal" {
+				interval = domain.IntervalWeekly
+			}
+
+			// Calculate NEXT run date based on the transaction date
+			nextRun := transactionDate
+			if interval == domain.IntervalMonthly {
+				nextRun = nextRun.AddDate(0, 1, 0)
+			} else {
+				nextRun = nextRun.AddDate(0, 0, 7)
+			}
+
+			rt := &domain.RecurringTransaction{
+				Description: d.descriptionEntry.Text,
+				Amount:      amount,
+				AccountID:   d.accountID,
+				CategoryID:  d.selectedCategoryID,
+				Interval:    interval,
+				StartDate:   transactionDate,
+				NextRunDate: nextRun,
+				IsActive:    true,
+			}
+
+			if err := d.recurService.Create(ctx, rt); err != nil {
+				d.logger.Printf("Failed to create recurrence from edit: %v", err)
+				fyne.Do(func() {
+					dialog.ShowInformation("Advertencia", "Transacción actualizada, pero falló la creación de la recurrencia.", d.mainWin)
+				})
+			}
 		}
 
 		fyne.Do(func() {

@@ -77,6 +77,7 @@ func (ui *UI) makeTransactionUI() fyne.CanvasObject {
 			ui.mainWindow,
 			ui.errorLogger,
 			ui.Services.TxService,
+			ui.Services.RecurService, // Injected Recurrence Service
 			ui.Services.CatService,
 			func() {
 				ui.loadTransactions(1, ui.transactionPaginator.GetPageSize())
@@ -322,6 +323,7 @@ func (ui *UI) updateTransactionItem(i widget.ListItemID, o fyne.CanvasObject) {
 			ui.mainWindow,
 			ui.errorLogger,
 			ui.Services.TxService,
+			ui.Services.RecurService, // Injected Recurrence Service
 			ui.Services.CatService,
 			func() {
 				ui.loadTransactions(1, ui.transactionPaginator.GetPageSize())

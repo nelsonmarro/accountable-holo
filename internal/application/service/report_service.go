@@ -31,7 +31,6 @@ type ReportServiceImpl struct {
 	transactionRepo TransactionRepository
 	categoryRepo    CategoryRepository
 	csvGenerator    interface { // <-- This is the
-
 		TransactionReportGenerator
 		DailyReportGenerator
 	}
@@ -248,7 +247,7 @@ func (s *ReportServiceImpl) GetBudgetOverview(
 		StartDate: &startDate,
 		EndDate:   &endDate,
 	}
-	
+
 	transactions, err := s.transactionRepo.FindAllTransactions(ctx, filters, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get transactions for budget: %w", err)

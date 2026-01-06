@@ -51,12 +51,6 @@ func (d *AddCategoryDialog) Show() {
 	// Start with budget hidden if default is Income
 	d.budgetEntry.Hide()
 
-	formItems := CategoryForm(
-		d.nameEntry,
-		d.tipoSelect,
-		d.budgetEntry,
-	)
-
 	// Custom visibility logic: Only show budget for Outcome (Egreso)
 	d.tipoSelect.OnChanged = func(selected string) {
 		if selected == string(domain.Outcome) {
@@ -68,12 +62,16 @@ func (d *AddCategoryDialog) Show() {
 	}
 
 	formDialog := dialog.NewForm("Crear Categoria", "Guardar", "Cancelar",
-		formItems,
+		CategoryForm(
+			d.nameEntry,
+			d.tipoSelect,
+			d.budgetEntry,
+		),
 		d.handleSubmit, // Pass the method as the callback
 		d.mainWin,
 	)
 
-	formDialog.Resize(fyne.NewSize(450, 300)) // Increased size
+	formDialog.Resize(fyne.NewSize(550, 300))
 	formDialog.Show()
 }
 

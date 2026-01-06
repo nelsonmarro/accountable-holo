@@ -12,6 +12,7 @@ import (
 	"fyne.io/fyne/v2/widget"
 	"github.com/nelsonmarro/accountable-holo/internal/domain"
 	"github.com/nelsonmarro/accountable-holo/internal/ui/componets"
+	"github.com/shopspring/decimal"
 )
 
 var dateRangeOptions = []string{
@@ -173,7 +174,13 @@ func (ui *UI) generateSummary() {
 		)
 
 		// Chart 2: Expenses Breakdown with Title
-		expenseChart := componets.NewCategoryBreakdownChart(summary.ExpensesByCategory, summary.TotalExpenses)
+		expenseChart := componets.NewCategoryBreakdownChart(
+			summary.ExpensesByCategory,
+			summary.TotalExpenses,
+			func() {
+				ui.showFullCategoryList(summary.ExpensesByCategory, summary.TotalExpenses)
+			},
+		)
 		chart2Container := container.NewVBox(
 			widget.NewLabelWithStyle("Distribución de Gastos: ¿A dónde va el dinero?", fyne.TextAlignCenter, fyne.TextStyle{Bold: true}),
 			expenseChart,
@@ -186,11 +193,37 @@ func (ui *UI) generateSummary() {
 		// Update Budget
 		ui.summaryBudgetContainer.Objects = nil
 		ui.summaryBudgetContainer.Add(widget.NewLabelWithStyle("Seguimiento de Presupuestos: Controla tus límites de gasto mensual.", fyne.TextAlignCenter, fyne.TextStyle{Italic: true}))
-		
-		budgetChart := componets.NewBudgetStatusChart(budgetStatuses)
+
+		budgetChart := componets.NewBudgetStatusChart(
+			budgetStatuses,
+			func() {
+				ui.showFullBudgetList(budgetStatuses)
+			},
+		)
 		ui.summaryBudgetContainer.Add(budgetChart)
 		ui.summaryBudgetContainer.Refresh()
 	})
+}
+
+func (ui *UI) showFullCategoryList(data []domain.CategoryAmount, total decimal.Decimal) {
+	// Re-use the chart logic but without limit (pass nil callback) to generate the full list view
+	// OR create a specific list view. Using the chart component is easier for consistency.
+	fullList := componets.NewCategoryBreakdownChart(data, total, nil)
+
+	scroll := container.NewVScroll(container.NewPadded(fullList))
+	scroll.SetMinSize(fyne.NewSize(500, 400))
+
+	dialog.NewCustom("Distribución Completa de Gastos", "Cerrar", scroll, ui.mainWindow).Show()
+}
+
+func (ui *UI) showFullBudgetList(statuses []domain.BudgetStatus) {
+	// Re-use the chart component to show the full list
+	fullList := componets.NewBudgetStatusChart(statuses, nil)
+
+	scroll := container.NewVScroll(container.NewPadded(fullList))
+	scroll.SetMinSize(fyne.NewSize(600, 500))
+
+	dialog.NewCustom("Detalle Completo de Presupuestos", "Cerrar", scroll, ui.mainWindow).Show()
 }
 
 // getDatesForRange translates the selected string into start and end dates.

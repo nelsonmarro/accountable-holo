@@ -18,7 +18,7 @@ func NewIncomeExpenseChart(income, expense decimal.Decimal) fyne.CanvasObject {
 	if expense.GreaterThan(income) {
 		maxVal = expense
 	}
-	
+
 	if maxVal.IsZero() {
 		return widget.NewLabel("Sin datos para mostrar")
 	}
@@ -34,19 +34,21 @@ func NewIncomeExpenseChart(income, expense decimal.Decimal) fyne.CanvasObject {
 
 	// Let's use a fixed height container for the chart area, e.g., 200px.
 	chartHeight := float32(200)
-	
-	createAlignedBar := func(val decimal.Decimal, factor float32, col color.Color) fyne.CanvasObject {
+
+	createAlignedBar := func(_ decimal.Decimal, factor float32, col color.Color) fyne.CanvasObject {
 		barPixelHeight := chartHeight * factor
-		if barPixelHeight < 2 { barPixelHeight = 2 }
+		if barPixelHeight < 2 {
+			barPixelHeight = 2
+		}
 
 		rect := canvas.NewRectangle(col)
 		rect.SetMinSize(fyne.NewSize(40, barPixelHeight))
-		
+
 		// Invisible spacer to take up the rest of the space
 		spacerHeight := chartHeight - barPixelHeight
 		spacer := canvas.NewRectangle(color.Transparent)
 		spacer.SetMinSize(fyne.NewSize(40, spacerHeight))
-		
+
 		return container.NewVBox(spacer, rect)
 	}
 
@@ -65,30 +67,32 @@ func NewIncomeExpenseChart(income, expense decimal.Decimal) fyne.CanvasObject {
 	return container.NewGridWithColumns(2, incomeCol, expenseCol)
 }
 
-// NewCategoryBreakdownChart creates a horizontal bar chart for top categories.
-func NewCategoryBreakdownChart(data []domain.CategoryAmount, total decimal.Decimal) fyne.CanvasObject {
+// NewCategoryBreakdownChart creates a horizontal bar chart for top categories with optional 'Ver Más' button.
+func NewCategoryBreakdownChart(data []domain.CategoryAmount, total decimal.Decimal, onSeeMore func()) fyne.CanvasObject {
 	if len(data) == 0 {
 		return widget.NewLabel("Sin datos de gastos")
 	}
 
-	// Limit to top 5
 	limit := 5
-	if len(data) < limit {
-		limit = len(data)
+	displayData := data
+	showButton := false
+
+	if onSeeMore != nil && len(data) > limit {
+		displayData = data[:limit]
+		showButton = true
 	}
-	topData := data[:limit]
 
 	// Container for rows
 	rows := container.NewVBox()
 
-	for _, item := range topData {
+	for _, item := range displayData {
 		percent := item.Amount.Div(total).Mul(decimal.NewFromFloat(100))
 		percentFloat, _ := percent.Float64()
-		
+
 		// Label: "Category (25%)"
 		label := widget.NewLabel(fmt.Sprintf("%s (%.1f%%)", item.CategoryName, percentFloat))
 		label.TextStyle = fyne.TextStyle{Bold: true}
-		
+
 		// Bar (Progress Bar is perfect for horizontal bars!)
 		progressBar := widget.NewProgressBar()
 		progressBar.Min = 0
@@ -97,7 +101,7 @@ func NewCategoryBreakdownChart(data []domain.CategoryAmount, total decimal.Decim
 		valFloat, _ := item.Amount.Float64()
 		progressBar.SetValue(valFloat)
 		progressBar.TextFormatter = func() string { return "" } // Hide percentage text inside bar
-		
+
 		// Amount Label
 		amountLabel := widget.NewLabel(fmt.Sprintf("$%s", item.Amount.StringFixed(2)))
 		amountLabel.Alignment = fyne.TextAlignTrailing
@@ -105,6 +109,12 @@ func NewCategoryBreakdownChart(data []domain.CategoryAmount, total decimal.Decim
 		// Row Layout
 		header := container.NewBorder(nil, nil, label, amountLabel)
 		rows.Add(container.NewVBox(header, progressBar))
+	}
+
+	if showButton {
+		btn := widget.NewButton("Ver Más...", onSeeMore)
+		btn.Importance = widget.LowImportance
+		rows.Add(container.NewPadded(btn))
 	}
 
 	return rows
@@ -133,15 +143,24 @@ func (l *budgetBarLayout) MinSize(objects []fyne.CanvasObject) fyne.Size {
 	return fyne.NewSize(100, 12) // Tamaño mínimo razonable
 }
 
-// NewBudgetStatusChart crea una lista visual de estados de presupuesto con barras responsivas y estéticas.
-func NewBudgetStatusChart(statuses []domain.BudgetStatus) fyne.CanvasObject {
+// NewBudgetStatusChart crea una lista visual de estados de presupuesto con barras responsivas y botón 'Ver Más' opcional.
+func NewBudgetStatusChart(statuses []domain.BudgetStatus, onSeeMore func()) fyne.CanvasObject {
 	if len(statuses) == 0 {
 		return widget.NewLabel("No hay presupuestos definidos para este periodo.")
 	}
 
+	limit := 5
+	displayData := statuses
+	showButton := false
+
+	if onSeeMore != nil && len(statuses) > limit {
+		displayData = statuses[:limit]
+		showButton = true
+	}
+
 	containerList := container.NewVBox()
 
-	for _, status := range statuses {
+	for _, status := range displayData {
 		progressVal := float32(status.PercentageUsed / 100.0)
 		if progressVal > 1.0 {
 			progressVal = 1.0
@@ -150,7 +169,7 @@ func NewBudgetStatusChart(statuses []domain.BudgetStatus) fyne.CanvasObject {
 		// Colores mejorados
 		barColor := color.NRGBA{R: 34, G: 197, B: 94, A: 255}  // Verde esmeralda
 		trackColor := color.NRGBA{R: 38, G: 38, B: 38, A: 255} // Gris carbón muy oscuro
-		
+
 		if status.IsOverBudget {
 			barColor = color.NRGBA{R: 220, G: 38, B: 38, A: 255} // Rojo vibrante
 		}
@@ -189,11 +208,17 @@ func NewBudgetStatusChart(statuses []domain.BudgetStatus) fyne.CanvasObject {
 			warningText.TextSize = 18
 			warningText.TextStyle = fyne.TextStyle{Bold: true}
 			warningText.Alignment = fyne.TextAlignTrailing
-			
+
 			rowContent.Add(container.NewPadded(warningText))
 		}
 
 		containerList.Add(container.NewPadded(rowContent))
+	}
+
+	if showButton {
+		btn := widget.NewButton("Ver Más...", onSeeMore)
+		btn.Importance = widget.LowImportance
+		containerList.Add(container.NewPadded(btn))
 	}
 
 	return containerList

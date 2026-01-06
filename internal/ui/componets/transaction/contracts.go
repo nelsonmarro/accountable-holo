@@ -8,6 +8,10 @@ import (
 	"github.com/shopspring/decimal"
 )
 
+type RecurringTransactionService interface {
+	Create(ctx context.Context, rt *domain.RecurringTransaction) error
+}
+
 // TransactionService defines the interface for transaction-related business logic.
 type TransactionService interface {
 	GetTransactionByID(ctx context.Context, id int) (*domain.Transaction, error)

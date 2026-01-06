@@ -2,6 +2,7 @@
 package ui
 
 import (
+	"context"
 	"log"
 
 	"fyne.io/fyne/v2"
@@ -10,6 +11,7 @@ import (
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 	"github.com/nelsonmarro/accountable-holo/internal/domain"
+	"github.com/nelsonmarro/accountable-holo/internal/licensing"
 	"github.com/nelsonmarro/accountable-holo/internal/ui/componets"
 )
 
@@ -19,6 +21,7 @@ type Services struct {
 	TxService     TransactionService
 	ReportService ReportService
 	UserService   UserService
+	RecurService  RecurringTransactionService
 }
 
 // The UI struct holds the dependencies and state for the Fyne UI.
@@ -85,7 +88,14 @@ func (ui *UI) Init(a fyne.App) {
 }
 
 // Run starts the application by opening the login window.
-func (ui *UI) Run() {
+func (ui *UI) Run(licMgr *licensing.LicenseManager) {
+	// Definimos la accion de exito (entrar al login)
+	// onLicenseValid := func() {
+	// 	ui.openLoginWindow()
+	// }
+	//
+	// // Llamamos a la ventana de licencia
+	// ui.ShowLincenseWindow(licMgr, onLicenseValid)
 	ui.openLoginWindow()
 	ui.app.Run()
 }
@@ -144,6 +154,19 @@ func (ui *UI) openMainWindow() {
 
 	// Initial data load
 	go ui.loadAccountsForSummary()
+
+	// ---- Background Tasks (Recurrence) ----
+	go func() {
+		// Use a detached context or one with sufficient timeout
+		ctx := context.Background()
+		// We use *ui.currentUser because we are already logged in
+		if ui.currentUser != nil {
+			err := ui.Services.RecurService.ProcessPendingRecurrences(ctx, *ui.currentUser)
+			if err != nil {
+				ui.errorLogger.Printf("Failed to process recurring transactions: %v", err)
+			}
+		}
+	}()
 }
 
 func (ui *UI) lazyLoadTabsContent(tabs *container.AppTabs) {

@@ -3,6 +3,8 @@ package main
 import (
 	"context"
 	"log"
+	"os"
+	"path/filepath"
 	"runtime/debug"
 	"time"
 
@@ -13,6 +15,7 @@ import (
 	"github.com/nelsonmarro/accountable-holo/internal/infrastructure/database"
 	persistence "github.com/nelsonmarro/accountable-holo/internal/infrastructure/persistence"
 	"github.com/nelsonmarro/accountable-holo/internal/infrastructure/storage"
+	"github.com/nelsonmarro/accountable-holo/internal/licensing"
 	"github.com/nelsonmarro/accountable-holo/internal/logging"
 	"github.com/nelsonmarro/accountable-holo/internal/ui"
 )
@@ -72,6 +75,7 @@ func main() {
 	txRepo := persistence.NewTransactionRepository(pool)
 	reportRepo := persistence.NewReportRepository(pool)
 	userRepo := persistence.NewUserRepository(pool)
+	recurRepo := persistence.NewRecurringTransactionRepository(pool)
 
 	// ---- Application (Report Generators) ----
 	csvGen := report.NewCSVReportGenerator()
@@ -83,6 +87,7 @@ func main() {
 	txService := service.NewTransactionService(txRepo, storageService, accService)
 	userService := service.NewUserService(userRepo)
 	reportService := service.NewReportService(reportRepo, txRepo, catRepo, csvGen, pdfGen)
+	recurService := service.NewRecurringTransactionService(recurRepo, txRepo, infoLogger)
 
 	// ---- UI Struct ----
 	gui := ui.NewUI(&ui.Services{
@@ -91,14 +96,29 @@ func main() {
 		TxService:     txService,
 		ReportService: reportService,
 		UserService:   userService,
+		RecurService:  recurService,
 	}, infoLogger, errorLogger)
 
 	// ---- App Initialization ----
-	infoLogger.Println("Creating Main Window...")
 	gui.Init(a)
 	infoLogger.Println("Main Window created.")
 
-	// ---- Run Application ----
+	// ---- Licensing & Startup ----
+	infoLogger.Println("Checking License Status...")
+
+	userConfigDir, err := os.UserConfigDir()
+	if err != nil {
+		// Fallback por si falla (raro): usar carpeta local
+		userConfigDir = "."
+		errorLogger.Printf("Failed to get user config dir, using local: %v", err)
+
+	}
+	// 2. Definir la carpeta específica de nuestra app
+	// En Windows será: AppData/Roaming/AccountableHolo/license.json
+	// En Linux: .config/AccountableHolo/license.json
+	licensePath := filepath.Join(userConfigDir, "AccountableHolo")
+	licenseMgr := licensing.NewLicenseManager(licensePath)
+
 	infoLogger.Println("Starting UI Loop...")
-	gui.Run()
+	gui.Run(licenseMgr)
 }

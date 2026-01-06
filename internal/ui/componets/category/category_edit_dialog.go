@@ -98,16 +98,15 @@ func (d *EditCategoryDialog) fetchCategory(onSuccess func(acc *domain.Category),
 	}()
 }
 
-// showEditForm displays the actual form, pre-populated with account data.
+// showEditForm muestra el formulario real con los datos cargados.
 func (d *EditCategoryDialog) showEditForm(cat *domain.Category) {
-	// Populate the widgets with the fetched data
 	d.nameEntry.SetText(cat.Name)
 	d.tipoSelect.SetText(string(cat.Type))
 	if cat.MonthlyBudget != nil {
 		d.budgetEntry.SetText(cat.MonthlyBudget.String())
 	}
 
-	// Initial visibility check
+	// Lógica de visibilidad inicial
 	if cat.Type == domain.Income {
 		d.budgetEntry.Hide()
 	}
@@ -118,7 +117,6 @@ func (d *EditCategoryDialog) showEditForm(cat *domain.Category) {
 		d.budgetEntry,
 	)
 
-	// Dynamic visibility
 	d.tipoSelect.OnChanged = func(selected string) {
 		if selected == string(domain.Outcome) {
 			d.budgetEntry.Show()
@@ -128,12 +126,13 @@ func (d *EditCategoryDialog) showEditForm(cat *domain.Category) {
 		}
 	}
 
-	formDialog := dialog.NewForm("Editar Categoria", "Guardar", "Cancelar",
+	formDialog := dialog.NewForm("Editar Categoría", "Guardar", "Cancelar",
 		formItems,
-		d.handleSubmit, // The submit callback
+		d.handleSubmit,
 		d.mainWin,
 	)
-	formDialog.Resize(fyne.NewSize(450, 300)) // Increased size
+
+	formDialog.Resize(fyne.NewSize(550, 300))
 	formDialog.Show()
 }
 

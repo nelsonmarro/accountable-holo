@@ -84,6 +84,11 @@ type ReportService interface {
 	GenerateDailyReportFile(ctx context.Context, report *domain.DailyReport, outputPath string, format string, currentUser *domain.User) error
 }
 
+type RecurringTransactionService interface {
+	Create(ctx context.Context, rt *domain.RecurringTransaction) error
+	ProcessPendingRecurrences(ctx context.Context, systemUser domain.User) error
+}
+
 type UserService interface {
 	Login(ctx context.Context, username, password string) (*domain.User, error)
 	CreateUser(ctx context.Context, username, password, firstName, lastName string, role domain.UserRole, currentUser *domain.User) error

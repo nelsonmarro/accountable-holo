@@ -81,3 +81,10 @@ type ReportRepository interface {
 	GetFinancialSummary(ctx context.Context, startDate, endDate time.Time, accountID *int) (domain.FinancialSummary, error)
 	GetReconciliation(ctx context.Context, accountID int, startDate, endDate time.Time) (*domain.Reconciliation, error)
 }
+
+type RecurringTransactionRepository interface {
+	Create(ctx context.Context, rt *domain.RecurringTransaction) error
+	GetAllActive(ctx context.Context) ([]domain.RecurringTransaction, error)
+	Update(ctx context.Context, rt *domain.RecurringTransaction) error
+	Delete(ctx context.Context, id int) error
+}
