@@ -66,6 +66,7 @@ type TransactionRepository interface {
 
 	GetBalanceAsOf(ctx context.Context, accountID int, date time.Time) (decimal.Decimal, error)
 	GetTransactionByID(ctx context.Context, id int) (*domain.Transaction, error)
+	GetItemsByTransactionID(ctx context.Context, transactionID int) ([]domain.TransactionItem, error)
 	VoidTransaction(ctx context.Context, transactionID int, currentUser domain.User) error
 	UpdateTransaction(ctx context.Context, tx *domain.Transaction) error
 	UpdateAttachmentPath(ctx context.Context, transactionID int, attachmentPath string) error
@@ -87,4 +88,35 @@ type RecurringTransactionRepository interface {
 	GetAllActive(ctx context.Context) ([]domain.RecurringTransaction, error)
 	Update(ctx context.Context, rt *domain.RecurringTransaction) error
 	Delete(ctx context.Context, id int) error
+}
+
+type IssuerRepository interface {
+	GetActive(ctx context.Context) (*domain.Issuer, error)
+	Create(ctx context.Context, issuer *domain.Issuer) error
+	Update(ctx context.Context, issuer *domain.Issuer) error
+}
+
+type TaxPayerRepository interface {
+	GetByID(ctx context.Context, id int) (*domain.TaxPayer, error)
+	GetByIdentification(ctx context.Context, identification string) (*domain.TaxPayer, error)
+	Create(ctx context.Context, tp *domain.TaxPayer) error
+	Update(ctx context.Context, tp *domain.TaxPayer) error
+	GetAll(ctx context.Context) ([]domain.TaxPayer, error)
+}
+
+type EmissionPointRepository interface {
+	GetByPoint(ctx context.Context, issuerID int, estCode, pointCode, receiptType string) (*domain.EmissionPoint, error)
+	IncrementSequence(ctx context.Context, id int) error
+	Create(ctx context.Context, ep *domain.EmissionPoint) error
+}
+
+type ElectronicReceiptRepository interface {
+	Create(ctx context.Context, er *domain.ElectronicReceipt) error
+	UpdateStatus(ctx context.Context, accessKey string, status string, message string, authDate *time.Time) error
+	GetByAccessKey(ctx context.Context, accessKey string) (*domain.ElectronicReceipt, error)
+	FindPendingReceipts(ctx context.Context) ([]domain.ElectronicReceipt, error)
+}
+
+type MailService interface {
+	SendReceipt(issuer *domain.Issuer, recipientEmail string, xmlPath string, pdfPath string) error
 }

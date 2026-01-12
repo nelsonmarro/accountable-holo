@@ -64,7 +64,7 @@ func (rd *ReportDialog) createTransactionReportTab() fyne.CanvasObject {
 			if writer == nil {
 				return
 			}
-			defer writer.Close()
+			defer func() { _ = writer.Close() }()
 			// Fire and forget. The caller is responsible for async execution and error handling.
 			rd.onGenerateTransactionReport(rd.transactionReportFormatSelect.Selected, writer.URI().Path())
 		}, rd.parentWindow)
@@ -95,7 +95,7 @@ func (rd *ReportDialog) createDailyReportTab() fyne.CanvasObject {
 			if writer == nil {
 				return
 			}
-			defer writer.Close()
+			defer func() { _ = writer.Close() }()
 			// Fire and forget. The caller is responsible for async execution and error handling.
 			rd.onGenerateDailyReport(rd.dailyReportFormatSelect.Selected, writer.URI().Path())
 		}, rd.parentWindow)

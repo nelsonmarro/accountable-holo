@@ -3,7 +3,9 @@ package ui
 
 import (
 	"context"
+	"fmt"
 	"log"
+	"time"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/canvas"
@@ -19,9 +21,12 @@ type Services struct {
 	AccService    AccountService
 	CatService    CategoryService
 	TxService     TransactionService
-	ReportService ReportService
 	UserService   UserService
+	ReportService ReportService
 	RecurService  RecurringTransactionService
+	IssuerService IssuerService
+	SriService    SriService
+	TaxService    TaxPayerService // Added
 }
 
 // The UI struct holds the dependencies and state for the Fyne UI.
@@ -143,6 +148,10 @@ func (ui *UI) openMainWindow() {
 	if ui.currentUser.Role == domain.AdminRole {
 		userTabContent := widget.NewLabel("Cargando Usuarios...")
 		tabs.Append(container.NewTabItemWithIcon("Usuarios", theme.AccountIcon(), userTabContent))
+
+		// Configuración SRI (Solo Admin)
+		sriConfigContent := ui.makeSriConfigTab()
+		tabs.Append(container.NewTabItemWithIcon("Configuración SRI", theme.SettingsIcon(), sriConfigContent))
 	}
 
 	ui.lazyLoadTabsContent(tabs)
@@ -157,13 +166,38 @@ func (ui *UI) openMainWindow() {
 
 	// ---- Background Tasks (Recurrence) ----
 	go func() {
-		// Use a detached context or one with sufficient timeout
 		ctx := context.Background()
-		// We use *ui.currentUser because we are already logged in
 		if ui.currentUser != nil {
 			err := ui.Services.RecurService.ProcessPendingRecurrences(ctx, *ui.currentUser)
 			if err != nil {
 				ui.errorLogger.Printf("Failed to process recurring transactions: %v", err)
+			}
+		}
+	}()
+
+	// ---- Background Worker (SRI Sync) ----
+	go func() {
+		ticker := time.NewTicker(2 * time.Minute) // Check every 2 minutes
+		for range ticker.C {
+			if ui.currentUser == nil {
+				continue // Don't run if logged out
+			}
+
+			ctx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
+			count, err := ui.Services.SriService.ProcessBackgroundSync(ctx)
+			cancel()
+
+			if err != nil {
+				ui.errorLogger.Printf("SRI Sync Error: %v", err)
+			}
+
+			if count > 0 {
+				ui.app.SendNotification(fyne.NewNotification("Facturación Electrónica", fmt.Sprintf("%d comprobantes han sido autorizados por el SRI.", count)))
+				// Refresh list if active
+				// Note: Ideally use a data binding or event bus, but direct refresh works for MVP
+				if ui.transactionList != nil {
+					ui.loadTransactions(ui.transactionPaginator.GetCurrentPage(), ui.transactionPaginator.GetPageSize())
+				}
 			}
 		}
 	}()

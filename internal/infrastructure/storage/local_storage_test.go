@@ -55,12 +55,12 @@ func TestLocalStorageService_Save(t *testing.T) {
 	// 1. Create a temporary source file
 	sourceFile, err := os.CreateTemp("", "source_*.txt")
 	require.NoError(t, err)
-	defer os.Remove(sourceFile.Name())
+	defer func() { _ = os.Remove(sourceFile.Name()) }()
 
 	testContent := "hello world"
 	_, err = sourceFile.WriteString(testContent)
 	require.NoError(t, err)
-	sourceFile.Close()
+	_ = sourceFile.Close()
 
 	// 2. Call the Save method
 	destinationName := "my_saved_file.txt"

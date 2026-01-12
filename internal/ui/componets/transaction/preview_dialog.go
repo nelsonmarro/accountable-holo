@@ -81,7 +81,7 @@ func (d *PreviewDialog) handleSaveAs() {
 			// User cancelled
 			return
 		}
-		defer writer.Close()
+		defer func() { _ = writer.Close() }()
 
 		// Open the source file from our app's storage
 		sourceFile, err := os.Open(d.storagePath)
@@ -89,7 +89,7 @@ func (d *PreviewDialog) handleSaveAs() {
 			dialog.ShowError(fmt.Errorf("failed to open source file: %w", err), d.mainWin)
 			return
 		}
-		defer sourceFile.Close()
+		defer func() { _ = sourceFile.Close() }()
 
 		// Copy the data to the destination chosen by the user
 		_, err = io.Copy(writer, sourceFile)

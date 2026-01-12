@@ -56,6 +56,13 @@ func (p *Pagination) GetPageSize() int {
 	return p.pageSize
 }
 
+func (p *Pagination) GetCurrentPage() int {
+	if p.currentPage <= 0 {
+		return 1
+	}
+	return p.currentPage
+}
+
 // CreateRenderer is the entry point for Fyne to create the visual component.
 func (p *Pagination) CreateRenderer() fyne.WidgetRenderer {
 	p.ExtendBaseWidget(p)

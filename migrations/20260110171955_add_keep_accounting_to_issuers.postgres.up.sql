@@ -1,0 +1,1 @@
+ALTER TABLE issuers ADD COLUMN keep_accounting BOOLEAN DEFAULT FALSE;

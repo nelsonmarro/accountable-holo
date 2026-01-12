@@ -231,7 +231,7 @@ func (d *ReconciliationDialog) makeStatementCard() fyne.CanvasObject {
 				// User cancelled
 				return
 			}
-			defer writer.Close()
+			defer func() { _ = writer.Close() }()
 
 			go func() {
 				ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)

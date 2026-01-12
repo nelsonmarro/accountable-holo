@@ -44,21 +44,6 @@ func setupUITestForTabs() (*UI, *mocks.MockAccountService) {
 	return ui, mockService
 }
 
-func setupUITest() (*UI, *mocks.MockAccountService) {
-	mockService := new(mocks.MockAccountService)
-	services := &Services{
-		AccService: mockService,
-	}
-
-	discardLogger := log.New(io.Discard, "", 0)
-	ui := NewUI(services, discardLogger, discardLogger)
-
-	a := test.NewApp()
-	ui.Init(a)
-
-	return ui, mockService
-}
-
 func waitTimeout(t *testing.T, wg *sync.WaitGroup, timeout time.Duration) {
 	c := make(chan struct{})
 	go func() {

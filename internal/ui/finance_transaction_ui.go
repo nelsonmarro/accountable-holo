@@ -57,6 +57,21 @@ func (ui *UI) makeTransactionUI() fyne.CanvasObject {
 		ui.updateTransactionItem,
 	)
 
+	ui.transactionList.OnSelected = func(id widget.ListItemID) {
+		tx := ui.transactions.Data[id]
+		// Necesitamos pasar SriService aquí.
+		// Como ui.Services.SriService es del paquete 'service', y la interfaz en 'transaction' espera ese método,
+		// Go debería permitirlo si las firmas coinciden.
+		detailsDialog := transaction.NewDetailsDialog(
+			ui.mainWindow, 
+			&tx, 
+			ui.Services.TxService, 
+			ui.Services.SriService, // Injected
+		)
+		detailsDialog.Show()
+		ui.transactionList.Unselect(id) // Unselect after opening
+	}
+
 	// Account selector
 	ui.accountSelector = widget.NewSelect(
 		[]string{},
@@ -77,8 +92,9 @@ func (ui *UI) makeTransactionUI() fyne.CanvasObject {
 			ui.mainWindow,
 			ui.errorLogger,
 			ui.Services.TxService,
-			ui.Services.RecurService, // Injected Recurrence Service
+			ui.Services.RecurService,
 			ui.Services.CatService,
+			ui.Services.TaxService, // Injected
 			func() {
 				ui.loadTransactions(1, ui.transactionPaginator.GetPageSize())
 			},
@@ -172,7 +188,7 @@ func (ui *UI) makeTransactionUI() fyne.CanvasObject {
 	tableHeader := container.NewBorder(
 		ui.transactionPaginator,
 		nil, nil, nil,
-		container.NewGridWithColumns(9,
+		container.NewGridWithColumns(10, // Increased columns to 10
 			widget.NewLabel("#"),
 			widget.NewLabel("Fecha"),
 			widget.NewLabel("Descripción"),
@@ -180,6 +196,7 @@ func (ui *UI) makeTransactionUI() fyne.CanvasObject {
 			widget.NewLabel("Tipo"),
 			widget.NewLabel("Monto"),
 			widget.NewLabel("Saldo"),
+			widget.NewLabel("SRI"), // New Column
 			widget.NewLabel("Adjunto"),
 			widget.NewLabel("Acciones"),
 		),
@@ -206,9 +223,6 @@ func (ui *UI) createTransactiontItem() fyne.CanvasObject {
 	voidBtn := widget.NewButtonWithIcon("", theme.CancelIcon(), nil)
 	voidBtn.Importance = widget.DangerImportance
 
-	viewBtn := widget.NewButtonWithIcon("", theme.VisibilityIcon(), nil)
-	viewBtn.Importance = widget.LowImportance
-
 	attachmentLink := componets.NewHoverableHyperlink("", nil, ui.mainWindow.Canvas())
 	attachmentLink.Wrapping = fyne.TextWrap(fyne.TextTruncateClip)
 
@@ -232,7 +246,9 @@ func (ui *UI) createTransactiontItem() fyne.CanvasObject {
 	lblBalance := widget.NewLabel("$5,250.50")
 	lblBalance.Wrapping = fyne.TextWrap(fyne.TextTruncateClip)
 
-	grid := container.NewGridWithColumns(9,
+	iconSRI := widget.NewIcon(theme.ConfirmIcon()) // Placeholder
+
+	grid := container.NewGridWithColumns(10, // Increased to 10
 		lblTxNumber,
 		lblDate,
 		lblDescription,
@@ -240,11 +256,11 @@ func (ui *UI) createTransactiontItem() fyne.CanvasObject {
 		lblType,
 		txtAmount,
 		lblBalance,
+		iconSRI, // New Widget
 		attachmentLink,
 		container.NewHBox(
 			editBtn,
 			voidBtn,
-			viewBtn,
 		),
 	)
 
@@ -292,7 +308,27 @@ func (ui *UI) updateTransactionItem(i widget.ListItemID, o fyne.CanvasObject) {
 
 	rowContainer.Objects[6].(*widget.Label).SetText(fmt.Sprintf("$%.2f", tx.RunningBalance))
 
-	attachmentLink := rowContainer.Objects[7].(*componets.HoverableHyperlink)
+	// SRI Status Logic
+	sriIcon := rowContainer.Objects[7].(*widget.Icon)
+	if tx.ElectronicReceipt != nil {
+		sriIcon.Show()
+		switch tx.ElectronicReceipt.SRIStatus {
+		case "AUTORIZADO":
+			sriIcon.SetResource(theme.ConfirmIcon())
+			// Optional: Set color to green if possible via theme or custom widget
+		case "DEVUELTA", "RECHAZADO", "ANULADO":
+			sriIcon.SetResource(theme.WarningIcon())
+		case "RECIBIDA", "EN_PROCESO", "PENDIENTE":
+			sriIcon.SetResource(theme.HistoryIcon())
+		default:
+			sriIcon.SetResource(theme.QuestionIcon())
+		}
+	} else {
+		// Not emitted yet
+		sriIcon.Hide()
+	}
+
+	attachmentLink := rowContainer.Objects[8].(*componets.HoverableHyperlink)
 	if tx.AttachmentPath != nil && *tx.AttachmentPath != "" {
 		fileName := filepath.Base(*tx.AttachmentPath)
 
@@ -313,10 +349,9 @@ func (ui *UI) updateTransactionItem(i widget.ListItemID, o fyne.CanvasObject) {
 		attachmentLink.OnTapped = nil
 	}
 
-	actionsContainer := rowContainer.Objects[8].(*fyne.Container)
+	actionsContainer := rowContainer.Objects[9].(*fyne.Container)
 	editBtn := actionsContainer.Objects[0].(*widget.Button)
 	voidBtn := actionsContainer.Objects[1].(*widget.Button)
-	viewBtn := actionsContainer.Objects[2].(*widget.Button)
 
 	editBtn.OnTapped = func() {
 		dialigHandler := transaction.NewEditTransactionDialog(
@@ -351,20 +386,13 @@ func (ui *UI) updateTransactionItem(i widget.ListItemID, o fyne.CanvasObject) {
 		dialogHandler.Show()
 	}
 
-	viewBtn.OnTapped = func() {
-		detailsDialog := transaction.NewDetailsDialog(ui.mainWindow, &tx)
-		detailsDialog.Show()
-	}
-
 	if tx.IsVoided || tx.VoidsTransactionID != nil ||
 		strings.Contains(tx.Category.Name, "Ajuste") {
 		voidBtn.Hide()
 		editBtn.Hide()
-		viewBtn.Show()
 	} else {
 		voidBtn.Show()
 		editBtn.Show()
-		viewBtn.Hide()
 	}
 }
 

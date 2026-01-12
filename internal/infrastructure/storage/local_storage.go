@@ -32,14 +32,14 @@ func (s *LocalStorageService) Save(ctx context.Context, sourcePath string, desti
 	if err != nil {
 		return "", fmt.Errorf("failed to open source file: %w", err)
 	}
-	defer sourceFile.Close()
+	defer func() { _ = sourceFile.Close() }()
 
 	destinationPath := filepath.Join(s.basePath, destinationName)
 	destinationFile, err := os.Create(destinationPath)
 	if err != nil {
 		return "", fmt.Errorf("failed to create destination file: %w", err)
 	}
-	defer destinationFile.Close()
+	defer func() { _ = destinationFile.Close() }()
 
 	_, err = io.Copy(destinationFile, sourceFile)
 	if err != nil {

@@ -16,7 +16,7 @@ func TestLicenseManager_CheckStatus(t *testing.T) {
 	// Create a temporary directory for testing
 	tmpDir, err := os.MkdirTemp("", "license_test")
 	require.NoError(t, err)
-	defer os.RemoveAll(tmpDir)
+	defer func() { _ = os.RemoveAll(tmpDir) }()
 
 	manager := NewLicenseManager(tmpDir)
 
@@ -67,13 +67,13 @@ func TestActivateLicense_Integration(t *testing.T) {
 
 		// Decode payload
 		var payload map[string]string
-		json.NewDecoder(r.Body).Decode(&payload)
+		_ = json.NewDecoder(r.Body).Decode(&payload)
 
 		w.Header().Set("Content-Type", "application/json")
 
 		// Simulate Success for a specific key
 		if payload["license_key"] == "VALID-KEY" {
-			json.NewEncoder(w).Encode(LemonSqueezyResponse{
+			_ = json.NewEncoder(w).Encode(LemonSqueezyResponse{
 				Activated: true,
 				License: struct {
 					Status string `json:"status"`
@@ -81,7 +81,7 @@ func TestActivateLicense_Integration(t *testing.T) {
 			})
 		} else {
 			// Simulate Failure
-			json.NewEncoder(w).Encode(LemonSqueezyResponse{
+			_ = json.NewEncoder(w).Encode(LemonSqueezyResponse{
 				Activated: false,
 				Error:     "License key not found",
 			})
@@ -91,7 +91,7 @@ func TestActivateLicense_Integration(t *testing.T) {
 
 	// Setup Manager
 	tmpDir, _ := os.MkdirTemp("", "license_api_test")
-	defer os.RemoveAll(tmpDir)
+	defer func() { _ = os.RemoveAll(tmpDir) }()
 	manager := NewLicenseManager(tmpDir)
 	manager.apiURL = mockServer.URL + "/v1/licenses/activate" // Inject Mock URL
 

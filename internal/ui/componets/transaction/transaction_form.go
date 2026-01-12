@@ -15,13 +15,21 @@ func TransactionForm(
 	attachment fyne.CanvasObject,
 	isRecurring fyne.CanvasObject,
 	interval fyne.CanvasObject,
-	isRecurringLabel fyne.CanvasObject, // New
+	isRecurringLabel fyne.CanvasObject,
+	taxSelect fyne.CanvasObject, // New
+	taxPayerSelect fyne.CanvasObject, // New
+	subtotalLabel fyne.CanvasObject, // New: Display calculated subtotal
+	taxAmountLabel fyne.CanvasObject, // New: Display calculated tax
 ) []*widget.FormItem {
 	addFormValidation(description, amount, category)
 
 	return []*widget.FormItem{
 		{Text: "Descripción", Widget: description},
-		{Text: "Monto", Widget: amount},
+		{Text: "Monto Total", Widget: amount}, // Clarify it's Total
+		{Text: "Impuestos", Widget: taxSelect}, // New
+		{Text: "Subtotal", Widget: subtotalLabel}, // New (Info)
+		{Text: "IVA", Widget: taxAmountLabel}, // New (Info)
+		{Text: "Cliente", Widget: taxPayerSelect}, // New
 		{Text: "Fecha", Widget: date},
 		{Text: "Categoria", Widget: category},
 		{Text: "Adjunto", Widget: attachment},

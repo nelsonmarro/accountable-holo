@@ -15,6 +15,7 @@ type RecurringTransactionService interface {
 // TransactionService defines the interface for transaction-related business logic.
 type TransactionService interface {
 	GetTransactionByID(ctx context.Context, id int) (*domain.Transaction, error)
+	GetItemsByTransactionID(ctx context.Context, transactionID int) ([]domain.TransactionItem, error)
 	CreateTransaction(ctx context.Context, transaction *domain.Transaction, currentUser domain.User) error
 	UpdateTransaction(ctx context.Context, tx *domain.Transaction, currentUser domain.User) error
 	VoidTransaction(ctx context.Context, id int, currentUser domain.User) error
@@ -53,4 +54,11 @@ type StorageService interface {
 
 type ReportService interface {
 	GenerateReconciliationReportFile(ctx context.Context, reconciliation *domain.Reconciliation, outputPath string, currentUser *domain.User) error
+}
+
+type SriService interface {
+	EmitirFactura(ctx context.Context, transactionID int, signaturePassword string) error
+	GenerateRide(ctx context.Context, transactionID int) (string, error)
+	SyncReceipt(ctx context.Context, receipt *domain.ElectronicReceipt) (string, error)
+	ProcessBackgroundSync(ctx context.Context) (int, error)
 }

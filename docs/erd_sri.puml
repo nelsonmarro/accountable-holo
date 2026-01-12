@@ -1,0 +1,85 @@
+@startuml
+skinparam linetype ortho
+
+entity "users" as users {
+  *id : INT <<PK>>
+  --
+  username : VARCHAR
+  password_hash : VARCHAR
+  role : VARCHAR
+}
+
+entity "transactions" as transactions {
+  *id : INT <<PK>>
+  --
+  *transaction_number : VARCHAR
+  amount : DECIMAL
+  transaction_date : TIMESTAMP
+  description : TEXT
+  category_id : INT <<FK>>
+  account_id : INT <<FK>>
+}
+
+entity "issuers" as issuers {
+  *id : INT <<PK>>
+  --
+  *ruc : VARCHAR(13) <<Unique>>
+  business_name : VARCHAR(300)
+  trade_name : VARCHAR(300)
+  main_address : VARCHAR(300)
+  establishment_address : VARCHAR(300)
+  establishment_code : VARCHAR(3) -- ej: 001
+  emission_point_code : VARCHAR(3) -- ej: 002
+  contribution_class : VARCHAR -- Especial, RIMPE, etc.
+  withholding_agent : VARCHAR -- Resolucion Nro.
+  environment : INT -- 1: Pruebas, 2: Produccion
+  signature_path : TEXT -- Ruta al archivo .p12
+  logo_path : TEXT
+  is_active : BOOLEAN
+}
+
+entity "tax_payers" as tax_payers {
+  *id : INT <<PK>>
+  --
+  *identification : VARCHAR(13) <<Unique>> -- RUC/Cedula
+  type : VARCHAR -- 04: RUC, 05: Cedula, 06: Pasaporte
+  name : VARCHAR(300)
+  email : VARCHAR(300)
+  address : VARCHAR(300)
+  phone : VARCHAR(20)
+}
+
+entity "electronic_receipts" as electronic_receipts {
+  *id : INT <<PK>>
+  --
+  *transaction_id : INT <<FK>>
+  *issuer_id : INT <<FK>>
+  *tax_payer_id : INT <<FK>>
+  *access_key : VARCHAR(49) <<Unique>> -- Clave de Acceso
+  receipt_type : VARCHAR(2) -- 01: Factura, 04: Nota Credito
+  xml_content : TEXT -- XML Firmado
+  authorization_date : TIMESTAMP
+  sri_status : VARCHAR -- PENDIENTE, RECIBIDA, AUTORIZADO, RECHAZADO
+  sri_message : TEXT -- Error devuelto por SRI
+  ride_path : TEXT -- Ruta PDF generado
+  environment : INT -- 1: Pruebas, 2: Produccion
+}
+
+entity "emission_points" as emission_points {
+  *id : INT <<PK>>
+  --
+  *issuer_id : INT <<FK>>
+  point_code : VARCHAR(3) -- 001, 002
+  entity_code : VARCHAR(3) -- 001
+  current_sequence : INT -- Ultimo numero usado
+  type : VARCHAR(2) -- 01: Factura
+}
+
+' Relaciones
+issuers ||..o{ emission_points : "tiene"
+issuers ||..o{ electronic_receipts : "emite"
+tax_payers ||..o{ electronic_receipts : "recibe"
+transactions ||--|| electronic_receipts : "genera (1 a 1)"
+users ||..o{ transactions : "registra"
+
+@enduml

@@ -20,7 +20,7 @@ func (g *CSVReportGenerator) SelectedTransactionsReport(ctx context.Context, tra
 	if err != nil {
 		return fmt.Errorf("failed to create CSV file: %w", err)
 	}
-	defer file.Close()
+	defer func() { _ = file.Close() }()
 
 	writer := csv.NewWriter(file)
 	defer writer.Flush()
@@ -53,8 +53,8 @@ func (g *CSVReportGenerator) SelectedTransactionsReport(ctx context.Context, tra
 	}
 
 	// Add footer
-	writer.Write([]string{}) // Spacer
-	writer.Write([]string{"Reporte Generado Por:", fmt.Sprintf("%s %s", currentUser.FirstName, currentUser.LastName)})
+	_ = writer.Write([]string{}) // Spacer
+	_ = writer.Write([]string{"Reporte Generado Por:", fmt.Sprintf("%s %s", currentUser.FirstName, currentUser.LastName)})
 
 	return nil
 }
@@ -64,7 +64,7 @@ func (g *CSVReportGenerator) DailyReport(ctx context.Context, report *domain.Dai
 	if err != nil {
 		return fmt.Errorf("failed to create CSV file: %w", err)
 	}
-	defer file.Close()
+	defer func() { _ = file.Close() }()
 
 	writer := csv.NewWriter(file)
 	defer writer.Flush()
@@ -119,8 +119,8 @@ func (g *CSVReportGenerator) DailyReport(ctx context.Context, report *domain.Dai
 	}
 
 	// Add footer
-	writer.Write([]string{}) // Spacer
-	writer.Write([]string{"Reporte Generado Por:", fmt.Sprintf("%s %s", currentUser.FirstName, currentUser.LastName)})
+	_ = writer.Write([]string{}) // Spacer
+	_ = writer.Write([]string{"Reporte Generado Por:", fmt.Sprintf("%s %s", currentUser.FirstName, currentUser.LastName)})
 
 	return nil
 }

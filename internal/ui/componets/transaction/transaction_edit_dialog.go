@@ -26,21 +26,29 @@ type EditTransactionDialog struct {
 	mainWin         fyne.Window
 	logger          *log.Logger
 	txService       TransactionService
-	recurService    RecurringTransactionService // New
+	recurService    RecurringTransactionService
 	categoryService CategoryService
 	callbackAction  func()
 	txID            int
 
 	// UI Components
 	txNumber         *widget.Label
-	descriptionEntry *widget.Entry
-	amountEntry      *widget.Label
+	descriptionEntry *widget.Entry // Derived/Generated description
 	dateEntry        *widget.DateEntry
 	categoryLabel    *widget.Label
 	categoryButton   *widget.Button
 	searchDialog     *category.CategorySearchDialog
 	attachmentLabel  *widget.Label
 	searchFileBtn    *widget.Button
+	
+	// Tax & Client UI
+	subtotalLabel  *widget.Label
+	taxAmountLabel *widget.Label
+	totalLabel     *widget.Label
+	taxPayerEntry  *widget.Entry 
+
+	// Maestro-Detalle
+	itemsManager *ItemsListManager
 
 	// Recurrence UI
 	isRecurringCheck *widget.Check
@@ -52,6 +60,7 @@ type EditTransactionDialog struct {
 	selectedCategoryID int
 	attachmentPath     string
 	currentUser        domain.User
+	items              []domain.TransactionItem
 }
 
 // NewEditTransactionDialog creates a new dialog handler for the edit action.
@@ -59,7 +68,7 @@ func NewEditTransactionDialog(
 	win fyne.Window,
 	l *log.Logger,
 	txs TransactionService,
-	rs RecurringTransactionService, // New
+	rs RecurringTransactionService,
 	cs CategoryService,
 	callback func(),
 	txID int,
@@ -78,15 +87,22 @@ func NewEditTransactionDialog(
 		currentUser:      currentUser,
 		txNumber:         widget.NewLabel(""),
 		descriptionEntry: widget.NewMultiLineEntry(),
-		amountEntry:      widget.NewLabel(""),
 		dateEntry:        widget.NewDateEntry(),
 		categoryLabel:    widget.NewLabel(""),
 		attachmentLabel:  widget.NewLabel("Ninguno"),
 		isRecurringCheck: widget.NewCheck("", nil),
 		intervalSelect:   widget.NewSelect([]string{"Mensual", "Semanal"}, nil),
+		subtotalLabel:    widget.NewLabel("$0.00"),
+		taxAmountLabel:   widget.NewLabel("$0.00"),
+		totalLabel:       widget.NewLabelWithStyle("$0.00", fyne.TextAlignLeading, fyne.TextStyle{Bold: true}),
+		taxPayerEntry:    widget.NewEntry(),
+		items:            make([]domain.TransactionItem, 0),
 	}
 	d.intervalSelect.SetSelected("Mensual")
 	d.intervalSelect.Hide()
+	d.taxPayerEntry.SetPlaceHolder("RUC / Cédula Cliente (Opcional)")
+
+	d.itemsManager = NewItemsListManager(win, d.handleItemsUpdate)
 
 	d.isRecurringCheck.OnChanged = func(checked bool) {
 		if checked {
@@ -115,6 +131,22 @@ func NewEditTransactionDialog(
 	return d
 }
 
+func (d *EditTransactionDialog) handleItemsUpdate(items []domain.TransactionItem) {
+	d.items = items
+	var subtotal, tax float64
+	
+	for _, item := range items {
+		subtotal += item.Subtotal
+		if item.TaxRate == 4 { // IVA 15%
+			tax += item.Subtotal * 0.15
+		}
+	}
+	
+	d.subtotalLabel.SetText(fmt.Sprintf("$%.2f", subtotal))
+	d.taxAmountLabel.SetText(fmt.Sprintf("$%.2f", tax))
+	d.totalLabel.SetText(fmt.Sprintf("$%.2f", subtotal+tax))
+}
+
 func (d *EditTransactionDialog) openCategorySearch() {
 	d.searchDialog.Show()
 }
@@ -126,9 +158,9 @@ func (d *EditTransactionDialog) handleCategorySelect(cat *domain.Category) {
 
 // Show begins the entire "edit" process.
 func (d *EditTransactionDialog) Show() {
-	onSuccess := func(tx *domain.Transaction) {
+	onSuccess := func(tx *domain.Transaction, items []domain.TransactionItem) {
 		fyne.Do(func() {
-			d.showEditForm(tx)
+			d.showEditForm(tx, items)
 		})
 	}
 
@@ -142,7 +174,7 @@ func (d *EditTransactionDialog) Show() {
 	d.fetchTransaction(onSuccess, onFailure)
 }
 
-func (d *EditTransactionDialog) fetchTransaction(onSuccess func(tx *domain.Transaction), onFailure func(err error)) {
+func (d *EditTransactionDialog) fetchTransaction(onSuccess func(tx *domain.Transaction, items []domain.TransactionItem), onFailure func(err error)) {
 	progress := dialog.NewCustomWithoutButtons("Cargando...", widget.NewProgressBarInfinite(), d.mainWin)
 	progress.Show()
 
@@ -152,39 +184,43 @@ func (d *EditTransactionDialog) fetchTransaction(onSuccess func(tx *domain.Trans
 
 		tx, err := d.txService.GetTransactionByID(ctx, d.txID)
 		if err != nil {
-			fyne.Do(func() {
-				progress.Hide()
-			})
+			fyne.Do(func() { progress.Hide() })
+			onFailure(err)
+			return
+		}
+
+		items, err := d.txService.GetItemsByTransactionID(ctx, d.txID)
+		if err != nil {
+			fyne.Do(func() { progress.Hide() })
 			onFailure(err)
 			return
 		}
 
 		categories, err := d.categoryService.GetAllCategories(ctx)
 		if err != nil {
-			fyne.Do(func() {
-				progress.Hide()
-			})
+			fyne.Do(func() { progress.Hide() })
 			onFailure(err)
 			return
 		}
 		d.categories = categories
 
-		fyne.Do(func() {
-			progress.Hide()
-		})
-		onSuccess(tx)
+		fyne.Do(func() { progress.Hide() })
+		onSuccess(tx, items)
 	}()
 }
 
-func (d *EditTransactionDialog) showEditForm(tx *domain.Transaction) {
+func (d *EditTransactionDialog) showEditForm(tx *domain.Transaction, items []domain.TransactionItem) {
 	d.txNumber.SetText(fmt.Sprintf("#%s", tx.TransactionNumber))
 	d.descriptionEntry.SetText(tx.Description)
-	d.amountEntry.SetText(fmt.Sprintf("%.2f", tx.Amount))
 	d.dateEntry.SetText(tx.TransactionDate.Format("01/02/2006"))
 
 	if tx.AttachmentPath != nil {
 		d.attachmentPath = *tx.AttachmentPath
 		d.attachmentLabel.SetText(filepath.Base(*tx.AttachmentPath))
+	}
+
+	if tx.TaxPayerID != nil {
+		d.taxPayerEntry.SetText(strconv.Itoa(*tx.TaxPayerID))
 	}
 
 	for _, cat := range d.categories {
@@ -194,38 +230,62 @@ func (d *EditTransactionDialog) showEditForm(tx *domain.Transaction) {
 			break
 		}
 	}
+	
+	d.itemsManager.SetItems(items)
 
 	categoryContainer := container.NewBorder(nil, nil, nil, d.categoryButton, d.categoryLabel)
 	attachmentContainer := container.NewBorder(nil, nil, nil, d.searchFileBtn, d.attachmentLabel)
 
 	recurLabel := componets.NewHoverableLabel("¿Es Recurrente?", d.mainWin.Canvas())
-	recurLabel.SetTooltip("Crea esta transacción automáticamente cada periodo (mes/semana).\nSe calculara a partir de la fecha de la transacción.")
+	recurLabel.SetTooltip("Convierte esta transacción en recurrente (se creará una nueva regla)")
 
-	txFormItems := TransactionForm(
-		d.descriptionEntry,
-		d.amountEntry,
-		d.dateEntry,
-		categoryContainer,
-		attachmentContainer,
-		d.isRecurringCheck,
-		d.intervalSelect,
-		recurLabel,
+	// Header Form
+	headerForm := widget.NewForm(
+		widget.NewFormItem("Número", d.txNumber),
+		widget.NewFormItem("Cliente", d.taxPayerEntry),
+		widget.NewFormItem("Fecha", d.dateEntry),
+		widget.NewFormItem("Categoría", categoryContainer),
+		widget.NewFormItem("Adjunto", attachmentContainer),
+		widget.NewFormItem("", container.NewBorder(nil, nil, recurLabel, nil, d.isRecurringCheck)),
+		widget.NewFormItem("Frecuencia", d.intervalSelect),
 	)
 
-	txNumberFormItem := widget.NewFormItem("Número de Transacción", d.txNumber)
-	txFormItems = append([]*widget.FormItem{txNumberFormItem}, txFormItems...)
-
-	formDialog := dialog.NewForm("Editar Transacción", "Guardar", "Cancelar",
-		txFormItems,
-		d.handleSubmit, // The submit callback
-		d.mainWin,
+	// Summary / Totals
+	summary := widget.NewForm(
+		widget.NewFormItem("Subtotal", d.subtotalLabel),
+		widget.NewFormItem("IVA", d.taxAmountLabel),
+		widget.NewFormItem("TOTAL", d.totalLabel),
 	)
-	formDialog.Resize(fyne.NewSize(560, 450))
+
+	// Main Layout
+	content := container.NewVBox(
+		headerForm,
+		widget.NewSeparator(),
+		widget.NewLabelWithStyle("Detalle de Ítems", fyne.TextAlignLeading, fyne.TextStyle{Bold: true}),
+		d.itemsManager.GetContent(),
+		widget.NewSeparator(),
+		summary,
+	)
+
+	formDialog := dialog.NewCustomConfirm("Editar Transacción", "Guardar", "Cancelar",
+		container.NewVScroll(container.NewPadded(content)),
+		func(confirm bool) {
+			if confirm {
+				d.handleSubmit(true)
+			}
+		}, d.mainWin,
+	)
+	formDialog.Resize(fyne.NewSize(650, 600))
 	formDialog.Show()
 }
 
 func (d *EditTransactionDialog) handleSubmit(valid bool) {
 	if !valid {
+		return
+	}
+	
+	if len(d.items) == 0 {
+		dialog.ShowError(errors.New("debe tener al menos un ítem"), d.mainWin)
 		return
 	}
 
@@ -244,7 +304,22 @@ func (d *EditTransactionDialog) handleSubmit(valid bool) {
 	progress.Show()
 
 	go func() {
-		amount, _ := strconv.ParseFloat(d.amountEntry.Text, 64)
+		// Calculate final totals
+		var sub15, sub0, taxTotal, total float64
+		var description string
+		
+		for i, item := range d.items {
+			if i > 0 { description += ", " }
+			description += item.Description
+			
+			if item.TaxRate == 4 {
+				sub15 += item.Subtotal
+				taxTotal += item.Subtotal * 0.15
+			} else {
+				sub0 += item.Subtotal
+			}
+		}
+		total = sub15 + sub0 + taxTotal
 
 		var attachmentPathPtr *string
 		if d.attachmentPath != "" {
@@ -253,17 +328,22 @@ func (d *EditTransactionDialog) handleSubmit(valid bool) {
 
 		updatedTx := &domain.Transaction{
 			BaseEntity:      domain.BaseEntity{ID: d.txID},
-			Description:     d.descriptionEntry.Text,
-			Amount:          amount,
+			Description:     description, // Auto-generated from items
+			Amount:          total,
 			TransactionDate: transactionDate,
 			AccountID:       d.accountID,
 			CategoryID:      d.selectedCategoryID,
 			AttachmentPath:  attachmentPathPtr,
+			Subtotal15:      sub15,
+			Subtotal0:       sub0,
+			TaxAmount:       taxTotal,
+			Items:           d.items, // Needs backend support to update items
 		}
 
 		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 		defer cancel()
 
+		// NOTE: TransactionService.UpdateTransaction needs to be updated to handle Items update (Delete old + Insert new)
 		err := d.txService.UpdateTransaction(ctx, updatedTx, d.currentUser)
 		if err != nil {
 			fyne.Do(func() {
@@ -281,7 +361,6 @@ func (d *EditTransactionDialog) handleSubmit(valid bool) {
 				interval = domain.IntervalWeekly
 			}
 
-			// Calculate NEXT run date based on the transaction date
 			nextRun := transactionDate
 			if interval == domain.IntervalMonthly {
 				nextRun = nextRun.AddDate(0, 1, 0)
@@ -290,8 +369,8 @@ func (d *EditTransactionDialog) handleSubmit(valid bool) {
 			}
 
 			rt := &domain.RecurringTransaction{
-				Description: d.descriptionEntry.Text,
-				Amount:      amount,
+				Description: description,
+				Amount:      total,
 				AccountID:   d.accountID,
 				CategoryID:  d.selectedCategoryID,
 				Interval:    interval,

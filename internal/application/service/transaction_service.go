@@ -88,23 +88,11 @@ func (s *TransactionServiceImpl) FindAllTransactionsByAccount(
 }
 
 func (s *TransactionServiceImpl) GetTransactionByID(ctx context.Context, id int) (*domain.Transaction, error) {
-	if id <= 0 {
-		return nil, fmt.Errorf("ID de transacción inválido: %d", id)
-	}
-	tx, err := s.repo.GetTransactionByID(ctx, id)
-	if err != nil {
-		return nil, fmt.Errorf("error al obtener la transacción: %w", err)
-	}
+	return s.repo.GetTransactionByID(ctx, id)
+}
 
-	// Populate the absolute path for the UI
-	if tx.AttachmentPath != nil && *tx.AttachmentPath != "" {
-		fullPath, err := s.storage.GetFullPath(*tx.AttachmentPath)
-		if err == nil {
-			tx.AbsoluteAttachPath = fullPath
-		}
-	}
-
-	return tx, nil
+func (s *TransactionServiceImpl) GetItemsByTransactionID(ctx context.Context, id int) ([]domain.TransactionItem, error) {
+	return s.repo.GetItemsByTransactionID(ctx, id)
 }
 
 func (s *TransactionServiceImpl) CreateTransaction(ctx context.Context, tx *domain.Transaction, currentUser domain.User) error {
@@ -123,6 +111,11 @@ func (s *TransactionServiceImpl) CreateTransaction(ctx context.Context, tx *doma
 
 	tx.CreatedByID = currentUser.ID
 	tx.UpdatedByID = currentUser.ID
+
+	// Fallback para desgloses vacíos (ej: transacciones antiguas o automáticas)
+	if tx.Amount > 0 && tx.Subtotal15 == 0 && tx.Subtotal0 == 0 {
+		tx.Subtotal0 = tx.Amount
+	}
 
 	var sourcePath string
 	if tx.AttachmentPath != nil {

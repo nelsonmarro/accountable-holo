@@ -1,0 +1,54 @@
+@startuml
+skinparam componentStyle uml2
+skinparam packageStyle rectangle
+
+title Arquitectura Accountable Holo - Integración Facturación Electrónica SRI
+
+actor "Usuario / Emisor" as usuario
+actor "Cliente / Receptor" as cliente
+
+package "Servicios Externos" {
+    component "SRI Web Services\n(Recepción y Autorización)" as sri
+    component "Servidor SMTP\n(Envío de Email)" as email_provider
+}
+
+package "Accountable Holo (Desktop App)" {
+    
+    component "Capa UI (Fyne)" as ui_layer
+    component "Application Services" as app_service
+    component "Capa de Persistencia" as data_layer
+    database "Base de Datos Local\n(PostgreSQL)" as local_db
+    file "Sistema de Archivos\n(Certificados .p12)" as file_system
+
+    package "Módulo Facturación Electrónica (SRI Core)" {
+        component "Generador XML" as xml_generator
+        component "Motor de Claves\n(Clave Acceso 49 dígitos)" as key_gen
+        component "Firmador XAdES-BES" as signer
+        component "Cliente SOAP SRI" as soap_client
+        component "Generador RIDE\n(PDF + QR)" as ride_gen
+    }
+}
+
+' Relaciones
+usuario --> ui_layer : Usa
+ui_layer --> app_service : Invoca
+ui_layer --> xml_generator : Configura y Emite
+
+' Flujo de Facturación
+app_service --> xml_generator : Solicita Emisión
+xml_generator --> key_gen : 1. Genera Clave
+xml_generator --> signer : 2. Pasa XML
+signer --> file_system : Lee .p12
+signer --> soap_client : 3. XML Firmado
+
+' Comunicación Externa
+soap_client --> sri : 4. Envío y Validación (SOAP)
+soap_client --> data_layer : Guarda Estado
+data_layer --> local_db : Persiste
+
+' Post-Emisión
+soap_client --> ride_gen : 5. Autorizado
+ride_gen --> email_provider : 6. Envía XML+PDF
+email_provider --> cliente : Entrega Factura
+
+@enduml

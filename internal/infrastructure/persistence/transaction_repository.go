@@ -26,7 +26,7 @@ func (r *TransactionRepositoryImpl) CreateTransaction(ctx context.Context, trans
 	if err != nil {
 		return fmt.Errorf("failed to begin transaction: %w", err)
 	}
-	defer tx.Rollback(ctx)
+	defer func() { _ = tx.Rollback(ctx) }()
 
 	var cat domain.Category
 	err = tx.QueryRow(ctx, "SELECT name, type FROM categories WHERE id = $1", transaction.CategoryID).
@@ -43,8 +43,10 @@ func (r *TransactionRepositoryImpl) CreateTransaction(ctx context.Context, trans
 	transaction.TransactionNumber = newTxNumber
 
 	query := `
-		insert into transactions (transaction_number, description, amount, transaction_date, account_id, category_id, attachment_path, created_by_id, updated_by_id, created_at, updated_at)
-				 values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+		insert into transactions (transaction_number, description, amount, transaction_date, account_id, category_id, 
+		                          attachment_path, created_by_id, updated_by_id, created_at, updated_at,
+		                          subtotal_15, subtotal_0, tax_amount, tax_payer_id)
+				 values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
 				  returning id, created_at, updated_at`
 
 	now := time.Now()
@@ -60,9 +62,28 @@ func (r *TransactionRepositoryImpl) CreateTransaction(ctx context.Context, trans
 		transaction.UpdatedByID,
 		now,
 		now,
+		transaction.Subtotal15,
+		transaction.Subtotal0,
+		transaction.TaxAmount,
+		transaction.TaxPayerID,
 	).Scan(&transaction.ID, &transaction.CreatedAt, &transaction.UpdatedAt)
 	if err != nil {
 		return fmt.Errorf("failed to create transaction: %w", err)
+	}
+
+	// 3. Insertar ítems si los hay
+	for i := range transaction.Items {
+		item := &transaction.Items[i]
+		itemQuery := `
+			INSERT INTO transaction_items (transaction_id, description, quantity, unit_price, tax_rate, subtotal, created_at, updated_at)
+			VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id
+		`
+		err = tx.QueryRow(ctx, itemQuery,
+			transaction.ID, item.Description, item.Quantity, item.UnitPrice, item.TaxRate, item.Subtotal, now, now,
+		).Scan(&item.ID)
+		if err != nil {
+			return fmt.Errorf("failed to create transaction item: %w", err)
+		}
 	}
 
 	return tx.Commit(ctx)
@@ -122,10 +143,18 @@ func (r *TransactionRepositoryImpl) FindTransactionsByAccount(
         t.is_voided,
         t.voided_by_transaction_id,
         t.voids_transaction_id,
+        t.subtotal_15,
+        t.subtotal_0,
+        t.tax_amount,
+        t.tax_payer_id,
         c.name AS category_name,
         c.type AS category_type,
 		uc.username AS created_by,
 		uu.username AS updated_by,
+		er.sri_status,
+		er.access_key,
+		er.authorization_date,
+		er.ride_path,
         (
             SELECT initial_balance FROM accounts WHERE id = t.account_id
         ) + (
@@ -147,6 +176,8 @@ func (r *TransactionRepositoryImpl) FindTransactionsByAccount(
 		users AS uc ON t.created_by_id = uc.id
 	LEFT JOIN
 		users AS uu ON t.updated_by_id = uu.id
+	LEFT JOIN
+		electronic_receipts AS er ON t.id = er.transaction_id
     WHERE %s
     ORDER BY
         t.transaction_date DESC, t.id DESC
@@ -194,10 +225,18 @@ func (r *TransactionRepositoryImpl) FindAllTransactionsByAccount(
         t.is_voided,
         t.voided_by_transaction_id,
         t.voids_transaction_id,
+        t.subtotal_15,
+        t.subtotal_0,
+        t.tax_amount,
+        t.tax_payer_id,
         c.name AS category_name,
         c.type AS category_type,
 		uc.username AS created_by,
 		uu.username AS updated_by,
+		er.sri_status,
+		er.access_key,
+		er.authorization_date,
+		er.ride_path,
         (
             SELECT initial_balance FROM accounts WHERE id = t.account_id
         ) + (
@@ -219,6 +258,8 @@ func (r *TransactionRepositoryImpl) FindAllTransactionsByAccount(
 		users AS uc ON t.created_by_id = uc.id
 	LEFT JOIN
 		users AS uu ON t.updated_by_id = uu.id
+	LEFT JOIN
+		electronic_receipts AS er ON t.id = er.transaction_id
     WHERE %s
     ORDER BY
         t.transaction_date DESC, t.id DESC;`, whereCondition)
@@ -254,10 +295,18 @@ func (r *TransactionRepositoryImpl) FindAllTransactions(
         t.is_voided,
         t.voided_by_transaction_id,
         t.voids_transaction_id,
+        t.subtotal_15,
+        t.subtotal_0,
+        t.tax_amount,
+        t.tax_payer_id,
         c.name AS category_name,
         c.type AS category_type,
 			  uc.username AS created_by,
 		    uu.username AS updated_by,
+		er.sri_status,
+		er.access_key,
+		er.authorization_date,
+		er.ride_path,
         (
             SELECT initial_balance FROM accounts WHERE id = t.account_id
         ) + (
@@ -279,6 +328,8 @@ func (r *TransactionRepositoryImpl) FindAllTransactions(
 				users AS uc ON t.created_by_id = uc.id
 		LEFT JOIN
 				users AS uu ON t.updated_by_id = uu.id
+	LEFT JOIN
+		electronic_receipts AS er ON t.id = er.transaction_id
     WHERE %s
     ORDER BY
         t.transaction_date DESC, t.id DESC;`, whereCondition)
@@ -328,7 +379,7 @@ func (r *TransactionRepositoryImpl) VoidTransaction(
 	if err != nil {
 		return fmt.Errorf("failed to begin transaction: %w", err)
 	}
-	defer tx.Rollback(ctx)
+	defer func() { _ = tx.Rollback(ctx) }()
 
 	originalTransactionQuery := `
 		 SELECT
@@ -341,6 +392,10 @@ func (r *TransactionRepositoryImpl) VoidTransaction(
 			 t.is_voided,
 			 t.voided_by_transaction_id,
 			 t.voids_transaction_id,
+			 t.subtotal_15,
+			 t.subtotal_0,
+			 t.tax_amount,
+			 t.tax_payer_id,
 			 c.type
 		 FROM transactions t
 		JOIN categories c ON t.category_id = c.id
@@ -361,6 +416,10 @@ func (r *TransactionRepositoryImpl) VoidTransaction(
 		&originalTransaction.IsVoided,
 		&originalTransaction.VoidedByTransactionID,
 		&originalTransaction.VoidsTransactionID,
+		&originalTransaction.Subtotal15,
+		&originalTransaction.Subtotal0,
+		&originalTransaction.TaxAmount,
+		&originalTransaction.TaxPayerID,
 		&originalCatType,
 	)
 	if err != nil {
@@ -412,8 +471,8 @@ func (r *TransactionRepositoryImpl) VoidTransaction(
          insert into transactions
            (description, amount, transaction_date, account_id,
             category_id, voids_transaction_id, created_at, updated_at, transaction_number,
-            created_by_id, updated_by_id)
-            values($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) returning id
+            created_by_id, updated_by_id, subtotal_15, subtotal_0, tax_amount, tax_payer_id)
+            values($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15) returning id
      `
 
 	var voidTransactionID int
@@ -431,6 +490,10 @@ func (r *TransactionRepositoryImpl) VoidTransaction(
 		voidTransactionNumber,
 		currentUser.ID,
 		currentUser.ID,
+		originalTransaction.Subtotal15, // Copiamos valores de impuestos
+		originalTransaction.Subtotal0,
+		originalTransaction.TaxAmount,
+		originalTransaction.TaxPayerID,
 	).Scan(&voidTransactionID)
 	if err != nil {
 		return fmt.Errorf("failed to create void transaction: %w", err)
@@ -467,64 +530,82 @@ func (r *TransactionRepositoryImpl) VoidTransaction(
 }
 
 func (r *TransactionRepositoryImpl) GetTransactionByID(ctx context.Context, transactionID int) (*domain.Transaction, error) {
-	query := `
-			select
-				id,
-				transaction_number,
-				description,
-				amount,
-				transaction_date,
-				account_id,
-				category_id,
-				attachment_path,
-				is_voided,
-				voided_by_transaction_id,
-				voids_transaction_id,
-				created_at,
-				updated_at
-			from transactions t
-			   where id = $1
+	queryJoin := `
+		SELECT
+			t.id,
+			t.transaction_number,
+			t.description,
+			t.amount,
+			t.transaction_date,
+			t.account_id,
+			t.category_id,
+			t.attachment_path,
+			t.is_voided,
+			t.voided_by_transaction_id,
+			t.voids_transaction_id,
+			t.subtotal_15,
+			t.subtotal_0,
+			t.tax_amount,
+			t.tax_payer_id,
+			c.name,
+			c.type,
+			uc.username,
+			uu.username,
+			er.sri_status,
+			er.access_key,
+			er.authorization_date,
+			er.ride_path,
+			0.0 -- Running balance not needed for single ID usually
+		FROM transactions t
+		LEFT JOIN categories c ON t.category_id = c.id
+		LEFT JOIN users uc ON t.created_by_id = uc.id
+		LEFT JOIN users uu ON t.updated_by_id = uu.id
+		LEFT JOIN electronic_receipts er ON t.id = er.transaction_id
+		WHERE t.id = $1
 	`
-	var tx domain.Transaction
-	var attachment sql.NullString
-	var voidedBy sql.NullInt64
-	var voids sql.NullInt64
-
-	err := r.db.QueryRow(ctx, query, transactionID).Scan(
-		&tx.ID,
-		&tx.TransactionNumber,
-		&tx.Description,
-		&tx.Amount,
-		&tx.TransactionDate,
-		&tx.AccountID,
-		&tx.CategoryID,
-		&attachment,
-		&tx.IsVoided,
-		&voidedBy,
-		&voids,
-		&tx.CreatedAt,
-		&tx.UpdatedAt,
-	)
+	
+	rows, err := r.db.Query(ctx, queryJoin, transactionID)
 	if err != nil {
-		if err == pgx.ErrNoRows {
-			return nil, fmt.Errorf("transaction with ID %d not found", transactionID)
+		return nil, err
+	}
+	defer rows.Close()
+	
+	txs, err := r.scanTransactions(rows)
+	if err != nil {
+		return nil, err
+	}
+	if len(txs) == 0 {
+		return nil, pgx.ErrNoRows
+	}
+	
+	return &txs[0], nil
+}
+
+func (r *TransactionRepositoryImpl) GetItemsByTransactionID(ctx context.Context, transactionID int) ([]domain.TransactionItem, error) {
+	query := `
+		SELECT id, transaction_id, description, quantity, unit_price, tax_rate, subtotal, created_at, updated_at
+		FROM transaction_items
+		WHERE transaction_id = $1
+		ORDER BY id ASC
+	`
+	rows, err := r.db.Query(ctx, query, transactionID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query transaction items: %w", err)
+	}
+	defer rows.Close()
+
+	var items []domain.TransactionItem
+	for rows.Next() {
+		var item domain.TransactionItem
+		err := rows.Scan(
+			&item.ID, &item.TransactionID, &item.Description, &item.Quantity, &item.UnitPrice, &item.TaxRate, &item.Subtotal, &item.CreatedAt, &item.UpdatedAt,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan item: %w", err)
 		}
-		return nil, fmt.Errorf("failed to get transaction by ID: %w", err)
+		items = append(items, item)
 	}
-
-	if attachment.Valid {
-		tx.AttachmentPath = &attachment.String
-	}
-	if voidedBy.Valid {
-		val := int(voidedBy.Int64)
-		tx.VoidedByTransactionID = &val
-	}
-	if voids.Valid {
-		val := int(voids.Int64)
-		tx.VoidsTransactionID = &val
-	}
-
-	return &tx, nil
+	return items, nil
 }
 
 func (r *TransactionRepositoryImpl) UpdateTransaction(ctx context.Context, tx *domain.Transaction) error {
@@ -532,7 +613,7 @@ func (r *TransactionRepositoryImpl) UpdateTransaction(ctx context.Context, tx *d
 	if err != nil {
 		return fmt.Errorf("failed to begin transaction: %w", err)
 	}
-	defer dbTx.Rollback(ctx)
+	defer func() { _ = dbTx.Rollback(ctx) }()
 
 	// Get original transaction to compare
 	var originalTx domain.Transaction
@@ -718,7 +799,6 @@ func (r *TransactionRepositoryImpl) buildQueryConditions(
 
 		searchClauses = append(searchClauses, fmt.Sprintf("c.name ILIKE $%d", argsCount))
 		args = append(args, searchPattern)
-		argsCount++
 
 		whereClauses = append(whereClauses, "("+strings.Join(searchClauses, " OR ")+")")
 	}
@@ -738,6 +818,11 @@ func (r *TransactionRepositoryImpl) scanTransactions(rows pgx.Rows) ([]domain.Tr
 		var attachment sql.NullString
 		var voidedBy sql.NullInt64
 		var voids sql.NullInt64
+		
+		// SRI Fields
+		var sriStatus, accessKey, ridePath sql.NullString
+		var authDate sql.NullTime
+
 		err := rows.Scan(
 			&tx.ID,
 			&tx.TransactionNumber,
@@ -748,12 +833,20 @@ func (r *TransactionRepositoryImpl) scanTransactions(rows pgx.Rows) ([]domain.Tr
 			&tx.CategoryID,
 			&attachment,
 			&tx.IsVoided,
-			&voidedBy,
-			&voids,
+			&tx.VoidedByTransactionID,
+			&tx.VoidsTransactionID,
+			&tx.Subtotal15,
+			&tx.Subtotal0,
+			&tx.TaxAmount,
+			&tx.TaxPayerID,
 			&categoryName,
 			&categoryType,
 			&createdBy,
 			&updatedBy,
+			&sriStatus,     // New
+			&accessKey,     // New
+			&authDate,      // New
+			&ridePath,      // New
 			&tx.RunningBalance,
 		)
 		if err != nil {
@@ -782,6 +875,19 @@ func (r *TransactionRepositoryImpl) scanTransactions(rows pgx.Rows) ([]domain.Tr
 		if updatedBy.Valid {
 			tx.UpdatedByUser = &domain.User{Username: updatedBy.String}
 		}
+		
+		// Map SRI Receipt
+		if sriStatus.Valid {
+			tx.ElectronicReceipt = &domain.ElectronicReceipt{
+				SRIStatus: sriStatus.String,
+				AccessKey: accessKey.String,
+				RidePath:  ridePath.String,
+			}
+			if authDate.Valid {
+				tx.ElectronicReceipt.AuthorizationDate = &authDate.Time
+			}
+		}
+
 		transactions = append(transactions, tx)
 	}
 

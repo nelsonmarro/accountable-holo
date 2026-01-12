@@ -57,6 +57,7 @@ type TransactionService interface {
 	) ([]domain.Transaction, error)
 
 	GetTransactionByID(ctx context.Context, id int) (*domain.Transaction, error)
+	GetItemsByTransactionID(ctx context.Context, id int) ([]domain.TransactionItem, error)
 	VoidTransaction(ctx context.Context, transactionID int, currentUser domain.User) error
 	UpdateTransaction(ctx context.Context, tx *domain.Transaction, currentUser domain.User) error
 	ReconcileAccount(
@@ -89,10 +90,29 @@ type RecurringTransactionService interface {
 	ProcessPendingRecurrences(ctx context.Context, systemUser domain.User) error
 }
 
+type IssuerService interface {
+	SaveIssuerConfig(ctx context.Context, issuer *domain.Issuer, password string) error
+	GetIssuerConfig(ctx context.Context) (*domain.Issuer, error)
+	GetSignaturePassword(ruc string) (string, error)
+}
+
+type SriService interface {
+	EmitirFactura(ctx context.Context, transactionID int, signaturePassword string) error
+	GenerateRide(ctx context.Context, transactionID int) (string, error)
+	SyncReceipt(ctx context.Context, receipt *domain.ElectronicReceipt) (string, error)
+	ProcessBackgroundSync(ctx context.Context) (int, error)
+}
+
 type UserService interface {
 	Login(ctx context.Context, username, password string) (*domain.User, error)
 	CreateUser(ctx context.Context, username, password, firstName, lastName string, role domain.UserRole, currentUser *domain.User) error
 	UpdateUser(ctx context.Context, id int, username, password, firstName, lastName string, role domain.UserRole, currentUser *domain.User) error
 	DeleteUser(ctx context.Context, id int, currentUser *domain.User) error
 	GetAllUsers(ctx context.Context, currentUser *domain.User) ([]domain.User, error)
+}
+
+type TaxPayerService interface {
+	GetByIdentification(ctx context.Context, identification string) (*domain.TaxPayer, error)
+	Create(ctx context.Context, tp *domain.TaxPayer) error
+	Search(ctx context.Context, query string) ([]domain.TaxPayer, error)
 }

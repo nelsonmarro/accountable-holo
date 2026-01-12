@@ -17,6 +17,7 @@ import (
 	"github.com/nelsonmarro/accountable-holo/internal/infrastructure/storage"
 	"github.com/nelsonmarro/accountable-holo/internal/licensing"
 	"github.com/nelsonmarro/accountable-holo/internal/logging"
+	"github.com/nelsonmarro/accountable-holo/internal/sri"
 	"github.com/nelsonmarro/accountable-holo/internal/ui"
 )
 
@@ -76,10 +77,17 @@ func main() {
 	reportRepo := persistence.NewReportRepository(pool)
 	userRepo := persistence.NewUserRepository(pool)
 	recurRepo := persistence.NewRecurringTransactionRepository(pool)
+	issuerRepo := persistence.NewIssuerRepository(pool)
+	receiptRepo := persistence.NewElectronicReceiptRepository(pool)
+	clientRepo := persistence.NewTaxPayerRepository(pool)
+	emissionRepo := persistence.NewEmissionPointRepository(pool)
 
 	// ---- Application (Report Generators) ----
 	csvGen := report.NewCSVReportGenerator()
 	pdfGen := report.NewPDFReportGenerator()
+
+	// ---- SRI (Client & Service) ----
+	sriClient := sri.NewSoapClient()
 
 	// ---- Application (Services) ----
 	accService := service.NewAccountService(accRepo)
@@ -88,16 +96,31 @@ func main() {
 	userService := service.NewUserService(userRepo)
 	reportService := service.NewReportService(reportRepo, txRepo, catRepo, csvGen, pdfGen)
 	recurService := service.NewRecurringTransactionService(recurRepo, txRepo, infoLogger)
+	issuerService := service.NewIssuerService(issuerRepo)
+	taxService := service.NewTaxPayerService(clientRepo)
+	mailService := service.NewMailService()
+	sriService := service.NewSriService(txRepo, issuerRepo, receiptRepo, clientRepo, sriClient, mailService, infoLogger)
 
-	// ---- UI Struct ----
-	gui := ui.NewUI(&ui.Services{
-		AccService:    accService,
-		CatService:    catService,
-		TxService:     txService,
-		ReportService: reportService,
-		UserService:   userService,
-		RecurService:  recurService,
-	}, infoLogger, errorLogger)
+	// ---- UI Initialization ----
+	myApp := app.NewWithID("com.accountable.holo")
+	myApp.Settings().SetTheme(&ui.MyTheme{})
+
+	userUI := ui.NewUI(
+		myApp,
+		infoLogger,
+		errorLogger,
+		ui.Services{
+			AccService:    accService,
+			CatService:    catService,
+			TxService:     txService,
+			UserService:   userService,
+			ReportService: reportService,
+			RecurService:  recurService,
+			IssuerService: issuerService,
+			SriService:    sriService,
+			TaxService:    taxService,
+		},
+	)
 
 	// ---- App Initialization ----
 	gui.Init(a)
