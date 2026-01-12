@@ -12,20 +12,25 @@ import (
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 	"github.com/nelsonmarro/accountable-holo/internal/domain"
-	"github.com/nelsonmarro/accountable-holo/internal/ui"
 )
+
+type TaxPayerService interface {
+	Create(ctx context.Context, tp *domain.TaxPayer) error
+	Search(ctx context.Context, query string) ([]domain.TaxPayer, error)
+	GetByIdentification(ctx context.Context, identification string) (*domain.TaxPayer, error)
+}
 
 type SearchDialog struct {
 	window     fyne.Window
 	logger     *log.Logger
-	service    ui.TaxPayerService
+	service    TaxPayerService
 	onSelected func(*domain.TaxPayer)
 }
 
 func NewSearchDialog(
 	parent fyne.Window,
 	logger *log.Logger,
-	service ui.TaxPayerService,
+	service TaxPayerService,
 	onSelected func(*domain.TaxPayer),
 ) *SearchDialog {
 	return &SearchDialog{

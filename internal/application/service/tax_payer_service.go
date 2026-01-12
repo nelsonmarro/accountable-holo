@@ -15,6 +15,10 @@ func NewTaxPayerService(repo TaxPayerRepository) *TaxPayerService {
 	return &TaxPayerService{repo: repo}
 }
 
+func (s *TaxPayerService) GetByID(ctx context.Context, id int) (*domain.TaxPayer, error) {
+	return s.repo.GetByID(ctx, id)
+}
+
 func (s *TaxPayerService) GetByIdentification(ctx context.Context, identification string) (*domain.TaxPayer, error) {
 	return s.repo.GetByIdentification(ctx, identification)
 }

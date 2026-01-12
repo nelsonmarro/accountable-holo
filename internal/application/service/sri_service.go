@@ -188,7 +188,6 @@ func (s *SriService) ProcessBackgroundSync(ctx context.Context) (int, error) {
 
 		if newStatus == "AUTORIZADO" && oldStatus != "AUTORIZADO" {
 			authorizedCount++
-			// Aquí podríamos enviar un email al cliente automáticamente
 		}
 	}
 
@@ -237,8 +236,7 @@ func (s *SriService) EmitirFactura(ctx context.Context, transactionID int, signa
 	}
 
 	// 3. Obtener Secuencial SRI
-	// Buscamos el punto de emisión configurado para facturas (01)
-	// Asumimos por defecto estab=001 pto=002, pero debería venir del Issuer config
+	// Buscamos el punto de emisión configurado para facturas
 	ep, err := s.epRepo.GetByPoint(ctx, issuer.ID, issuer.EstablishmentCode, issuer.EmissionPointCode, "01")
 	if err != nil {
 		// Si no existe, intentamos crearlo la primera vez
@@ -256,12 +254,12 @@ func (s *SriService) EmitirFactura(ctx context.Context, transactionID int, signa
 			return fmt.Errorf("error obteniendo secuencial: %w", err)
 		}
 	}
-	
+
 	// Incrementamos el secuencial
 	if err := s.epRepo.IncrementSequence(ctx, ep.ID); err != nil {
 		return fmt.Errorf("error incrementando secuencial: %w", err)
 	}
-	
+
 	// Formato 9 dígitos (ej: 000000123)
 	secuencialSRI := fmt.Sprintf("%09d", ep.CurrentSequence+1)
 
@@ -345,23 +343,54 @@ func (s *SriService) EmitirFactura(ctx context.Context, transactionID int, signa
 
 // finalizeAndEmail handles the post-authorization steps: RIDE generation and Email sending.
 func (s *SriService) finalizeAndEmail(ctx context.Context, receipt *domain.ElectronicReceipt) {
-	// 1. Generate RIDE
-	pdfPath, err := s.GenerateRide(ctx, receipt.TransactionID)
+	// 1. Generate RIDE (PDF) in a temporary file
+	// We create a temp file pattern. The generator will write to this path.
+	tmpPDF, err := os.CreateTemp("", fmt.Sprintf("ride-%s-*.pdf", receipt.AccessKey))
 	if err != nil {
-		s.logger.Printf("Failed to generate RIDE for %s: %v", receipt.AccessKey, err)
+		s.logger.Printf("Failed to create temp PDF file: %v", err)
+		return
+	}
+	pdfPath := tmpPDF.Name()
+	tmpPDF.Close() // Close immediately so the generator can write to it if needed, or just let generator overwrite.
+
+	// Ensure PDF is removed after function exits
+	defer func() { _ = os.Remove(pdfPath) }()
+
+	// 2. Get Issuer for Logo and Data
+	issuer, err := s.issuerRepo.GetActive(ctx)
+	if err != nil {
+		s.logger.Printf("Failed to get issuer for RIDE generation: %v", err)
 		return
 	}
 
-	// 2. Get Issuer and TaxPayer
-	issuer, _ := s.issuerRepo.GetActive(ctx)
-	client, _ := s.clientRepo.GetByID(ctx, receipt.TaxPayerID)
+	// 3. Parse XML stored in DB
+	var factura sri.Factura
+	if err := xml.Unmarshal([]byte(receipt.XMLContent), &factura); err != nil {
+		s.logger.Printf("Failed to unmarshal XML for RIDE generation: %v", err)
+		return
+	}
 
+	// 4. Generate the PDF content into the temp path
+	// Use Authorization Date if available, else Now
+	authDate := time.Now()
+	if receipt.AuthorizationDate != nil {
+		authDate = *receipt.AuthorizationDate
+	}
+
+	err = s.rideGen.GenerateFacturaRide(&factura, pdfPath, issuer.LogoPath, authDate, receipt.AccessKey)
+	if err != nil {
+		s.logger.Printf("Failed to generate RIDE PDF for %s: %v", receipt.AccessKey, err)
+		return
+	}
+
+	// 5. Get Recipient
+	client, _ := s.clientRepo.GetByID(ctx, receipt.TaxPayerID)
 	if client == nil || client.Email == "" {
 		s.logger.Printf("Skipping email for %s: no recipient email found", receipt.AccessKey)
 		return
 	}
 
-	// 3. Write XML to temp file for attachment
+	// 6. Write XML to temp file for attachment
 	tmpXML, err := os.CreateTemp("", "factura-*.xml")
 	if err != nil {
 		s.logger.Printf("Failed to create temp XML file: %v", err)
@@ -371,7 +400,7 @@ func (s *SriService) finalizeAndEmail(ctx context.Context, receipt *domain.Elect
 	_, _ = tmpXML.WriteString(receipt.XMLContent)
 	_ = tmpXML.Close()
 
-	// 4. Send Email
+	// 7. Send Email with both temp files
 	err = s.mailService.SendReceipt(issuer, client.Email, tmpXML.Name(), pdfPath)
 	if err != nil {
 		s.logger.Printf("Failed to send email for %s: %v", receipt.AccessKey, err)

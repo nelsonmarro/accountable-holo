@@ -13,7 +13,6 @@ import (
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 	"github.com/nelsonmarro/accountable-holo/internal/domain"
-	"github.com/nelsonmarro/accountable-holo/internal/ui"
 	"github.com/nelsonmarro/accountable-holo/internal/ui/componets"
 	"github.com/nelsonmarro/accountable-holo/internal/ui/componets/category"
 	"github.com/nelsonmarro/accountable-holo/internal/ui/componets/taxpayer"
@@ -26,7 +25,7 @@ type AddTransactionDialog struct {
 	txService       TransactionService
 	recurService    RecurringTransactionService
 	categoryService CategoryService
-	taxService      ui.TaxPayerService // Added
+	taxService      TaxPayerService // Updated to local interface
 	callbackAction  func()
 
 	// UI Components
@@ -35,12 +34,12 @@ type AddTransactionDialog struct {
 	searchCategoryBtn *widget.Button
 	attachmentLabel   *widget.Label
 	searchFileBtn     *widget.Button
-	
+
 	// Tax & Client UI
 	subtotalLabel  *widget.Label
 	taxAmountLabel *widget.Label
 	totalLabel     *widget.Label
-	
+
 	// Client Selector
 	taxPayerLabel     *widget.Label
 	searchTaxPayerBtn *widget.Button
@@ -68,7 +67,7 @@ func NewAddTransactionDialog(
 	txs TransactionService,
 	rs RecurringTransactionService,
 	cs CategoryService,
-	ts ui.TaxPayerService, // Added
+	ts TaxPayerService, // Added
 	callback func(),
 	accountID int,
 	currentUser domain.User,
@@ -94,9 +93,9 @@ func NewAddTransactionDialog(
 		taxPayerLabel:    widget.NewLabel("Consumidor Final"), // Default
 		items:            make([]domain.TransactionItem, 0),
 	}
-	
+
 	d.itemsManager = NewItemsListManager(win, d.handleItemsUpdate)
-	
+
 	d.dateEntry.SetText(time.Now().Format("01/02/2006"))
 	d.intervalSelect.SetSelected("Mensual")
 	d.intervalSelect.Hide()
@@ -156,14 +155,14 @@ func NewAddTransactionDialog(
 func (d *AddTransactionDialog) handleItemsUpdate(items []domain.TransactionItem) {
 	d.items = items
 	var subtotal, tax float64
-	
+
 	for _, item := range items {
 		subtotal += item.Subtotal
 		if item.TaxRate == 4 { // IVA 15%
 			tax += item.Subtotal * 0.15
 		}
 	}
-	
+
 	d.subtotalLabel.SetText(fmt.Sprintf("$%.2f", subtotal))
 	d.taxAmountLabel.SetText(fmt.Sprintf("$%.2f", tax))
 	d.totalLabel.SetText(fmt.Sprintf("$%.2f", subtotal+tax))
@@ -205,8 +204,8 @@ func (d *AddTransactionDialog) Show() {
 		summary,
 	)
 
-	formDialog := dialog.NewCustomConfirm("Crear Transacción", "Guardar", "Cancelar", 
-		container.NewVScroll(container.NewPadded(content)), 
+	formDialog := dialog.NewCustomConfirm("Crear Transacción", "Guardar", "Cancelar",
+		container.NewVScroll(container.NewPadded(content)),
 		func(confirm bool) {
 			if confirm {
 				d.handleSubmit(true)
@@ -241,11 +240,13 @@ func (d *AddTransactionDialog) handleSubmit(valid bool) {
 		// Calculate final totals
 		var sub15, sub0, taxTotal, total float64
 		var description string
-		
+
 		for i, item := range d.items {
-			if i > 0 { description += ", " }
+			if i > 0 {
+				description += ", "
+			}
 			description += item.Description
-			
+
 			if item.TaxRate == 4 {
 				sub15 += item.Subtotal
 				taxTotal += item.Subtotal * 0.15
@@ -259,7 +260,7 @@ func (d *AddTransactionDialog) handleSubmit(valid bool) {
 		if d.attachmentPath != "" {
 			attachmentPathPtr = &d.attachmentPath
 		}
-		
+
 		var taxPayerID *int
 		if d.selectedTaxPayer != nil {
 			taxPayerID = &d.selectedTaxPayer.ID

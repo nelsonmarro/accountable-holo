@@ -59,7 +59,7 @@ func main() {
 	// ---- UI (Fyne) ----
 	infoLogger.Println("Initializing Fyne App...")
 	// 1. Create the Fyne App first.
-	a := app.NewWithID("51af2ee4-c61c-4608-a3f1-d8576343af14")
+	// a := app.NewWithID("51af2ee4-c61c-4608-a3f1-d8576343af14") removed
 	infoLogger.Println("Fyne App initialized.")
 
 	// ---- Infrastructure (Storage) ----
@@ -99,17 +99,14 @@ func main() {
 	issuerService := service.NewIssuerService(issuerRepo)
 	taxService := service.NewTaxPayerService(clientRepo)
 	mailService := service.NewMailService()
-	sriService := service.NewSriService(txRepo, issuerRepo, receiptRepo, clientRepo, sriClient, mailService, infoLogger)
+	sriService := service.NewSriService(txRepo, issuerRepo, receiptRepo, clientRepo, emissionRepo, sriClient, mailService, infoLogger)
 
 	// ---- UI Initialization ----
 	myApp := app.NewWithID("com.accountable.holo")
-	myApp.Settings().SetTheme(&ui.MyTheme{})
+	myApp.Settings().SetTheme(ui.NewAppTheme())
 
 	userUI := ui.NewUI(
-		myApp,
-		infoLogger,
-		errorLogger,
-		ui.Services{
+		&ui.Services{
 			AccService:    accService,
 			CatService:    catService,
 			TxService:     txService,
@@ -120,10 +117,14 @@ func main() {
 			SriService:    sriService,
 			TaxService:    taxService,
 		},
+		infoLogger,
+		errorLogger,
 	)
+	
+	userUI.Init(myApp)
 
 	// ---- App Initialization ----
-	gui.Init(a)
+	// gui.Init(a) removed as Init is called above
 	infoLogger.Println("Main Window created.")
 
 	// ---- Licensing & Startup ----
@@ -143,5 +144,5 @@ func main() {
 	licenseMgr := licensing.NewLicenseManager(licensePath)
 
 	infoLogger.Println("Starting UI Loop...")
-	gui.Run(licenseMgr)
+	userUI.Run(licenseMgr)
 }

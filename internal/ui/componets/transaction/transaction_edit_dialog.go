@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"log"
 	"path/filepath"
-	"strconv"
 	"time"
 
 	"fyne.io/fyne/v2"
@@ -19,6 +18,7 @@ import (
 	"github.com/nelsonmarro/accountable-holo/internal/domain"
 	"github.com/nelsonmarro/accountable-holo/internal/ui/componets"
 	"github.com/nelsonmarro/accountable-holo/internal/ui/componets/category"
+	"github.com/nelsonmarro/accountable-holo/internal/ui/componets/taxpayer"
 )
 
 // EditTransactionDialog holds the state and logic for the 'Edit Transaction' dialog.
@@ -28,6 +28,7 @@ type EditTransactionDialog struct {
 	txService       TransactionService
 	recurService    RecurringTransactionService
 	categoryService CategoryService
+	taxService      TaxPayerService // Added
 	callbackAction  func()
 	txID            int
 
@@ -45,7 +46,10 @@ type EditTransactionDialog struct {
 	subtotalLabel  *widget.Label
 	taxAmountLabel *widget.Label
 	totalLabel     *widget.Label
-	taxPayerEntry  *widget.Entry 
+	
+	// Client Selector
+	taxPayerLabel     *widget.Label
+	searchTaxPayerBtn *widget.Button
 
 	// Maestro-Detalle
 	itemsManager *ItemsListManager
@@ -58,6 +62,7 @@ type EditTransactionDialog struct {
 	accountID          int
 	categories         []domain.Category
 	selectedCategoryID int
+	selectedTaxPayer   *domain.TaxPayer // Added
 	attachmentPath     string
 	currentUser        domain.User
 	items              []domain.TransactionItem
@@ -70,6 +75,7 @@ func NewEditTransactionDialog(
 	txs TransactionService,
 	rs RecurringTransactionService,
 	cs CategoryService,
+	ts TaxPayerService, // Added
 	callback func(),
 	txID int,
 	accountID int,
@@ -81,6 +87,7 @@ func NewEditTransactionDialog(
 		txService:        txs,
 		recurService:     rs,
 		categoryService:  cs,
+		taxService:       ts, // Added
 		callbackAction:   callback,
 		txID:             txID,
 		accountID:        accountID,
@@ -95,12 +102,11 @@ func NewEditTransactionDialog(
 		subtotalLabel:    widget.NewLabel("$0.00"),
 		taxAmountLabel:   widget.NewLabel("$0.00"),
 		totalLabel:       widget.NewLabelWithStyle("$0.00", fyne.TextAlignLeading, fyne.TextStyle{Bold: true}),
-		taxPayerEntry:    widget.NewEntry(),
+		taxPayerLabel:    widget.NewLabel("Consumidor Final"), // Default
 		items:            make([]domain.TransactionItem, 0),
 	}
 	d.intervalSelect.SetSelected("Mensual")
 	d.intervalSelect.Hide()
-	d.taxPayerEntry.SetPlaceHolder("RUC / Cédula Cliente (Opcional)")
 
 	d.itemsManager = NewItemsListManager(win, d.handleItemsUpdate)
 
@@ -114,6 +120,20 @@ func NewEditTransactionDialog(
 
 	d.categoryButton = widget.NewButtonWithIcon("", theme.SearchIcon(), d.openCategorySearch)
 	d.searchDialog = category.NewCategorySearchDialog(win, l, cs, d.handleCategorySelect)
+	
+	d.searchTaxPayerBtn = widget.NewButtonWithIcon("", theme.SearchIcon(), func() {
+		searchDialog := taxpayer.NewSearchDialog(
+			d.mainWin,
+			d.logger,
+			d.taxService,
+			func(tp *domain.TaxPayer) {
+				d.selectedTaxPayer = tp
+				d.taxPayerLabel.SetText(tp.Name)
+			},
+		)
+		searchDialog.Show()
+	})
+
 	d.searchFileBtn = widget.NewButtonWithIcon("", theme.FileIcon(), func() {
 		fileDialog := dialog.NewFileOpen(func(reader fyne.URIReadCloser, err error) {
 			if err != nil {
@@ -214,17 +234,32 @@ func (d *EditTransactionDialog) showEditForm(tx *domain.Transaction, items []dom
 	d.descriptionEntry.SetText(tx.Description)
 	d.dateEntry.SetText(tx.TransactionDate.Format("01/02/2006"))
 
-	if tx.AttachmentPath != nil {
-		d.attachmentPath = *tx.AttachmentPath
-		d.attachmentLabel.SetText(filepath.Base(*tx.AttachmentPath))
-	}
-
-	if tx.TaxPayerID != nil {
-		d.taxPayerEntry.SetText(strconv.Itoa(*tx.TaxPayerID))
-	}
-
-	for _, cat := range d.categories {
-		if cat.ID == tx.CategoryID {
+		if tx.AttachmentPath != nil {
+			d.attachmentPath = *tx.AttachmentPath
+			d.attachmentLabel.SetText(filepath.Base(*tx.AttachmentPath))
+		}
+	
+		if tx.TaxPayerID != nil {
+			go func() {
+				ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+				defer cancel()
+				tp, err := d.taxService.GetByID(ctx, *tx.TaxPayerID)
+				if err == nil {
+					d.selectedTaxPayer = tp
+					fyne.Do(func() {
+						d.taxPayerLabel.SetText(tp.Name)
+					})
+				} else {
+					fyne.Do(func() {
+						d.taxPayerLabel.SetText(fmt.Sprintf("Cliente ID: %d (Error al cargar)", *tx.TaxPayerID))
+					})
+				}
+			}()
+		} else {
+			d.taxPayerLabel.SetText("Consumidor Final")
+		}
+	
+		for _, cat := range d.categories {		if cat.ID == tx.CategoryID {
 			d.selectedCategoryID = cat.ID
 			d.categoryLabel.SetText(cat.Name)
 			break
@@ -234,6 +269,7 @@ func (d *EditTransactionDialog) showEditForm(tx *domain.Transaction, items []dom
 	d.itemsManager.SetItems(items)
 
 	categoryContainer := container.NewBorder(nil, nil, nil, d.categoryButton, d.categoryLabel)
+	taxPayerContainer := container.NewBorder(nil, nil, nil, d.searchTaxPayerBtn, d.taxPayerLabel)
 	attachmentContainer := container.NewBorder(nil, nil, nil, d.searchFileBtn, d.attachmentLabel)
 
 	recurLabel := componets.NewHoverableLabel("¿Es Recurrente?", d.mainWin.Canvas())
@@ -242,7 +278,7 @@ func (d *EditTransactionDialog) showEditForm(tx *domain.Transaction, items []dom
 	// Header Form
 	headerForm := widget.NewForm(
 		widget.NewFormItem("Número", d.txNumber),
-		widget.NewFormItem("Cliente", d.taxPayerEntry),
+		widget.NewFormItem("Cliente", taxPayerContainer),
 		widget.NewFormItem("Fecha", d.dateEntry),
 		widget.NewFormItem("Categoría", categoryContainer),
 		widget.NewFormItem("Adjunto", attachmentContainer),

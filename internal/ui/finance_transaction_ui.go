@@ -360,6 +360,7 @@ func (ui *UI) updateTransactionItem(i widget.ListItemID, o fyne.CanvasObject) {
 			ui.Services.TxService,
 			ui.Services.RecurService, // Injected Recurrence Service
 			ui.Services.CatService,
+			ui.Services.TaxService, // Injected Tax Service
 			func() {
 				ui.loadTransactions(1, ui.transactionPaginator.GetPageSize())
 			},
