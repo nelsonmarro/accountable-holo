@@ -128,8 +128,13 @@ func (ui *UI) openMainWindow() {
 	// Create the menu with logout logic
 	logoutItem := fyne.NewMenuItem("Cerrar Sesión", func() {
 		ui.currentUser = nil
-		mainWindow.Close()
 		ui.openLoginWindow()
+		
+		mainWindow.Hide()
+		go func() {
+			time.Sleep(100 * time.Millisecond)
+			mainWindow.Close()
+		}()
 	})
 	fileMenu := fyne.NewMenu("Sesión", logoutItem)
 	mainWindow.SetMainMenu(fyne.NewMainMenu(fileMenu))

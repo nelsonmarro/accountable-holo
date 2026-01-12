@@ -35,9 +35,17 @@ func (ui *UI) makeLoginUI(loginWindow fyne.Window) fyne.CanvasObject {
 			}
 			ui.currentUser = user
 
-			// Close login window and open main window
-			loginWindow.Close()
+			// Open main window first
 			ui.openMainWindow()
+			
+			// Hide login window immediately to give visual feedback
+			loginWindow.Hide()
+			
+			// Close it slightly later to ensure events are finished
+			go func() {
+				time.Sleep(100 * time.Millisecond)
+				loginWindow.Close()
+			}()
 		},
 	}
 

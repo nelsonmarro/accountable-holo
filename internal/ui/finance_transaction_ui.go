@@ -239,11 +239,19 @@ func (ui *UI) createTransactiontItem() fyne.CanvasObject {
 	lblType.Wrapping = fyne.TextWrap(fyne.TextTruncateClip)
 
 	txtAmount := canvas.NewText("$1,200.00", color.Black)
+	amountContainer := container.NewCenter(txtAmount)
 
 	lblBalance := widget.NewLabel("$5,250.50")
 	lblBalance.Wrapping = fyne.TextWrap(fyne.TextTruncateClip)
 
-	iconSRI := widget.NewIcon(theme.ConfirmIcon()) // Placeholder
+	iconSRI := widget.NewIcon(theme.ConfirmIcon())
+	sriContainer := container.NewCenter(iconSRI)
+
+	lblNoAttachment := widget.NewLabel("-")
+	lblNoAttachment.Alignment = fyne.TextAlignCenter
+	attachmentLink = componets.NewHoverableHyperlink("", nil, ui.mainWindow.Canvas())
+	attachmentLink.Wrapping = fyne.TextWrap(fyne.TextTruncateClip)
+	attachmentContainer := container.NewStack(lblNoAttachment, attachmentLink)
 
 	grid := container.NewGridWithColumns(10, // Increased to 10
 		lblTxNumber,
@@ -251,10 +259,10 @@ func (ui *UI) createTransactiontItem() fyne.CanvasObject {
 		lblDescription,
 		lblCategory,
 		lblType,
-		txtAmount,
+		amountContainer,
 		lblBalance,
-		iconSRI, // New Widget
-		attachmentLink,
+		sriContainer,
+		attachmentContainer,
 		container.NewHBox(
 			editBtn,
 			voidBtn,
@@ -292,7 +300,8 @@ func (ui *UI) updateTransactionItem(i widget.ListItemID, o fyne.CanvasObject) {
 		rowContainer.Objects[4].(*widget.Label).SetText("-")
 	}
 
-	amountText := rowContainer.Objects[5].(*canvas.Text)
+	amountContainer := rowContainer.Objects[5].(*fyne.Container)
+	amountText := amountContainer.Objects[0].(*canvas.Text)
 	amountText.Text = fmt.Sprintf("%.2f", tx.Amount)
 	if tx.Category != nil && tx.Category.Type == domain.Income {
 		amountText.Text = "+ $" + amountText.Text
@@ -306,13 +315,13 @@ func (ui *UI) updateTransactionItem(i widget.ListItemID, o fyne.CanvasObject) {
 	rowContainer.Objects[6].(*widget.Label).SetText(fmt.Sprintf("$%.2f", tx.RunningBalance))
 
 	// SRI Status Logic
-	sriIcon := rowContainer.Objects[7].(*widget.Icon)
+	sriContainer := rowContainer.Objects[7].(*fyne.Container)
+	sriIcon := sriContainer.Objects[0].(*widget.Icon)
 	if tx.ElectronicReceipt != nil {
 		sriIcon.Show()
 		switch tx.ElectronicReceipt.SRIStatus {
 		case "AUTORIZADO":
 			sriIcon.SetResource(theme.ConfirmIcon())
-			// Optional: Set color to green if possible via theme or custom widget
 		case "DEVUELTA", "RECHAZADO", "ANULADO":
 			sriIcon.SetResource(theme.WarningIcon())
 		case "RECIBIDA", "EN_PROCESO", "PENDIENTE":
@@ -321,30 +330,30 @@ func (ui *UI) updateTransactionItem(i widget.ListItemID, o fyne.CanvasObject) {
 			sriIcon.SetResource(theme.QuestionIcon())
 		}
 	} else {
-		// Not emitted yet
 		sriIcon.Hide()
 	}
 
-	attachmentLink := rowContainer.Objects[8].(*componets.HoverableHyperlink)
+	attachmentContainer := rowContainer.Objects[8].(*fyne.Container)
+	lblNoAttachment := attachmentContainer.Objects[0].(*widget.Label)
+	attachmentLink := attachmentContainer.Objects[1].(*componets.HoverableHyperlink)
+
 	if tx.AttachmentPath != nil && *tx.AttachmentPath != "" {
 		fileName := filepath.Base(*tx.AttachmentPath)
-
 		attachmentLink.SetText(helpers.PrepareForTruncation(fileName))
 		attachmentLink.SetTooltip(fileName)
-
 		dummyURL, _ := url.Parse("file://")
 		attachmentLink.SetURL(dummyURL)
-
 		attachmentLink.OnTapped = func() {
 			previewDialog := transaction.NewPreviewDialog(ui.mainWindow, tx.AbsoluteAttachPath)
 			previewDialog.Show()
 		}
 		attachmentLink.Show()
+		lblNoAttachment.Hide()
 	} else {
-		attachmentLink.SetText("-")
-		attachmentLink.SetTooltip("")
-		attachmentLink.OnTapped = nil
+		attachmentLink.Hide()
+		lblNoAttachment.Show()
 	}
+	attachmentContainer.Show()
 
 	actionsContainer := rowContainer.Objects[9].(*fyne.Container)
 	editBtn := actionsContainer.Objects[0].(*widget.Button)
