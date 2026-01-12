@@ -7,11 +7,32 @@ import (
 )
 
 // MailService handles sending emails to clients.
-type MailServiceImpl struct{}
+type MailServiceImpl struct {
+	// Optional dialer factory for testing
+	dialerFactory func(host string, port int, username, password string) Dialer
+}
+
+// Dialer abstracts gomail.Dialer for testing
+type Dialer interface {
+	DialAndSend(m ...*gomail.Message) error
+}
+
+// RealDialer wraps gomail.Dialer
+type RealDialer struct {
+	d *gomail.Dialer
+}
+
+func (r *RealDialer) DialAndSend(m ...*gomail.Message) error {
+	return r.d.DialAndSend(m...)
+}
 
 // NewMailService creates a new instance of MailServiceImpl.
 func NewMailService() *MailServiceImpl {
-	return &MailServiceImpl{}
+	return &MailServiceImpl{
+		dialerFactory: func(host string, port int, username, password string) Dialer {
+			return &RealDialer{d: gomail.NewDialer(host, port, username, password)}
+		},
+	}
 }
 
 // SendReceipt sends the authorized XML and RIDE PDF to the recipient.
@@ -46,7 +67,8 @@ func (s *MailServiceImpl) SendReceipt(issuer *domain.Issuer, recipientEmail stri
 		port = *issuer.SMTPPort
 	}
 	
-	d := gomail.NewDialer(*issuer.SMTPServer, port, *issuer.SMTPUser, *issuer.SMTPPassword)
+	// Use factory to get dialer
+	d := s.dialerFactory(*issuer.SMTPServer, port, *issuer.SMTPUser, *issuer.SMTPPassword)
 	
 	// Send the email
 	if err := d.DialAndSend(m); err != nil {

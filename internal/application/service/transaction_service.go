@@ -149,6 +149,15 @@ func (s *TransactionServiceImpl) VoidTransaction(ctx context.Context, transactio
 		return fmt.Errorf("ID de transacción inválido: %d", transactionID)
 	}
 
+	tx, err := s.repo.GetTransactionByID(ctx, transactionID)
+	if err != nil {
+		return fmt.Errorf("error al obtener la transacción: %w", err)
+	}
+
+	if tx.IsVoided {
+		return fmt.Errorf("la transacción ya ha sido anulada")
+	}
+
 	return s.repo.VoidTransaction(ctx, transactionID, currentUser)
 }
 

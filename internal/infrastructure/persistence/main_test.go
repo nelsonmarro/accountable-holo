@@ -109,7 +109,7 @@ func TestMain(m *testing.M) {
 
 // truncateTables cleans the database tables between test runs for isolation.
 func truncateTables(t *testing.T) {
-	_, err := dbPool.Exec(context.Background(), "TRUNCATE TABLE accounts, categories, transactions, users RESTART IDENTITY CASCADE")
+	_, err := dbPool.Exec(context.Background(), "TRUNCATE TABLE accounts, categories, transactions, users, tax_payers, issuers, emission_points, electronic_receipts, transaction_items RESTART IDENTITY CASCADE")
 	if err != nil {
 		t.Fatalf("Failed to truncate tables: %v", err)
 	}

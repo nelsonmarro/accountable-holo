@@ -15,6 +15,11 @@ import (
 	"github.com/nelsonmarro/accountable-holo/internal/sri"
 )
 
+// MailService define el contrato para enviar notificaciones, requerido por SriService.
+type MailService interface {
+	SendReceipt(issuer *domain.Issuer, recipientEmail string, xmlPath string, pdfPath string) error
+}
+
 type SriService struct {
 	txRepo      TransactionRepository
 	issuerRepo  IssuerRepository

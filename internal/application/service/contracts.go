@@ -116,7 +116,3 @@ type ElectronicReceiptRepository interface {
 	GetByAccessKey(ctx context.Context, accessKey string) (*domain.ElectronicReceipt, error)
 	FindPendingReceipts(ctx context.Context) ([]domain.ElectronicReceipt, error)
 }
-
-type MailService interface {
-	SendReceipt(issuer *domain.Issuer, recipientEmail string, xmlPath string, pdfPath string) error
-}
