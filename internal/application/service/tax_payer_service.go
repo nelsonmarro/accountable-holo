@@ -34,13 +34,18 @@ func (s *TaxPayerService) Create(ctx context.Context, tp *domain.TaxPayer) error
 	return s.repo.Create(ctx, tp)
 }
 
-func (s *TaxPayerService) Search(ctx context.Context, query string) ([]domain.TaxPayer, error) {
-	// Por ahora devolvemos todos, idealmente el repo debería tener Search(query)
-	all, err := s.repo.GetAll(ctx)
-	if err != nil {
-		return nil, err
+func (s *TaxPayerService) Update(ctx context.Context, tp *domain.TaxPayer) error {
+	if tp.ID == 0 {
+		return fmt.Errorf("ID inválido para actualización")
 	}
-	// Filtrado en memoria si el repo no soporta search (MVP)
-	// O simplemente retornamos todos para el buscador de UI
-	return all, nil
+	return s.repo.Update(ctx, tp)
+}
+
+func (s *TaxPayerService) GetPaginated(ctx context.Context, page, pageSize int, search string) (*domain.PaginatedResult[domain.TaxPayer], error) {
+	return s.repo.GetPaginated(ctx, page, pageSize, search)
+}
+
+func (s *TaxPayerService) Search(ctx context.Context, query string) ([]domain.TaxPayer, error) {
+	// Deprecated: Use GetPaginated instead for UI
+	return s.repo.GetAll(ctx)
 }

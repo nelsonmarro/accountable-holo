@@ -102,6 +102,7 @@ type TaxPayerRepository interface {
 	Create(ctx context.Context, tp *domain.TaxPayer) error
 	Update(ctx context.Context, tp *domain.TaxPayer) error
 	GetAll(ctx context.Context) ([]domain.TaxPayer, error)
+	GetPaginated(ctx context.Context, page, pageSize int, search string) (*domain.PaginatedResult[domain.TaxPayer], error)
 }
 
 type EmissionPointRepository interface {

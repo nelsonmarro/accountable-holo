@@ -24,14 +24,22 @@ type App struct {
 	Version    string
 }
 
+type Storage struct {
+	AttachmentPath string `mapstructure:"attachment_path"`
+}
+
+type SMTP struct {
+	Host     string `mapstructure:"host"`
+	Port     int    `mapstructure:"port"`
+	User     string `mapstructure:"user"`
+	Password string `mapstructure:"password"`
+}
+
 type Config struct {
 	Database Database `mapstructure:"database"`
 	App      App      `mapstructure:"app"`
 	Storage  Storage  `mapstructure:"storage"`
-}
-
-type Storage struct {
-	AttachmentPath string `mapstructure:"attachment_path"`
+	SMTP     SMTP     `mapstructure:"smtp"`
 }
 
 var (

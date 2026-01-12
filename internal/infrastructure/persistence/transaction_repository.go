@@ -199,6 +199,7 @@ func (r *TransactionRepositoryImpl) FindTransactionsByAccount(
 			TotalCount: totalCount,
 			Page:       page,
 			PageSize:   pageSize,
+			TotalPages: int((totalCount + int64(pageSize) - 1) / int64(pageSize)),
 		},
 		nil
 }

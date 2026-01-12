@@ -44,3 +44,11 @@ func (m *MockTaxPayerRepository) GetAll(ctx context.Context) ([]domain.TaxPayer,
 	}
 	return args.Get(0).([]domain.TaxPayer), args.Error(1)
 }
+
+func (m *MockTaxPayerRepository) GetPaginated(ctx context.Context, page, pageSize int, search string) (*domain.PaginatedResult[domain.TaxPayer], error) {
+	args := m.Called(ctx, page, pageSize, search)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*domain.PaginatedResult[domain.TaxPayer]), args.Error(1)
+}

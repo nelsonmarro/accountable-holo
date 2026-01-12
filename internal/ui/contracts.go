@@ -115,5 +115,7 @@ type TaxPayerService interface {
 	GetByID(ctx context.Context, id int) (*domain.TaxPayer, error)
 	GetByIdentification(ctx context.Context, identification string) (*domain.TaxPayer, error)
 	Create(ctx context.Context, tp *domain.TaxPayer) error
+	Update(ctx context.Context, tp *domain.TaxPayer) error
 	Search(ctx context.Context, query string) ([]domain.TaxPayer, error)
+	GetPaginated(ctx context.Context, page, pageSize int, search string) (*domain.PaginatedResult[domain.TaxPayer], error)
 }

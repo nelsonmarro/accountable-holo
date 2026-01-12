@@ -98,7 +98,7 @@ func main() {
 	recurService := service.NewRecurringTransactionService(recurRepo, txRepo, infoLogger)
 	issuerService := service.NewIssuerService(issuerRepo)
 	taxService := service.NewTaxPayerService(clientRepo)
-	mailService := service.NewMailService()
+	mailService := service.NewMailService(conf)
 	sriService := service.NewSriService(txRepo, issuerRepo, receiptRepo, clientRepo, emissionRepo, sriClient, mailService, infoLogger)
 
 	// ---- UI Initialization ----
@@ -120,7 +120,7 @@ func main() {
 		infoLogger,
 		errorLogger,
 	)
-	
+
 	userUI.Init(myApp)
 
 	// ---- App Initialization ----

@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"path/filepath"
-	"strconv"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
@@ -56,20 +55,8 @@ func (ui *UI) makeSriConfigTab() fyne.CanvasObject {
 	}
 
 	// --- Componentes SMTP (Correo) ---
-	smtpServerEntry := widget.NewEntry()
-	smtpServerEntry.SetPlaceHolder("smtp.gmail.com")
-
-	smtpPortEntry := widget.NewEntry()
-	smtpPortEntry.SetPlaceHolder("587")
-	
-	smtpUserEntry := widget.NewEntry()
-	smtpUserEntry.SetPlaceHolder("tu_correo@gmail.com")
-
-	smtpPassEntry := widget.NewPasswordEntry()
-	smtpPassEntry.SetPlaceHolder("Contraseña de aplicación")
-
-	smtpSslCheck := widget.NewCheck("Usar SSL/TLS", nil)
-	smtpSslCheck.SetChecked(true)
+	// ELIMINADO: La configuración SMTP ahora se maneja centralmente vía config.yaml/.env
+	// El usuario final no debe modificar esto.
 
 	// --- Firma Electrónica ---
 	p12Label := widget.NewLabel("No seleccionado")
@@ -134,21 +121,6 @@ func (ui *UI) makeSriConfigTab() fyne.CanvasObject {
 
 				keepAccCheck.SetChecked(currentIssuer.KeepAccounting)
 
-				// Cargar SMTP
-				if currentIssuer.SMTPServer != nil {
-					smtpServerEntry.SetText(*currentIssuer.SMTPServer)
-				}
-				if currentIssuer.SMTPPort != nil {
-					smtpPortEntry.SetText(strconv.Itoa(*currentIssuer.SMTPPort))
-				}
-				if currentIssuer.SMTPUser != nil {
-					smtpUserEntry.SetText(*currentIssuer.SMTPUser)
-				}
-				if currentIssuer.SMTPPassword != nil && *currentIssuer.SMTPPassword != "" {
-					smtpPassEntry.SetPlaceHolder("******** (Guardada)")
-				}
-				smtpSslCheck.SetChecked(currentIssuer.SMTPSSL)
-
 				if currentIssuer.SignaturePath != "" {
 					p12Path = currentIssuer.SignaturePath
 					p12Label.SetText(filepath.Base(p12Path))
@@ -181,19 +153,6 @@ func (ui *UI) makeSriConfigTab() fyne.CanvasObject {
 			envCode = 1
 		}
 
-		// Parsear puerto SMTP
-		var port int
-		if smtpPortEntry.Text != "" {
-			p, err := strconv.Atoi(smtpPortEntry.Text)
-			if err == nil {
-				port = p
-			}
-		}
-		
-		server := smtpServerEntry.Text
-		user := smtpUserEntry.Text
-		pass := smtpPassEntry.Text
-
 		issuer := &domain.Issuer{
 			RUC:                  rucEntry.Text,
 			BusinessName:         nameEntry.Text,
@@ -209,11 +168,6 @@ func (ui *UI) makeSriConfigTab() fyne.CanvasObject {
 			SignaturePath:        p12Path,
 			LogoPath:             logoPath,
 			IsActive:             true,
-			SMTPServer:           &server,
-			SMTPPort:             &port,
-			SMTPUser:             &user,
-			SMTPPassword:         &pass,
-			SMTPSSL:              smtpSslCheck.Checked,
 		}
 
 		// Guardar (Password firma solo si se escribió algo nuevo)
@@ -227,40 +181,56 @@ func (ui *UI) makeSriConfigTab() fyne.CanvasObject {
 	})
 	saveBtn.Importance = widget.HighImportance
 
-	// --- Layout ---
-	form := widget.NewForm(
-		widget.NewFormItem("RUC", rucEntry),
-		widget.NewFormItem("Razón Social", nameEntry),
-		widget.NewFormItem("Nombre Comercial", tradeNameEntry),
-		widget.NewFormItem("Dirección Matriz", addressEntry),
-		widget.NewFormItem("Dirección Establecimiento", estabAddrEntry),
-		widget.NewFormItem("Cod. Establecimiento", estabCodeEntry),
-		widget.NewFormItem("Punto de Emisión", ptoEmiEntry),
-		widget.NewFormItem("Contribuyente Especial", contribEntry),
-		widget.NewFormItem("Obligado Contabilidad", keepAccCheck),
-		widget.NewFormItem("Régimen RIMPE", rimpeSelect),
-		widget.NewFormItem("Ambiente", envSelect),
-		widget.NewFormItem("Firma Electrónica (.p12)", container.NewBorder(nil, nil, nil, p12Btn, p12Label)),
-		widget.NewFormItem("Contraseña Firma", passwordEntry),
-		widget.NewFormItem("Logo Empresa", container.NewBorder(nil, nil, nil, logoBtn, logoLabel)),
-	)
+		// --- Layout ---
 
-	smtpForm := widget.NewForm(
-		widget.NewFormItem("Servidor SMTP", smtpServerEntry),
-		widget.NewFormItem("Puerto", smtpPortEntry),
-		widget.NewFormItem("Usuario/Email", smtpUserEntry),
-		widget.NewFormItem("Contraseña Email", smtpPassEntry),
-		widget.NewFormItem("Seguridad", smtpSslCheck),
-	)
+		form := widget.NewForm(
 
-	return container.NewVScroll(container.NewPadded(container.NewVBox(
-		widget.NewLabelWithStyle("Configuración de Emisor SRI", fyne.TextAlignCenter, fyne.TextStyle{Bold: true}),
-		widget.NewSeparator(),
-		form,
-		widget.NewSeparator(),
-		widget.NewLabelWithStyle("Configuración de Correo Electrónico (Envío de Facturas)", fyne.TextAlignLeading, fyne.TextStyle{Bold: true}),
-		smtpForm,
-		widget.NewSeparator(),
-		saveBtn,
-	)))
-}
+			widget.NewFormItem("RUC", rucEntry),
+
+			widget.NewFormItem("Razón Social", nameEntry),
+
+			widget.NewFormItem("Nombre Comercial", tradeNameEntry),
+
+			widget.NewFormItem("Dirección Matriz", addressEntry),
+
+			widget.NewFormItem("Dirección Establecimiento", estabAddrEntry),
+
+			widget.NewFormItem("Cod. Establecimiento", estabCodeEntry),
+
+			widget.NewFormItem("Punto de Emisión", ptoEmiEntry),
+
+			widget.NewFormItem("Contribuyente Especial", contribEntry),
+
+			widget.NewFormItem("Obligado Contabilidad", keepAccCheck),
+
+			widget.NewFormItem("Régimen RIMPE", rimpeSelect),
+
+			widget.NewFormItem("Ambiente", envSelect),
+
+			widget.NewFormItem("Firma Electrónica (.p12)", container.NewBorder(nil, nil, nil, p12Btn, p12Label)),
+
+			widget.NewFormItem("Contraseña Firma", passwordEntry),
+
+			widget.NewFormItem("Logo Empresa", container.NewBorder(nil, nil, nil, logoBtn, logoLabel)),
+
+		)
+
+	
+
+		return container.NewVScroll(container.NewPadded(container.NewVBox(
+
+			widget.NewLabelWithStyle("Configuración de Emisor SRI", fyne.TextAlignCenter, fyne.TextStyle{Bold: true}),
+
+			widget.NewSeparator(),
+
+			form,
+
+			widget.NewSeparator(),
+
+			saveBtn,
+
+		)))
+
+	}
+
+	

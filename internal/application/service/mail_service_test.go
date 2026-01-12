@@ -4,6 +4,7 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/nelsonmarro/accountable-holo/config"
 	"github.com/nelsonmarro/accountable-holo/internal/domain"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -27,11 +28,17 @@ func TestSendReceipt(t *testing.T) {
 	user := "sender@test.com"
 	pass := "secret"
 	
+	// Config simulates loaded env vars
+	cfg := &config.Config{
+		SMTP: config.SMTP{
+			Host:     server,
+			Port:     port,
+			User:     user,
+			Password: pass,
+		},
+	}
+	
 	issuer := &domain.Issuer{
-		SMTPServer:   &server,
-		SMTPPort:     &port,
-		SMTPUser:     &user,
-		SMTPPassword: &pass,
 		BusinessName: "Test Corp",
 		TradeName:    "Test Store",
 	}
@@ -41,6 +48,7 @@ func TestSendReceipt(t *testing.T) {
 		mockDialer.On("DialAndSend", mock.Anything).Return(nil).Once()
 
 		svc := &MailServiceImpl{
+			config: cfg,
 			dialerFactory: func(h string, p int, u, pwd string) Dialer {
 				assert.Equal(t, server, h)
 				assert.Equal(t, port, p)
@@ -56,10 +64,9 @@ func TestSendReceipt(t *testing.T) {
 	})
 
 	t.Run("Fail - SMTP Config Missing", func(t *testing.T) {
-		svc := NewMailService()
-		emptyIssuer := &domain.Issuer{}
+		svc := NewMailService(&config.Config{}) // Empty config
 		
-		err := svc.SendReceipt(emptyIssuer, "client@test.com", "x", "p")
+		err := svc.SendReceipt(issuer, "client@test.com", "x", "p")
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "SMTP configuration not found")
 	})
@@ -69,6 +76,7 @@ func TestSendReceipt(t *testing.T) {
 		mockDialer.On("DialAndSend", mock.Anything).Return(errors.New("connection timeout")).Once()
 
 		svc := &MailServiceImpl{
+			config: cfg,
 			dialerFactory: func(h string, p int, u, pwd string) Dialer {
 				return mockDialer
 			},

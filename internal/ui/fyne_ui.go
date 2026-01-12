@@ -53,6 +53,13 @@ type UI struct {
 	categories        *domain.PaginatedResult[domain.Category]
 	categoryFilter    string
 
+	// ---- TaxPayer State ----
+	taxPayerList       *widget.List
+	taxPayerPaginator  *componets.Pagination
+	paginatedTaxPayers *domain.PaginatedResult[domain.TaxPayer]
+	taxPayerSearchText string
+	taxPayers          []domain.TaxPayer // Deprecated, but keeping for compatibility if needed
+
 	transactionList           *widget.List
 	transactionPaginator      *componets.Pagination
 	transactions              *domain.PaginatedResult[domain.Transaction]
@@ -138,10 +145,12 @@ func (ui *UI) openMainWindow() {
 	// Placeholders
 	accountsTabContent := widget.NewLabel("Cargando Cuentas...")
 	txTabContent := widget.NewLabel("Cargando Transacciones...")
+	taxPayerTabContent := widget.NewLabel("Cargando Clientes...")
 
 	tabs := container.NewAppTabs(
 		container.NewTabItemWithIcon("Resumen Financiero", reportIcon, summaryTabContent),
 		container.NewTabItemWithIcon("Cuentas", accountIcon, accountsTabContent),
+		container.NewTabItemWithIcon("Clientes", theme.AccountIcon(), taxPayerTabContent),
 		container.NewTabItemWithIcon("Transacciones", transactionIcon, txTabContent),
 	)
 
@@ -210,7 +219,8 @@ func (ui *UI) lazyLoadTabsContent(tabs *container.AppTabs) {
 			if lbl, ok := obj.(*widget.Label); ok {
 				return lbl.Text == "Cargando Cuentas..." ||
 					lbl.Text == "Cargando Transacciones..." ||
-					lbl.Text == "Cargando Usuarios..."
+					lbl.Text == "Cargando Usuarios..." ||
+					lbl.Text == "Cargando Clientes..."
 			}
 			return false
 		}
@@ -224,6 +234,12 @@ func (ui *UI) lazyLoadTabsContent(tabs *container.AppTabs) {
 			if len(ui.accounts) == 0 {
 				go ui.loadAccounts()
 			}
+		case "Clientes":
+			if isPlaceholder(item.Content) {
+				item.Content = ui.makeTaxPayerTab()
+				tabs.Refresh()
+			}
+			// Initial load is handled inside makeTaxPayerTab via goroutine
 		case "Transacciones":
 			if isPlaceholder(item.Content) {
 				item.Content = ui.makeFinancesTab()

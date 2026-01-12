@@ -110,3 +110,47 @@ func (r *TaxPayerRepositoryImpl) GetAll(ctx context.Context) ([]domain.TaxPayer,
 	}
 	return results, nil
 }
+
+func (r *TaxPayerRepositoryImpl) GetPaginated(ctx context.Context, page, pageSize int, search string) (*domain.PaginatedResult[domain.TaxPayer], error) {
+	offset := (page - 1) * pageSize
+	searchPattern := "%" + search + "%"
+
+	// 1. Count Total
+	countQuery := `SELECT COUNT(*) FROM tax_payers WHERE name ILIKE $1 OR identification ILIKE $1`
+	var total int64
+	err := r.db.QueryRow(ctx, countQuery, searchPattern).Scan(&total)
+	if err != nil {
+		return nil, fmt.Errorf("failed to count taxpayers: %w", err)
+	}
+
+	// 2. Fetch Data
+	query := `
+		SELECT id, identification, identification_type, name, email, COALESCE(address, ''), COALESCE(phone, ''), created_at, updated_at
+		FROM tax_payers
+		WHERE name ILIKE $1 OR identification ILIKE $1
+		ORDER BY name ASC
+		LIMIT $2 OFFSET $3
+	`
+	rows, err := r.db.Query(ctx, query, searchPattern, pageSize, offset)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list taxpayers paginated: %w", err)
+	}
+	defer rows.Close()
+
+	var results []domain.TaxPayer
+	for rows.Next() {
+		var tp domain.TaxPayer
+		if err := rows.Scan(&tp.ID, &tp.Identification, &tp.IdentificationType, &tp.Name, &tp.Email, &tp.Address, &tp.Phone, &tp.CreatedAt, &tp.UpdatedAt); err != nil {
+			return nil, err
+		}
+		results = append(results, tp)
+	}
+
+	return &domain.PaginatedResult[domain.TaxPayer]{
+		Data:       results,
+		TotalCount: total,
+		Page:       page,
+		PageSize:   pageSize,
+		TotalPages: (int(total) + pageSize - 1) / pageSize,
+	}, nil
+}

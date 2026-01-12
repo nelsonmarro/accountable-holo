@@ -59,13 +59,10 @@ func (ui *UI) makeTransactionUI() fyne.CanvasObject {
 
 	ui.transactionList.OnSelected = func(id widget.ListItemID) {
 		tx := ui.transactions.Data[id]
-		// Necesitamos pasar SriService aquí.
-		// Como ui.Services.SriService es del paquete 'service', y la interfaz en 'transaction' espera ese método,
-		// Go debería permitirlo si las firmas coinciden.
 		detailsDialog := transaction.NewDetailsDialog(
-			ui.mainWindow, 
-			&tx, 
-			ui.Services.TxService, 
+			ui.mainWindow,
+			&tx,
+			ui.Services.TxService,
 			ui.Services.SriService, // Injected
 		)
 		detailsDialog.Show()

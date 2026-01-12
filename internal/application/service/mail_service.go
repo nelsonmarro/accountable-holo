@@ -3,6 +3,7 @@ package service
 import (
 	"fmt"
 	"gopkg.in/gomail.v2"
+	"github.com/nelsonmarro/accountable-holo/config"
 	"github.com/nelsonmarro/accountable-holo/internal/domain"
 )
 
@@ -10,6 +11,7 @@ import (
 type MailServiceImpl struct {
 	// Optional dialer factory for testing
 	dialerFactory func(host string, port int, username, password string) Dialer
+	config        *config.Config
 }
 
 // Dialer abstracts gomail.Dialer for testing
@@ -27,8 +29,9 @@ func (r *RealDialer) DialAndSend(m ...*gomail.Message) error {
 }
 
 // NewMailService creates a new instance of MailServiceImpl.
-func NewMailService() *MailServiceImpl {
+func NewMailService(cfg *config.Config) *MailServiceImpl {
 	return &MailServiceImpl{
+		config: cfg,
 		dialerFactory: func(host string, port int, username, password string) Dialer {
 			return &RealDialer{d: gomail.NewDialer(host, port, username, password)}
 		},
@@ -37,12 +40,13 @@ func NewMailService() *MailServiceImpl {
 
 // SendReceipt sends the authorized XML and RIDE PDF to the recipient.
 func (s *MailServiceImpl) SendReceipt(issuer *domain.Issuer, recipientEmail string, xmlPath string, pdfPath string) error {
-	if issuer.SMTPServer == nil || *issuer.SMTPServer == "" {
-		return fmt.Errorf("SMTP configuration not found for issuer")
+	smtpCfg := s.config.SMTP
+	if smtpCfg.Host == "" || smtpCfg.Port == 0 {
+		return fmt.Errorf("SMTP configuration not found in app config")
 	}
 
 	m := gomail.NewMessage()
-	m.SetHeader("From", *issuer.SMTPUser)
+	m.SetHeader("From", smtpCfg.User) // Use configured user as sender
 	m.SetHeader("To", recipientEmail)
 	m.SetHeader("Subject", fmt.Sprintf("Comprobante Electrónico - %s", issuer.BusinessName))
 	
@@ -61,14 +65,8 @@ func (s *MailServiceImpl) SendReceipt(issuer *domain.Issuer, recipientEmail stri
 	m.Attach(xmlPath)
 	m.Attach(pdfPath)
 
-	// Dialer configuration
-	port := 587
-	if issuer.SMTPPort != nil {
-		port = *issuer.SMTPPort
-	}
-	
 	// Use factory to get dialer
-	d := s.dialerFactory(*issuer.SMTPServer, port, *issuer.SMTPUser, *issuer.SMTPPassword)
+	d := s.dialerFactory(smtpCfg.Host, smtpCfg.Port, smtpCfg.User, smtpCfg.Password)
 	
 	// Send the email
 	if err := d.DialAndSend(m); err != nil {

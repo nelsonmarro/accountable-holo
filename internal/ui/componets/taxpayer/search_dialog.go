@@ -12,20 +12,28 @@ import (
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 	"github.com/nelsonmarro/accountable-holo/internal/domain"
+	"github.com/nelsonmarro/accountable-holo/internal/ui/componets"
 )
-
-type TaxPayerService interface {
-	Create(ctx context.Context, tp *domain.TaxPayer) error
-	Search(ctx context.Context, query string) ([]domain.TaxPayer, error)
-	GetByIdentification(ctx context.Context, identification string) (*domain.TaxPayer, error)
-}
 
 type SearchDialog struct {
 	window     fyne.Window
 	logger     *log.Logger
 	service    TaxPayerService
 	onSelected func(*domain.TaxPayer)
+
+	// UI Components
+	searchEntry *widget.Entry
+	list        *widget.List
+	pagination  *componets.Pagination
+	dl          dialog.Dialog
+
+	// State
+	taxpayers  []domain.TaxPayer
+	totalCount int64
+	searchTerm string
 }
+
+var pageSizeOpts = []string{"10", "20", "50"}
 
 func NewSearchDialog(
 	parent fyne.Window,
@@ -33,88 +41,135 @@ func NewSearchDialog(
 	service TaxPayerService,
 	onSelected func(*domain.TaxPayer),
 ) *SearchDialog {
-	return &SearchDialog{
+	d := &SearchDialog{
 		window:     parent,
 		logger:     logger,
 		service:    service,
 		onSelected: onSelected,
 	}
+	d.searchEntry = widget.NewEntry()
+	d.searchEntry.SetPlaceHolder("Buscar por RUC o Nombre...")
+	return d
 }
 
 func (d *SearchDialog) Show() {
-	searchEntry := widget.NewEntry()
-	searchEntry.SetPlaceHolder("Buscar por RUC o Nombre...")
+	content := d.createContent()
 
-	resultsList := widget.NewList(
-		func() int { return 0 },
-		func() fyne.CanvasObject { return widget.NewLabel("template") },
-		func(i widget.ListItemID, o fyne.CanvasObject) {},
+	d.dl = dialog.NewCustom("Buscar Cliente", "Cerrar", content, d.window)
+	d.dl.Resize(fyne.NewSize(650, 550))
+
+	go d.loadTaxPayers(1, d.pagination.GetPageSize())
+
+	d.dl.Show()
+}
+
+func (d *SearchDialog) createContent() fyne.CanvasObject {
+	// --- Search Bar ---
+	d.searchEntry.OnChanged = func(s string) {
+		time.AfterFunc(300*time.Millisecond, func() {
+			if s == d.searchEntry.Text {
+				d.filterTaxPayers(s)
+			}
+		})
+	}
+
+	// --- Pagination ---
+	d.pagination = componets.NewPagination(
+		func() int { return int(d.totalCount) },
+		d.loadTaxPayers,
+		pageSizeOpts...,
 	)
 
-	var searchResults []domain.TaxPayer
+	// --- List ---
+	d.list = widget.NewList(
+		func() int { return len(d.taxpayers) },
+		d.makeListItem,
+		d.updateListItem,
+	)
 
-	// Search Logic
-	doSearch := func(query string) {
-		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-		defer cancel()
+	// --- Headers ---
+	header := container.NewGridWithColumns(3,
+		widget.NewLabelWithStyle("Identificación", fyne.TextAlignLeading, fyne.TextStyle{Bold: true}),
+		widget.NewLabelWithStyle("Nombre / Razón Social", fyne.TextAlignLeading, fyne.TextStyle{Bold: true}),
+		widget.NewLabelWithStyle("Acción", fyne.TextAlignCenter, fyne.TextStyle{Bold: true}),
+	)
 
-		results, err := d.service.Search(ctx, query)
-		if err != nil {
-			dialog.ShowError(err, d.window)
-			return
-		}
-		
-		// Client-side filtering if API returns all
-		var filtered []domain.TaxPayer
-		for _, tp := range results {
-			// Simple contains check (case sensitive for now, improve later)
-			if query == "" || 
-			   (len(tp.Identification) >= len(query) && tp.Identification[:len(query)] == query) ||
-			   (len(tp.Name) >= len(query) && tp.Name[:len(query)] == query) {
-				filtered = append(filtered, tp)
-			}
-		}
-		
-		searchResults = filtered
-		resultsList.Length = func() int { return len(searchResults) }
-		resultsList.UpdateItem = func(i widget.ListItemID, o fyne.CanvasObject) {
-			tp := searchResults[i]
-			o.(*widget.Label).SetText(fmt.Sprintf("%s - %s", tp.Identification, tp.Name))
-		}
-		resultsList.Refresh()
-	}
-
-	searchEntry.OnChanged = doSearch
-
-	// Selection Logic
-	var dlg dialog.Dialog
-	resultsList.OnSelected = func(id widget.ListItemID) {
-		d.onSelected(&searchResults[id])
-		dlg.Hide()
-	}
-
-	// Create New Logic
+	// --- Create Button ---
 	createBtn := widget.NewButtonWithIcon("Nuevo Cliente", theme.ContentAddIcon(), func() {
 		d.showCreateDialog()
-		dlg.Hide()
 	})
 
-	content := container.NewBorder(
-		container.NewVBox(searchEntry, createBtn), 
-		nil, nil, nil, 
-		resultsList,
-	)
+	// --- Layout ---
+	topContainer := container.NewBorder(nil, nil, nil, createBtn, d.searchEntry)
+	tableContainer := container.NewBorder(header, nil, nil, nil, d.list)
 
-	dlg = dialog.NewCustom("Buscar Cliente", "Cerrar", content, d.window)
-	dlg.Resize(fyne.NewSize(400, 500))
-	
-	// Initial Load
-	doSearch("")
-	
-	dlg.Show()
+	return container.NewBorder(
+		container.NewVBox(topContainer, d.pagination),
+		nil, nil, nil,
+		tableContainer,
+	)
+}
+
+func (d *SearchDialog) makeListItem() fyne.CanvasObject {
+	lblId := widget.NewLabel("0000000000001")
+	lblName := widget.NewLabel("Template Name")
+	selectBtn := widget.NewButtonWithIcon("Seleccionar", theme.ConfirmIcon(), nil)
+	selectBtn.Importance = widget.HighImportance
+
+	return container.NewGridWithColumns(3,
+		lblId,
+		lblName,
+		selectBtn,
+	)
+}
+
+func (d *SearchDialog) updateListItem(i widget.ListItemID, o fyne.CanvasObject) {
+	if i >= len(d.taxpayers) {
+		return
+	}
+	tp := d.taxpayers[i]
+	row := o.(*fyne.Container)
+
+	row.Objects[0].(*widget.Label).SetText(tp.Identification)
+	row.Objects[1].(*widget.Label).SetText(tp.Name)
+
+	btn := row.Objects[2].(*widget.Button)
+	btn.OnTapped = func() {
+		if d.onSelected != nil {
+			d.onSelected(&tp)
+		}
+		d.dl.Hide()
+	}
+}
+
+func (d *SearchDialog) loadTaxPayers(page int, pageSize int) {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	result, err := d.service.GetPaginated(ctx, page, pageSize, d.searchTerm)
+	if err != nil {
+		fyne.Do(func() {
+			dialog.ShowError(fmt.Errorf("error cargando clientes: %w", err), d.window)
+		})
+		return
+	}
+
+	d.taxpayers = result.Data
+	d.totalCount = result.TotalCount
+
+	fyne.Do(func() {
+		d.pagination.Refresh()
+		d.list.Refresh()
+	})
+}
+
+func (d *SearchDialog) filterTaxPayers(filter string) {
+	d.searchTerm = filter
+	d.loadTaxPayers(1, d.pagination.GetPageSize())
 }
 
 func (d *SearchDialog) showCreateDialog() {
+	// ... (Misma lógica de creación, pero refresca la lista al final)
 	idEntry := widget.NewEntry()
 	idEntry.SetPlaceHolder("17900...")
 	
@@ -159,12 +214,14 @@ func (d *SearchDialog) showCreateDialog() {
 			return
 		}
 
-		// Auto-select created client
-		// We need to fetch it again to get the ID if Create doesn't set it (Repo implementation dependent)
-		// Assuming Create sets ID or we fetch by ID
+		// Recargar la lista y seleccionar
+		d.filterTaxPayers(tp.Identification) // Busca el nuevo
+		
+		// Auto-seleccionar si se encuentra
 		created, _ := d.service.GetByIdentification(ctx, tp.Identification)
 		if created != nil {
 			d.onSelected(created)
+			d.dl.Hide()
 		}
 	}, d.window)
 }
