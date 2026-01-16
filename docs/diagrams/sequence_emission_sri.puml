@@ -1,0 +1,58 @@
+@startuml
+autonumber
+title Secuencia de Emisión de Factura Electrónica (SRI Ecuador)
+
+actor "Usuario" as User
+participant "UI (Fyne)" as UI
+participant "TransactionService" as App
+participant "SRI Core\n(Signer/XML)" as Core
+database "Local DB" as DB
+participant "SRI WebService" as SRI_WS
+participant "Email Service" as SMTP
+
+User -> UI : Clic "Guardar y Emitir Factura"
+UI -> App : CreateTransaction(data, emit=true)
+
+group Transacción Local
+    App -> DB : Guardar Transaction (Estado: PENDIENTE)
+    App -> DB : Guardar ElectronicReceipt (Inicial)
+end
+
+App -> Core : EmitirComprobante(TransactionID)
+activate Core
+
+    Core -> DB : Obtener Datos Emisor/Cliente
+    Core -> Core : Generar XML (InfoTributaria + InfoFactura)
+    Core -> Core : Generar Clave Acceso (49 dígitos)
+    Core -> Core : Firmar XML (XAdES-BES usando .p12)
+    
+    Core -> DB : Actualizar Receipt (XML Firmado)
+
+    ' Comunicación SRI
+    group Envío Síncrono (Tiempo Real)
+        Core -> SRI_WS : SOAP Recepción (XML Base64)
+        alt Recepción Exitosa (RECIBIDA)
+            Core -> SRI_WS : SOAP Autorización (Clave Acceso)
+            
+            alt Autorización Exitosa (AUTORIZADO)
+                Core -> DB : Update Status = AUTORIZADO
+                Core -> Core : Generar RIDE (PDF)
+                Core -> SMTP : Enviar Email (XML + PDF)
+                App <-- Core : Éxito
+                UI -> User : Notificación "Factura Autorizada y Enviada"
+            else Rechazo / Error
+                Core -> DB : Update Status = RECHAZADO / NO AUTORIZADO
+                App <-- Core : Error (Motivo del SRI)
+                UI -> User : Alerta "Factura Rechazada: [Motivo]"
+            end
+            
+        else Fallo Recepción (DEVUELTA)
+            Core -> DB : Update Status = DEVUELTA
+            App <-- Core : Error (Motivo)
+            UI -> User : Alerta "Error en Recepción: [Motivo]"
+        end
+    end
+
+deactivate Core
+
+@enduml

@@ -116,6 +116,15 @@ func NewAddTransactionDialog(
 			func(cat *domain.Category) {
 				d.selectedCategory = cat
 				d.categoryLabel.SetText(cat.Name)
+
+				// RESTRICCIÓN: Solo egresos pueden ser recurrentes
+				if cat.Type == domain.Outcome {
+					d.isRecurringCheck.Enable()
+				} else {
+					d.isRecurringCheck.SetChecked(false)
+					d.isRecurringCheck.Disable()
+					d.intervalSelect.Hide()
+				}
 			},
 		)
 		searchDialog.Show()
@@ -212,11 +221,11 @@ func (d *AddTransactionDialog) Show() {
 			}
 		}, d.mainWin)
 
-	formDialog.Resize(fyne.NewSize(650, 600)) // Larger for detail view
+	formDialog.Resize(fyne.NewSize(850, 650)) // Larger for detail view
 	formDialog.Show()
 }
 
-func (d *AddTransactionDialog) handleSubmit(valid bool) {
+func (d *AddTransactionDialog) handleSubmit(_ bool) {
 	if len(d.items) == 0 {
 		dialog.ShowError(errors.New("debe agregar al menos un ítem"), d.mainWin)
 		return
@@ -292,9 +301,32 @@ func (d *AddTransactionDialog) handleSubmit(valid bool) {
 			return
 		}
 
-		// 2. If Recurring... (logic remains similar but using total)
-		if d.isRecurringCheck.Checked {
-			// ... (Recurrence logic omitted for brevity, should use tx.Amount)
+		// 2. If Recurring (ONLY FOR OUTCOMES - UI already enforces this)
+		if d.isRecurringCheck.Checked && d.selectedCategory.Type == domain.Outcome {
+			intervalStr := d.intervalSelect.Selected
+			var interval domain.RecurrenceInterval
+			if intervalStr == "Semanal" {
+				interval = domain.IntervalWeekly
+			} else {
+				interval = domain.IntervalMonthly
+			}
+
+			recurTx := &domain.RecurringTransaction{
+				AccountID:   d.accountID,
+				CategoryID:  d.selectedCategory.ID,
+				Description: description,
+				Amount:      total,
+				StartDate:   transactionDate,
+				Interval:    interval,
+				IsActive:    true,
+			}
+
+			if err := d.recurService.Create(ctx, recurTx); err != nil {
+				d.logger.Printf("Failed to create recurring transaction: %v", err)
+				fyne.Do(func() {
+					dialog.ShowError(fmt.Errorf("transacción creada pero falló la recurrencia: %w", err), d.mainWin)
+				})
+			}
 		}
 
 		fyne.Do(func() {

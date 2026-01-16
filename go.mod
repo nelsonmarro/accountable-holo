@@ -7,12 +7,14 @@ require (
 	github.com/golang-migrate/migrate/v4 v4.18.3
 	github.com/jackc/pgx/v5 v5.7.5
 	github.com/johnfercher/maroto/v2 v2.3.1
-	github.com/nelsonmarro/go_ec_sri_invoice_signer v0.1.0
+	github.com/nelsonmarro/go_ec_sri_invoice_signer v1.0.0
 	github.com/ory/dockertest/v3 v3.12.0
 	github.com/shopspring/decimal v1.2.0
 	github.com/spf13/viper v1.20.1
 	github.com/stretchr/testify v1.10.0
+	github.com/zalando/go-keyring v0.2.6
 	golang.org/x/crypto v0.46.0
+	gopkg.in/gomail.v2 v2.0.0-20160411212932-81ebce5c23df
 )
 
 require (
@@ -23,6 +25,7 @@ require (
 	github.com/BurntSushi/toml v1.5.0 // indirect
 	github.com/Microsoft/go-winio v0.6.2 // indirect
 	github.com/Nvveen/Gotty v0.0.0-20120604004816-cd527374f1e5 // indirect
+	github.com/beevik/etree v1.6.0 // indirect
 	github.com/boombuler/barcode v1.0.1 // indirect
 	github.com/cenkalti/backoff/v4 v4.3.0 // indirect
 	github.com/containerd/continuity v0.4.5 // indirect
@@ -59,6 +62,7 @@ require (
 	github.com/jackc/puddle/v2 v2.2.2 // indirect
 	github.com/jeandeaual/go-locale v0.0.0-20250612000132-0ef82f21eade // indirect
 	github.com/johnfercher/go-tree v1.0.5 // indirect
+	github.com/jonboulle/clockwork v0.5.0 // indirect
 	github.com/jsummers/gobmp v0.0.0-20230614200233-a9de23ed2e25 // indirect
 	github.com/jung-kurt/gofpdf v1.16.2 // indirect
 	github.com/lib/pq v1.10.9 // indirect
@@ -76,6 +80,7 @@ require (
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/rivo/uniseg v0.4.4 // indirect
+	github.com/russellhaering/goxmldsig v1.5.0 // indirect
 	github.com/rymdport/portal v0.4.2 // indirect
 	github.com/sagikazarmark/locafero v0.9.0 // indirect
 	github.com/sirupsen/logrus v1.9.3 // indirect
@@ -87,12 +92,10 @@ require (
 	github.com/srwiley/rasterx v0.0.0-20220730225603-2ab79fcdd4ef // indirect
 	github.com/stretchr/objx v0.5.2 // indirect
 	github.com/subosito/gotenv v1.6.0 // indirect
-	github.com/ucarion/c14n v0.1.0 // indirect
 	github.com/xeipuuv/gojsonpointer v0.0.0-20190905194746-02993c407bfb // indirect
 	github.com/xeipuuv/gojsonreference v0.0.0-20180127040603-bd5ef7bd5415 // indirect
 	github.com/xeipuuv/gojsonschema v1.2.0 // indirect
 	github.com/yuin/goldmark v1.7.12 // indirect
-	github.com/zalando/go-keyring v0.2.6 // indirect
 	go.uber.org/atomic v1.11.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	golang.org/x/image v0.29.0 // indirect
@@ -101,7 +104,6 @@ require (
 	golang.org/x/sys v0.39.0 // indirect
 	golang.org/x/text v0.32.0 // indirect
 	gopkg.in/alexcesaro/quotedprintable.v3 v3.0.0-20150716171945-2caba252f4dc // indirect
-	gopkg.in/gomail.v2 v2.0.0-20160411212932-81ebce5c23df // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	software.sslmate.com/src/go-pkcs12 v0.7.0 // indirect

@@ -41,12 +41,12 @@ type EditTransactionDialog struct {
 	searchDialog     *category.CategorySearchDialog
 	attachmentLabel  *widget.Label
 	searchFileBtn    *widget.Button
-	
+
 	// Tax & Client UI
 	subtotalLabel  *widget.Label
 	taxAmountLabel *widget.Label
 	totalLabel     *widget.Label
-	
+
 	// Client Selector
 	taxPayerLabel     *widget.Label
 	searchTaxPayerBtn *widget.Button
@@ -120,7 +120,7 @@ func NewEditTransactionDialog(
 
 	d.categoryButton = widget.NewButtonWithIcon("", theme.SearchIcon(), d.openCategorySearch)
 	d.searchDialog = category.NewCategorySearchDialog(win, l, cs, d.handleCategorySelect)
-	
+
 	d.searchTaxPayerBtn = widget.NewButtonWithIcon("", theme.SearchIcon(), func() {
 		searchDialog := taxpayer.NewSearchDialog(
 			d.mainWin,
@@ -154,14 +154,14 @@ func NewEditTransactionDialog(
 func (d *EditTransactionDialog) handleItemsUpdate(items []domain.TransactionItem) {
 	d.items = items
 	var subtotal, tax float64
-	
+
 	for _, item := range items {
 		subtotal += item.Subtotal
 		if item.TaxRate == 4 { // IVA 15%
 			tax += item.Subtotal * 0.15
 		}
 	}
-	
+
 	d.subtotalLabel.SetText(fmt.Sprintf("$%.2f", subtotal))
 	d.taxAmountLabel.SetText(fmt.Sprintf("$%.2f", tax))
 	d.totalLabel.SetText(fmt.Sprintf("$%.2f", subtotal+tax))
@@ -234,38 +234,39 @@ func (d *EditTransactionDialog) showEditForm(tx *domain.Transaction, items []dom
 	d.descriptionEntry.SetText(tx.Description)
 	d.dateEntry.SetText(tx.TransactionDate.Format("01/02/2006"))
 
-		if tx.AttachmentPath != nil {
-			d.attachmentPath = *tx.AttachmentPath
-			d.attachmentLabel.SetText(filepath.Base(*tx.AttachmentPath))
-		}
-	
-		if tx.TaxPayerID != nil {
-			go func() {
-				ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-				defer cancel()
-				tp, err := d.taxService.GetByID(ctx, *tx.TaxPayerID)
-				if err == nil {
-					d.selectedTaxPayer = tp
-					fyne.Do(func() {
-						d.taxPayerLabel.SetText(tp.Name)
-					})
-				} else {
-					fyne.Do(func() {
-						d.taxPayerLabel.SetText(fmt.Sprintf("Cliente ID: %d (Error al cargar)", *tx.TaxPayerID))
-					})
-				}
-			}()
-		} else {
-			d.taxPayerLabel.SetText("Consumidor Final")
-		}
-	
-		for _, cat := range d.categories {		if cat.ID == tx.CategoryID {
+	if tx.AttachmentPath != nil {
+		d.attachmentPath = *tx.AttachmentPath
+		d.attachmentLabel.SetText(filepath.Base(*tx.AttachmentPath))
+	}
+
+	if tx.TaxPayerID != nil {
+		go func() {
+			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			defer cancel()
+			tp, err := d.taxService.GetByID(ctx, *tx.TaxPayerID)
+			if err == nil {
+				d.selectedTaxPayer = tp
+				fyne.Do(func() {
+					d.taxPayerLabel.SetText(tp.Name)
+				})
+			} else {
+				fyne.Do(func() {
+					d.taxPayerLabel.SetText(fmt.Sprintf("Cliente ID: %d (Error al cargar)", *tx.TaxPayerID))
+				})
+			}
+		}()
+	} else {
+		d.taxPayerLabel.SetText("Consumidor Final")
+	}
+
+	for _, cat := range d.categories {
+		if cat.ID == tx.CategoryID {
 			d.selectedCategoryID = cat.ID
 			d.categoryLabel.SetText(cat.Name)
 			break
 		}
 	}
-	
+
 	d.itemsManager.SetItems(items)
 
 	categoryContainer := container.NewBorder(nil, nil, nil, d.categoryButton, d.categoryLabel)
@@ -311,7 +312,7 @@ func (d *EditTransactionDialog) showEditForm(tx *domain.Transaction, items []dom
 			}
 		}, d.mainWin,
 	)
-	formDialog.Resize(fyne.NewSize(650, 600))
+	formDialog.Resize(fyne.NewSize(850, 650)) // Larger for detail view
 	formDialog.Show()
 }
 
@@ -319,7 +320,7 @@ func (d *EditTransactionDialog) handleSubmit(valid bool) {
 	if !valid {
 		return
 	}
-	
+
 	if len(d.items) == 0 {
 		dialog.ShowError(errors.New("debe tener al menos un ítem"), d.mainWin)
 		return
@@ -343,11 +344,13 @@ func (d *EditTransactionDialog) handleSubmit(valid bool) {
 		// Calculate final totals
 		var sub15, sub0, taxTotal, total float64
 		var description string
-		
+
 		for i, item := range d.items {
-			if i > 0 { description += ", " }
+			if i > 0 {
+				description += ", "
+			}
 			description += item.Description
-			
+
 			if item.TaxRate == 4 {
 				sub15 += item.Subtotal
 				taxTotal += item.Subtotal * 0.15

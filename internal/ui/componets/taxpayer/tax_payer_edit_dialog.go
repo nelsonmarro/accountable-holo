@@ -11,10 +11,10 @@ import (
 )
 
 type EditTaxPayerDialog struct {
-	window   fyne.Window
-	service  TaxPayerService
+	window    fyne.Window
+	service   TaxPayerService
 	onUpdated func()
-	existing *domain.TaxPayer
+	existing  *domain.TaxPayer
 }
 
 func NewEditTaxPayerDialog(
@@ -24,9 +24,9 @@ func NewEditTaxPayerDialog(
 	onUpdated func(),
 ) *EditTaxPayerDialog {
 	return &EditTaxPayerDialog{
-		window:   parent,
-		service:  service,
-		existing: existing,
+		window:    parent,
+		service:   service,
+		existing:  existing,
 		onUpdated: onUpdated,
 	}
 }
@@ -43,7 +43,7 @@ func (d *EditTaxPayerDialog) Show() {
 		tp := form.GetTaxPayer()
 		tp.ID = d.existing.ID
 		// Identification shouldn't change ideally, or handle logic in service
-		tp.IdentificationType = d.existing.IdentificationType 
+		tp.IdentificationType = d.existing.IdentificationType
 
 		if tp.Name == "" || tp.Email == "" {
 			dialog.ShowError(fmt.Errorf("nombre y email son obligatorios"), d.window)
@@ -64,6 +64,6 @@ func (d *EditTaxPayerDialog) Show() {
 		dialog.ShowInformation("Éxito", "Cliente actualizado correctamente", d.window)
 	}, d.window)
 
-	dlg.Resize(fyne.NewSize(400, 400))
+	dlg.Resize(fyne.NewSize(500, 450))
 	dlg.Show()
 }

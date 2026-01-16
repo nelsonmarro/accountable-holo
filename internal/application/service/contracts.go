@@ -114,6 +114,7 @@ type EmissionPointRepository interface {
 type ElectronicReceiptRepository interface {
 	Create(ctx context.Context, er *domain.ElectronicReceipt) error
 	UpdateStatus(ctx context.Context, accessKey string, status string, message string, authDate *time.Time) error
+	UpdateXML(ctx context.Context, accessKey string, xmlContent string) error
 	GetByAccessKey(ctx context.Context, accessKey string) (*domain.ElectronicReceipt, error)
 	FindPendingReceipts(ctx context.Context) ([]domain.ElectronicReceipt, error)
 }

@@ -6,26 +6,27 @@ import (
 	"fmt"
 )
 
-// MarshalFactura convierte la estructura Factura en un arreglo de bytes XML listo para firmar.                                       │
-// Agrega automáticamente el encabezado XML requerido por el SRI.
+// MarshalFactura convierte la estructura Factura en un arreglo de bytes XML listo para firmar.
+// Usa xml.Marshal (compacto) para evitar problemas de integridad en la firma digital.
 func MarshalFactura(factura *Factura) ([]byte, error) {
 	if factura.ID != "comprobante" {
 		factura.ID = "comprobante"
 	}
 
-	if factura.Version != "2.1.0" {
-		factura.Version = "2.1.0"
+	if factura.Version == "" {
+		factura.Version = "1.1.0"
 	}
 
-	xmlBytes, err := xml.MarshalIndent(factura, "", "  ")
+	// Usamos Marshal (compacto) en lugar de MarshalIndent para el XML legal.
+	// Esto reduce el riesgo de errores de "Firma Inválida" por espacios en blanco.
+	xmlBytes, err := xml.Marshal(factura)
 	if err != nil {
 		return nil, fmt.Errorf("error al serializar la factura: %w", err)
 	}
 
-	// 3. Construir el buffer final con el encabezado explícito                                                                       │
-	// El SRI exige UTF-8 y el encabezado estándar.
+	// Construir el buffer con el encabezado estándar del SRI sin saltos de línea adicionales.
 	var buffer bytes.Buffer
-	buffer.WriteString("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n")
+	buffer.WriteString(`<?xml version="1.0" encoding="UTF-8"?>`)
 	buffer.Write(xmlBytes)
 
 	return buffer.Bytes(), nil

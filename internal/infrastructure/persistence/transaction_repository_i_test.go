@@ -548,3 +548,67 @@ func TestFindAllTransactions(t *testing.T) {
 	})
 }
 
+func TestFindTransactionsWithMultipleReceipts(t *testing.T) {
+	// Setup Repositories
+	accountRepo := NewAccountRepository(dbPool)
+	categoryRepo := NewCategoryRepository(dbPool)
+	txRepo := NewTransactionRepository(dbPool)
+	ctx := context.Background()
+
+	// --- Test Data Setup ---
+	truncateTables(t)
+	user := createTestUser(t, testUserRepo, "testuser_receipts", domain.AdminRole)
+	acc := createTestAccount(t, accountRepo)
+	cat := createTestCategory(t, categoryRepo, "Sales", domain.Income)
+
+	// Create 1 transaction
+	tx := createTestTransaction(t, txRepo, acc.ID, cat.ID, 100.00, time.Now(), user.ID)
+
+	// Create Issuer
+	var issuerID int
+	err := dbPool.QueryRow(ctx, `
+		INSERT INTO issuers (ruc, business_name, trade_name, establishment_address, main_address, establishment_code, emission_point_code, environment, keep_accounting, signature_path, created_at, updated_at)
+		VALUES ('1790000000001', 'Test Issuer', 'Test Trade', 'Addr', 'Main Addr', '001', '001', 1, TRUE, '/tmp/dummy.p12', NOW(), NOW())
+		RETURNING id
+	`).Scan(&issuerID)
+	require.NoError(t, err)
+
+	// Create TaxPayer
+	var taxPayerID int
+	err = dbPool.QueryRow(ctx, `
+		INSERT INTO tax_payers (identification, name, email, identification_type, created_at, updated_at)
+		VALUES ('9999999999999', 'Consumer', 'test@test.com', '07', NOW(), NOW())
+		RETURNING id
+	`).Scan(&taxPayerID)
+	require.NoError(t, err)
+
+	// Insert MULTIPLE receipts for this transaction (simulating retries)
+	
+	// Receipt 1: Oldest, Failed
+	_, err = dbPool.Exec(ctx, `
+		INSERT INTO electronic_receipts (transaction_id, issuer_id, tax_payer_id, access_key, receipt_type, xml_content, sri_status, environment, created_at, updated_at)
+		VALUES ($1, $2, $3, '1111111111111111111111111111111111111111111111111', '01', '<xml>old</xml>', 'RECHAZADA', 1, $4, $4)
+	`, tx.ID, issuerID, taxPayerID, time.Now().Add(-2*time.Hour))
+	require.NoError(t, err)
+
+	// Receipt 2: New, Authorized
+	_, err = dbPool.Exec(ctx, `
+		INSERT INTO electronic_receipts (transaction_id, issuer_id, tax_payer_id, access_key, receipt_type, xml_content, sri_status, environment, created_at, updated_at)
+		VALUES ($1, $2, $3, '2222222222222222222222222222222222222222222222222', '01', '<xml>new</xml>', 'AUTORIZADO', 1, $4, $4)
+	`, tx.ID, issuerID, taxPayerID, time.Now())
+	require.NoError(t, err)
+
+	// --- Act ---
+	result, err := txRepo.FindTransactionsByAccount(ctx, acc.ID, 1, 10, domain.TransactionFilters{}, nil)
+
+	// --- Assert ---
+	require.NoError(t, err)
+	assert.Equal(t, int64(1), result.TotalCount, "Should return exactly 1 transaction, ignoring duplicate receipts")
+	assert.Len(t, result.Data, 1)
+	
+	returnedTx := result.Data[0]
+	assert.Equal(t, tx.ID, returnedTx.ID)
+	require.NotNil(t, returnedTx.ElectronicReceipt, "Should have receipt info")
+	assert.Equal(t, "AUTORIZADO", returnedTx.ElectronicReceipt.SRIStatus, "Should show the status of the LATEST receipt")
+	assert.Equal(t, "2222222222222222222222222222222222222222222222222", returnedTx.ElectronicReceipt.AccessKey)
+}

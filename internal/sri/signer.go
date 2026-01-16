@@ -7,6 +7,12 @@ import (
 	"github.com/nelsonmarro/go_ec_sri_invoice_signer/pkg/signer"
 )
 
+// Re-exportamos los tipos de la librería para facilitar su uso
+const (
+	SHA1   = signer.SHA1
+	SHA256 = signer.SHA256
+)
+
 // DocumentSigner es el servicio encargado de firmar digitalmente los comprobantes.
 type DocumentSigner struct {
 	p12Path  string
@@ -22,16 +28,17 @@ func NewDocumentSigner(p12Path string, password string) *DocumentSigner {
 }
 
 // Sign toma el XML crudo y devuelve el XML firmado usando el paquete especializado.
-func (s *DocumentSigner) Sign(xmlBytes []byte) ([]byte, error) {
+func (s *DocumentSigner) Sign(xmlBytes []byte, algo signer.HashAlgorithm) ([]byte, error) {
 	// 1. Leer el archivo de firma (.p12)
 	p12Bytes, err := os.ReadFile(s.p12Path)
 	if err != nil {
 		return nil, fmt.Errorf("error al leer el certificado .p12: %w", err)
 	}
 
-	// 2. Firmar usando la librería propia del usuario
+	// 2. Firmar usando la librería propia
 	signedXML, err := signer.SignInvoice(string(xmlBytes), p12Bytes, &signer.SignOptions{
-		Password: s.password,
+		Password:  s.password,
+		Algorithm: algo,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("error al firmar el XML: %w", err)

@@ -22,6 +22,11 @@ func (m *MockElectronicReceiptRepository) UpdateStatus(ctx context.Context, acce
 	return args.Error(0)
 }
 
+func (m *MockElectronicReceiptRepository) UpdateXML(ctx context.Context, accessKey string, xmlContent string) error {
+	args := m.Called(ctx, accessKey, xmlContent)
+	return args.Error(0)
+}
+
 func (m *MockElectronicReceiptRepository) GetByAccessKey(ctx context.Context, accessKey string) (*domain.ElectronicReceipt, error) {
 	args := m.Called(ctx, accessKey)
 	if args.Get(0) == nil {

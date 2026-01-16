@@ -63,7 +63,10 @@ func (ui *UI) makeTransactionUI() fyne.CanvasObject {
 			ui.mainWindow,
 			&tx,
 			ui.Services.TxService,
-			ui.Services.SriService, // Injected
+			ui.Services.SriService,
+			func() {
+				ui.loadTransactions(ui.transactionPaginator.GetCurrentPage(), ui.transactionPaginator.GetPageSize())
+			},
 		)
 		detailsDialog.Show()
 		ui.transactionList.Unselect(id) // Unselect after opening
@@ -239,7 +242,6 @@ func (ui *UI) createTransactiontItem() fyne.CanvasObject {
 	lblType.Wrapping = fyne.TextWrap(fyne.TextTruncateClip)
 
 	txtAmount := canvas.NewText("$1,200.00", color.Black)
-	amountContainer := container.NewCenter(txtAmount)
 
 	lblBalance := widget.NewLabel("$5,250.50")
 	lblBalance.Wrapping = fyne.TextWrap(fyne.TextTruncateClip)
@@ -259,7 +261,7 @@ func (ui *UI) createTransactiontItem() fyne.CanvasObject {
 		lblDescription,
 		lblCategory,
 		lblType,
-		amountContainer,
+		txtAmount,
 		lblBalance,
 		sriContainer,
 		attachmentContainer,
@@ -300,8 +302,7 @@ func (ui *UI) updateTransactionItem(i widget.ListItemID, o fyne.CanvasObject) {
 		rowContainer.Objects[4].(*widget.Label).SetText("-")
 	}
 
-	amountContainer := rowContainer.Objects[5].(*fyne.Container)
-	amountText := amountContainer.Objects[0].(*canvas.Text)
+	amountText := rowContainer.Objects[5].(*canvas.Text)
 	amountText.Text = fmt.Sprintf("%.2f", tx.Amount)
 	if tx.Category != nil && tx.Category.Type == domain.Income {
 		amountText.Text = "+ $" + amountText.Text
@@ -324,8 +325,10 @@ func (ui *UI) updateTransactionItem(i widget.ListItemID, o fyne.CanvasObject) {
 			sriIcon.SetResource(theme.ConfirmIcon())
 		case "DEVUELTA", "RECHAZADO", "ANULADO":
 			sriIcon.SetResource(theme.WarningIcon())
-		case "RECIBIDA", "EN_PROCESO", "PENDIENTE":
+		case "RECIBIDA", "EN PROCESO", "PENDIENTE":
 			sriIcon.SetResource(theme.HistoryIcon())
+		case "NO AUTORIZADO":
+			sriIcon.SetResource(theme.ErrorIcon())
 		default:
 			sriIcon.SetResource(theme.QuestionIcon())
 		}

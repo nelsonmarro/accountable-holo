@@ -3,9 +3,13 @@ package transaction
 import (
 	"context"
 	"fmt"
+	"image/color"
+	"io"
+	"os"
 	"time"
 
 	"fyne.io/fyne/v2"
+	"fyne.io/fyne/v2/canvas"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/theme"
@@ -19,6 +23,8 @@ type DetailsDialog struct {
 	tx         *domain.Transaction
 	txService  TransactionService
 	sriService SriService
+	onChanged  func()
+	dialog     dialog.Dialog // Added reference
 }
 
 func NewDetailsDialog(
@@ -26,12 +32,14 @@ func NewDetailsDialog(
 	tx *domain.Transaction,
 	txService TransactionService,
 	sriService SriService,
+	onChanged func(), // Added
 ) *DetailsDialog {
 	return &DetailsDialog{
 		parent:     parent,
 		tx:         tx,
 		txService:  txService,
 		sriService: sriService,
+		onChanged:  onChanged, // Added
 	}
 }
 
@@ -57,18 +65,29 @@ func (d *DetailsDialog) Show() {
 		fyne.Do(func() {
 			progress.Hide()
 			content := d.buildContent()
-			dlg := dialog.NewCustom("Comprobante de Transacción", "Cerrar", content, d.parent)
-			dlg.Resize(fyne.NewSize(650, 600))
-			dlg.Show()
+			d.dialog = dialog.NewCustom("Comprobante de Transacción", "Cerrar", content, d.parent)
+			d.dialog.Resize(fyne.NewSize(650, 600))
+			d.dialog.Show()
 		})
 	}()
 }
 
 func (d *DetailsDialog) buildContent() fyne.CanvasObject {
+	var catTypeColor color.Color
+	if d.tx.Category.Type == domain.Income {
+		catTypeColor = color.NRGBA{R: 0, G: 150, B: 0, A: 255}
+	} else {
+		catTypeColor = color.NRGBA{R: 200, G: 0, B: 0, A: 255}
+	}
+
 	header := widget.NewForm(
 		widget.NewFormItem("Nro. Comprobante:", widget.NewLabelWithStyle(d.tx.TransactionNumber, fyne.TextAlignLeading, fyne.TextStyle{Bold: true})),
 		widget.NewFormItem("Fecha:", widget.NewLabel(d.tx.TransactionDate.Format("02/01/2006"))),
-		widget.NewFormItem("Categoría:", widget.NewLabel(d.tx.Category.Name)),
+
+		widget.NewFormItem("Categoría:", container.NewHBox(
+			widget.NewLabel(fmt.Sprintf("%s   -", d.tx.Category.Name)),
+			canvas.NewText(string(d.tx.Category.Type), catTypeColor),
+		)),
 	)
 
 	itemsContainer := container.NewVBox()
@@ -96,42 +115,81 @@ func (d *DetailsDialog) buildContent() fyne.CanvasObject {
 	)
 
 	actions := container.NewHBox()
-	if d.tx.ElectronicReceipt != nil && d.tx.ElectronicReceipt.SRIStatus == "AUTORIZADO" {
-		statusLabel := widget.NewLabelWithStyle("✅ Factura Autorizada", fyne.TextAlignCenter, fyne.TextStyle{Bold: true})
-		rideBtn := widget.NewButtonWithIcon("Ver RIDE (PDF)", theme.DocumentIcon(), func() {
-			d.generateAndShowRide()
-		})
-		actions.Add(statusLabel)
-		actions.Add(rideBtn)
-	} else if d.tx.ElectronicReceipt != nil {
-		statusText := fmt.Sprintf("Estado SRI: %s", d.tx.ElectronicReceipt.SRIStatus)
-		if d.tx.ElectronicReceipt.SRIMessage != "" {
-			statusText += "\n" + d.tx.ElectronicReceipt.SRIMessage
+
+	// Determine SRI Action Button (ONLY for INCOMES)
+	if d.tx.Category.Type == domain.Income {
+		isAuthorized := d.tx.ElectronicReceipt != nil && d.tx.ElectronicReceipt.SRIStatus == "AUTORIZADO"
+		hasReceipt := d.tx.ElectronicReceipt != nil
+
+		if isAuthorized {
+			statusLabel := widget.NewLabelWithStyle("✅ Factura Autorizada", fyne.TextAlignCenter, fyne.TextStyle{Bold: true})
+			rideBtn := widget.NewButtonWithIcon("Ver RIDE (PDF)", theme.DocumentIcon(), func() {
+				d.generateAndShowRide()
+			})
+			actions.Add(statusLabel)
+			actions.Add(rideBtn)
+		} else if hasReceipt {
+			status := d.tx.ElectronicReceipt.SRIStatus
+			statusText := fmt.Sprintf("Estado SRI: %s", status)
+
+			// Detectar si está "trabada" en proceso por mucho tiempo (> 2 horas)
+			isStuck := status == "EN PROCESO" && time.Since(d.tx.ElectronicReceipt.CreatedAt) > 2*time.Hour
+
+			// Si es error temporal o está en proceso reciente, permitir sincronizar
+			if (status == "RECIBIDA" || status == "EN PROCESO" || status == "PENDIENTE" || status == "ERROR_RED") && !isStuck {
+				statusLabel := widget.NewLabelWithStyle(statusText, fyne.TextAlignCenter, fyne.TextStyle{Italic: true})
+				retryBtn := widget.NewButtonWithIcon("Sincronizar / Reintentar", theme.ViewRefreshIcon(), func() {
+					d.retryEmission()
+				})
+				actions.Add(statusLabel)
+				actions.Add(retryBtn)
+			} else {
+				// Terminal errors (NO AUTORIZADO, RECHAZADA, DEVUELTA) OR Stuck Process: Allow RE-EMIT (New Key)
+				label := statusText + " (Fallido)"
+				if isStuck {
+					label = statusText + " (Sin respuesta > 2h)"
+				}
+				statusLabel := widget.NewLabelWithStyle(label, fyne.TextAlignCenter, fyne.TextStyle{Bold: true})
+				reEmitBtn := widget.NewButtonWithIcon("Corregir y Re-Emitir", theme.ConfirmIcon(), func() {
+					d.promptPasswordAndEmit()
+				})
+				reEmitBtn.Importance = widget.WarningImportance
+				actions.Add(statusLabel)
+				actions.Add(reEmitBtn)
+			}
+		} else {
+			// New emission
+			emitBtn := widget.NewButtonWithIcon("Emitir Factura Electrónica", theme.ConfirmIcon(), func() {
+				d.promptPasswordAndEmit()
+			})
+			emitBtn.Importance = widget.HighImportance
+			actions.Add(emitBtn)
 		}
-		statusLabel := widget.NewLabelWithStyle(statusText, fyne.TextAlignCenter, fyne.TextStyle{Italic: true})
-		retryBtn := widget.NewButtonWithIcon("Sincronizar / Reintentar", theme.ViewRefreshIcon(), func() {
-			d.retryEmission()
-		})
-		actions.Add(statusLabel)
-		actions.Add(retryBtn)
-	} else {
-		emitBtn := widget.NewButtonWithIcon("Emitir Factura Electrónica", theme.ConfirmIcon(), func() {
-			d.promptPasswordAndEmit()
-		})
-		emitBtn.Importance = widget.HighImportance
-		actions.Add(emitBtn)
 	}
 
-	return container.NewVScroll(container.NewVBox(
+	// Layout principal: Acciones arriba, detalles abajo con scroll
+	var topActions fyne.CanvasObject
+	if len(actions.Objects) > 0 {
+		topActions = container.NewVBox(
+			container.NewCenter(actions),
+			widget.NewSeparator(),
+		)
+	}
+
+	detailsContent := container.NewVBox(
 		header,
 		widget.NewSeparator(),
 		widget.NewLabelWithStyle("Detalle de Ítems", fyne.TextAlignLeading, fyne.TextStyle{Italic: true}),
 		container.NewPadded(itemsContainer),
 		widget.NewSeparator(),
 		container.NewBorder(nil, nil, nil, nil, footer),
-		widget.NewSeparator(),
-		container.NewCenter(actions),
-	))
+	)
+
+	return container.NewBorder(
+		topActions,
+		nil, nil, nil,
+		container.NewVScroll(detailsContent),
+	)
 }
 
 func (d *DetailsDialog) promptPasswordAndEmit() {
@@ -153,9 +211,67 @@ func (d *DetailsDialog) promptPasswordAndEmit() {
 
 func (d *DetailsDialog) emitFactura(password string) {
 	componets.HandleLongRunningOperation(d.parent, "Emitiendo Factura al SRI...", func(ctx context.Context) error {
-		return d.sriService.EmitirFactura(ctx, d.tx.ID, password)
+		err := d.sriService.EmitirFactura(ctx, d.tx.ID, password)
+		if err != nil {
+			return err // El diálogo de error lo maneja HandleLongRunningOperation
+		}
+
+		// Éxito técnico (se envió). Ahora verificamos el estado de negocio.
+		// Recargamos la transacción para ver cómo quedó.
+		updatedTx, errFetch := d.txService.GetTransactionByID(ctx, d.tx.ID)
+		if errFetch != nil {
+			return fmt.Errorf("factura enviada, pero error al recargar estado: %w", errFetch)
+		}
+
+		fyne.Do(func() {
+			if d.dialog != nil {
+				d.dialog.Hide() // Cerrar detalles
+			}
+
+			d.showSRIFeedback(updatedTx) // Mostrar feedback rico
+
+			if d.onChanged != nil {
+				d.onChanged()
+			}
+		})
+		return nil
 	})
-	dialog.ShowInformation("Proceso Finalizado", "Revise el estado en la lista de transacciones.", d.parent)
+}
+
+func (d *DetailsDialog) showSRIFeedback(tx *domain.Transaction) {
+	if tx.ElectronicReceipt == nil {
+		return
+	}
+
+	status := tx.ElectronicReceipt.SRIStatus
+	var title, message string
+	var icon fyne.Resource
+
+	switch status {
+	case "AUTORIZADO":
+		title = "✅ Factura Autorizada"
+		message = fmt.Sprintf("La factura ha sido autorizada correctamente.\nClave: %s", tx.ElectronicReceipt.AccessKey)
+		icon = theme.ConfirmIcon()
+	case "EN PROCESO", "RECIBIDA", "PENDIENTE":
+		title = "⏳ En Proceso"
+		message = "La factura fue recibida por el SRI pero la autorización está pendiente.\nEl sistema verificará el estado automáticamente."
+		icon = theme.InfoIcon()
+	case "NO AUTORIZADO", "RECHAZADA", "DEVUELTA":
+		title = "❌ Factura Rechazada"
+		message = fmt.Sprintf("El SRI rechazó el comprobante.\nMotivo: %s", tx.ElectronicReceipt.SRIMessage)
+		icon = theme.ErrorIcon()
+	default:
+		title = "Estado Desconocido"
+		message = fmt.Sprintf("Estado actual: %s", status)
+		icon = theme.QuestionIcon()
+	}
+
+	content := container.NewHBox(
+		widget.NewIcon(icon),
+		widget.NewLabel(message),
+	)
+
+	dialog.ShowCustom(title, "Aceptar", content, d.parent)
 }
 
 func (d *DetailsDialog) generateAndShowRide() {
@@ -166,35 +282,75 @@ func (d *DetailsDialog) generateAndShowRide() {
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()
 
-		path, err := d.sriService.GenerateRide(ctx, d.tx.ID)
+		// 1. Generar en TEMP
+		tempPath, err := d.sriService.GenerateRide(ctx, d.tx.ID)
+		
 		fyne.Do(func() {
 			progress.Hide()
 			if err != nil {
 				dialog.ShowError(err, d.parent)
 				return
 			}
-			preview := NewPreviewDialog(d.parent, path)
-			preview.Show()
+
+			// 2. Diálogo Guardar Como
+			saveDialog := dialog.NewFileSave(func(writer fyne.URIWriteCloser, err error) {
+				defer os.Remove(tempPath)
+
+				if err != nil {
+					dialog.ShowError(err, d.parent)
+					return
+				}
+				if writer == nil {
+					return
+				}
+				defer writer.Close()
+
+				// 3. Copiar contenido: Temp -> Destino Usuario
+				srcFile, err := os.Open(tempPath)
+				if err != nil {
+					dialog.ShowError(fmt.Errorf("error leyendo archivo temporal: %w", err), d.parent)
+					return
+				}
+				defer srcFile.Close()
+
+				if _, err := io.Copy(writer, srcFile); err != nil {
+					dialog.ShowError(fmt.Errorf("error guardando archivo: %w", err), d.parent)
+					return
+				}
+
+				dialog.ShowInformation("Éxito", "RIDE guardado correctamente", d.parent)
+			}, d.parent)
+
+			saveDialog.SetFileName(fmt.Sprintf("RIDE-%s.pdf", d.tx.ElectronicReceipt.AccessKey))
+			saveDialog.Show()
 		})
 	}()
 }
 
 func (d *DetailsDialog) retryEmission() {
-	progress := dialog.NewCustomWithoutButtons("Sincronizando con SRI...", widget.NewProgressBarInfinite(), d.parent)
-	progress.Show()
+	componets.HandleLongRunningOperation(d.parent, "Sincronizando con SRI...", func(ctx context.Context) error {
+		_, err := d.sriService.SyncReceipt(ctx, d.tx.ElectronicReceipt)
+		if err != nil {
+			return fmt.Errorf("error de sincronización: %w", err)
+		}
 
-	go func() {
-		ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
-		defer cancel()
+		// Recargar estado
+		updatedTx, errFetch := d.txService.GetTransactionByID(ctx, d.tx.ID)
+		if errFetch != nil {
+			return fmt.Errorf("sincronizado, pero error al recargar: %w", errFetch)
+		}
 
-		status, err := d.sriService.SyncReceipt(ctx, d.tx.ElectronicReceipt)
 		fyne.Do(func() {
-			progress.Hide()
-			if err != nil {
-				dialog.ShowError(fmt.Errorf("error de sincronización: %w", err), d.parent)
-			} else {
-				dialog.ShowInformation("Estado Actualizado", fmt.Sprintf("Nuevo estado: %s", status), d.parent)
+			if d.dialog != nil {
+				d.dialog.Hide()
+			}
+
+			d.showSRIFeedback(updatedTx)
+
+			if d.onChanged != nil {
+				d.onChanged()
 			}
 		})
-	}()
+		return nil
+	})
 }

@@ -63,7 +63,7 @@ type Mensaje struct {
 type SoapRecepcionEnvelope struct {
 	Body struct {
 		ValidarComprobanteResponse struct {
-			RespuestaRecepcion RespuestaRecepcion `xml:"RespuestaSolicitud"`
+			RespuestaRecepcion RespuestaRecepcion `xml:"RespuestaRecepcionComprobante"`
 		} `xml:"validarComprobanteResponse"`
 	} `xml:"Body"`
 }

@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"log"
 	"testing"
@@ -52,14 +53,15 @@ func TestSyncReceipt(t *testing.T) {
 		mockReceiptRepo.On("UpdateStatus", ctx, receipt.AccessKey, "RECIBIDA", "Recibido por SRI", (*time.Time)(nil)).Return(nil).Once()
 
 		// Expect immediate authorization check (since it moved to RECIBIDA)
-		mockSriClient.On("AutorizarComprobante", receipt.AccessKey, 1).Return(&sri.RespuestaAutorizacion{}, nil).Once()
+		mockSriClient.On("AutorizarComprobante", receipt.AccessKey, 1).Return(&sri.RespuestaAutorizacion{NumeroComprobantes: "0"}, nil).Once()
+		mockReceiptRepo.On("UpdateStatus", ctx, receipt.AccessKey, "EN PROCESO", mock.Anything, (*time.Time)(nil)).Return(nil).Once()
 
 		// Act
 		status, err := service.SyncReceipt(ctx, receipt)
 
 		// Assert
 		require.NoError(t, err)
-		assert.Equal(t, "RECIBIDA", status)
+		assert.Equal(t, "EN PROCESO", status)
 		mockSriClient.AssertExpectations(t)
 		mockReceiptRepo.AssertExpectations(t)
 	})
@@ -76,6 +78,7 @@ func TestSyncReceipt(t *testing.T) {
 		authDate, _ := time.Parse(time.RFC3339, authDateStr)
 
 		sriResponse := &sri.RespuestaAutorizacion{
+			NumeroComprobantes: "1",
 			Autorizaciones: struct {
 				Autorizacion []sri.Autorizacion `xml:"autorizacion"`
 			}{
@@ -97,6 +100,51 @@ func TestSyncReceipt(t *testing.T) {
 		// Assert
 		require.NoError(t, err)
 		assert.Equal(t, "AUTORIZADO", status)
+	})
+
+	t.Run("RECIBIDA -> EN PROCESO (SRI procesando)", func(t *testing.T) {
+		receipt := &domain.ElectronicReceipt{AccessKey: "KEY_PENDING", SRIStatus: "RECIBIDA", Environment: 1}
+		
+		// Simula respuesta vacía o 0 comprobantes
+		sriResponse := &sri.RespuestaAutorizacion{NumeroComprobantes: "0"}
+		
+		mockSriClient.On("AutorizarComprobante", receipt.AccessKey, 1).Return(sriResponse, nil).Once()
+		mockReceiptRepo.On("UpdateStatus", ctx, receipt.AccessKey, "EN PROCESO", mock.Anything, (*time.Time)(nil)).Return(nil).Once()
+
+		status, err := service.SyncReceipt(ctx, receipt)
+		require.NoError(t, err)
+		assert.Equal(t, "EN PROCESO", status)
+	})
+
+	t.Run("RECIBIDA -> NO AUTORIZADO (SRI rechaza)", func(t *testing.T) {
+		receipt := &domain.ElectronicReceipt{AccessKey: "KEY_REJECT", SRIStatus: "RECIBIDA", Environment: 1}
+		
+		sriResponse := &sri.RespuestaAutorizacion{
+			NumeroComprobantes: "1",
+			Autorizaciones: struct {
+				Autorizacion []sri.Autorizacion `xml:"autorizacion"`
+			}{
+				Autorizacion: []sri.Autorizacion{
+					{
+						Estado: "NO AUTORIZADO",
+						Mensajes: struct{ Mensaje []sri.Mensaje `xml:"mensaje"` }{
+							Mensaje: []sri.Mensaje{{Identificador: "39", Mensaje: "FIRMA INVALIDA"}},
+						},
+					},
+				},
+			},
+		}
+		
+		mockSriClient.On("AutorizarComprobante", receipt.AccessKey, 1).Return(sriResponse, nil).Once()
+		// Debe guardar el mensaje de error concatenado
+		mockReceiptRepo.On("UpdateStatus", ctx, receipt.AccessKey, "RECHAZADA", mock.MatchedBy(func(msg string) bool {
+			return len(msg) > 0 // El mensaje debe contener el error
+		}), mock.Anything).Return(nil).Once()
+
+		status, err := service.SyncReceipt(ctx, receipt)
+		require.Error(t, err) // Debe retornar error porque fue rechazada
+		assert.Contains(t, err.Error(), "FIRMA INVALIDA")
+		assert.Equal(t, "RECHAZADA", status)
 	})
 }
 
@@ -124,14 +172,16 @@ func TestProcessBackgroundSync(t *testing.T) {
 		pending := []domain.ElectronicReceipt{
 			{AccessKey: "KEY1", SRIStatus: "RECIBIDA", Environment: 1}, // Will become AUTHORIZED
 			{AccessKey: "KEY2", SRIStatus: "PENDIENTE", Environment: 1}, // Will fail send (simulate error)
+			{AccessKey: "KEY3", SRIStatus: "EN PROCESO", Environment: 1}, // Will stay EN PROCESO
 		}
 
-		// Mock Repo Find
+		// Mock Repo Find (Simulamos que el SQL ya filtró los antiguos, devolviendo estos 3 recientes)
 		mockReceiptRepo.On("FindPendingReceipts", ctx).Return(pending, nil).Once()
 
 		// Mock SRI calls
 		// 1. KEY1: Authorize Success
 		sriAuthResp := &sri.RespuestaAutorizacion{
+			NumeroComprobantes: "1",
 			Autorizaciones: struct{Autorizacion []sri.Autorizacion `xml:"autorizacion"`}{
 				Autorizacion: []sri.Autorizacion{{Estado: "AUTORIZADO", FechaAutorizacion: time.Now().Format(time.RFC3339)}},
 			},
@@ -140,15 +190,33 @@ func TestProcessBackgroundSync(t *testing.T) {
 		mockReceiptRepo.On("UpdateStatus", ctx, "KEY1", "AUTORIZADO", mock.Anything, mock.Anything).Return(nil).Once()
 
 		// 2. KEY2: Send Fail (Network Error)
-		mockSriClient.On("EnviarComprobante", mock.Anything, 1).Return(nil, assert.AnError).Once()
+		mockSriClient.On("EnviarComprobante", mock.Anything, 1).Return(nil, fmt.Errorf("timeout")).Once()
 		mockReceiptRepo.On("UpdateStatus", ctx, "KEY2", "ERROR_RED", mock.Anything, mock.Anything).Return(nil).Once()
+
+		// 3. KEY3: Still Processing
+		sriPendingResp := &sri.RespuestaAutorizacion{NumeroComprobantes: "0"}
+		mockSriClient.On("AutorizarComprobante", "KEY3", 1).Return(sriPendingResp, nil).Once()
+		mockReceiptRepo.On("UpdateStatus", ctx, "KEY3", "EN PROCESO", mock.Anything, mock.Anything).Return(nil).Once()
 
 		// Act
 		count, err := service.ProcessBackgroundSync(ctx)
 
 		// Assert
 		require.NoError(t, err)
-		assert.Equal(t, 1, count, "Should count 1 authorized receipt")
+		assert.Equal(t, 1, count, "Should count 1 authorized receipt") // KEY1 es el único finalizado OK
 		mockSriClient.AssertExpectations(t)
+	})
+
+	t.Run("Should handle empty list (Filter applied by Repo)", func(t *testing.T) {
+		// Arrange: Repo returns empty list (SQL filtered old pending receipts)
+		mockReceiptRepo.On("FindPendingReceipts", ctx).Return([]domain.ElectronicReceipt{}, nil).Once()
+
+		// Act
+		count, err := service.ProcessBackgroundSync(ctx)
+
+		// Assert
+		require.NoError(t, err)
+		assert.Equal(t, 0, count)
+		mockSriClient.AssertNotCalled(t, "AutorizarComprobante")
 	})
 }

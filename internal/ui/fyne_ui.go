@@ -58,7 +58,6 @@ type UI struct {
 	taxPayerPaginator  *componets.Pagination
 	paginatedTaxPayers *domain.PaginatedResult[domain.TaxPayer]
 	taxPayerSearchText string
-	taxPayers          []domain.TaxPayer // Deprecated, but keeping for compatibility if needed
 
 	transactionList           *widget.List
 	transactionPaginator      *componets.Pagination

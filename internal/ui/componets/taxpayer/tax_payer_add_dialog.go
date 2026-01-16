@@ -10,9 +10,9 @@ import (
 )
 
 type AddTaxPayerDialog struct {
-	window   fyne.Window
-	service  TaxPayerService
-	onSaved  func()
+	window  fyne.Window
+	service TaxPayerService
+	onSaved func()
 }
 
 func NewAddTaxPayerDialog(
@@ -36,7 +36,7 @@ func (d *AddTaxPayerDialog) Show() {
 		}
 
 		tp := form.GetTaxPayer()
-		
+
 		// Simple validation
 		if tp.Identification == "" || tp.Name == "" || tp.Email == "" {
 			dialog.ShowError(fmt.Errorf("identificación, nombre y email son obligatorios"), d.window)
@@ -57,6 +57,6 @@ func (d *AddTaxPayerDialog) Show() {
 		dialog.ShowInformation("Éxito", "Cliente creado correctamente", d.window)
 	}, d.window)
 
-	dlg.Resize(fyne.NewSize(400, 400))
+	dlg.Resize(fyne.NewSize(500, 450))
 	dlg.Show()
 }

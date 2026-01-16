@@ -51,6 +51,12 @@ func (r *ElectronicReceiptRepositoryImpl) UpdateStatus(ctx context.Context, acce
 	return nil
 }
 
+func (r *ElectronicReceiptRepositoryImpl) UpdateXML(ctx context.Context, accessKey string, xmlContent string) error {
+	query := `UPDATE electronic_receipts SET xml_content = $1, updated_at = $2 WHERE access_key = $3`
+	_, err := r.db.Exec(ctx, query, xmlContent, time.Now(), accessKey)
+	return err
+}
+
 func (r *ElectronicReceiptRepositoryImpl) GetByAccessKey(ctx context.Context, accessKey string) (*domain.ElectronicReceipt, error) {
 	query := `
 		SELECT id, transaction_id, issuer_id, tax_payer_id, access_key, receipt_type, 
@@ -84,11 +90,15 @@ func (r *ElectronicReceiptRepositoryImpl) GetByAccessKey(ctx context.Context, ac
 }
 
 func (r *ElectronicReceiptRepositoryImpl) FindPendingReceipts(ctx context.Context) ([]domain.ElectronicReceipt, error) {
+	// Solo intentamos sincronizar comprobantes recientes (últimos 2 días).
+	// Si un comprobante lleva más de 2 días atascado en PENDIENTE/EN PROCESO, se considera abandonado por el job automático
+	// y requerirá intervención manual del usuario (ej: anular y reemitir).
 	query := `
 		SELECT id, transaction_id, issuer_id, tax_payer_id, access_key, receipt_type, 
 		       xml_content, authorization_date, sri_status, sri_message, environment, created_at, updated_at
 		FROM electronic_receipts
-		WHERE sri_status IN ('PENDIENTE', 'RECIBIDA', 'EN_PROCESO', 'ERROR_ENVIO', 'ERROR_RED')
+		WHERE sri_status IN ('PENDIENTE', 'RECIBIDA', 'EN PROCESO', 'ERROR_ENVIO', 'ERROR_RED')
+		AND created_at > NOW() - INTERVAL '2 days'
 		ORDER BY created_at ASC
 	`
 	rows, err := r.db.Query(ctx, query)

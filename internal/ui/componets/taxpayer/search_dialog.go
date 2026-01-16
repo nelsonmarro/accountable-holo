@@ -1,3 +1,4 @@
+// Package taxpayer implements a dialog for searching and selecting taxpayers.
 package taxpayer
 
 import (
@@ -56,7 +57,7 @@ func (d *SearchDialog) Show() {
 	content := d.createContent()
 
 	d.dl = dialog.NewCustom("Buscar Cliente", "Cerrar", content, d.window)
-	d.dl.Resize(fyne.NewSize(650, 550))
+	d.dl.Resize(fyne.NewSize(750, 600))
 
 	go d.loadTaxPayers(1, d.pagination.GetPageSize())
 
@@ -89,9 +90,9 @@ func (d *SearchDialog) createContent() fyne.CanvasObject {
 
 	// --- Headers ---
 	header := container.NewGridWithColumns(3,
-		widget.NewLabelWithStyle("Identificación", fyne.TextAlignLeading, fyne.TextStyle{Bold: true}),
-		widget.NewLabelWithStyle("Nombre / Razón Social", fyne.TextAlignLeading, fyne.TextStyle{Bold: true}),
-		widget.NewLabelWithStyle("Acción", fyne.TextAlignCenter, fyne.TextStyle{Bold: true}),
+		widget.NewLabel("Identificación"),
+		widget.NewLabel("Nombre / Razón Social"),
+		widget.NewLabel("Acción"),
 	)
 
 	// --- Create Button ---
@@ -111,15 +112,15 @@ func (d *SearchDialog) createContent() fyne.CanvasObject {
 }
 
 func (d *SearchDialog) makeListItem() fyne.CanvasObject {
-	lblId := widget.NewLabel("0000000000001")
+	lblID := widget.NewLabel("0000000000001")
 	lblName := widget.NewLabel("Template Name")
 	selectBtn := widget.NewButtonWithIcon("Seleccionar", theme.ConfirmIcon(), nil)
 	selectBtn.Importance = widget.HighImportance
 
 	return container.NewGridWithColumns(3,
-		lblId,
+		lblID,
 		lblName,
-		selectBtn,
+		container.NewCenter(selectBtn),
 	)
 }
 
@@ -133,7 +134,8 @@ func (d *SearchDialog) updateListItem(i widget.ListItemID, o fyne.CanvasObject) 
 	row.Objects[0].(*widget.Label).SetText(tp.Identification)
 	row.Objects[1].(*widget.Label).SetText(tp.Name)
 
-	btn := row.Objects[2].(*widget.Button)
+	btnContainer := row.Objects[2].(*fyne.Container)
+	btn := btnContainer.Objects[0].(*widget.Button)
 	btn.OnTapped = func() {
 		if d.onSelected != nil {
 			d.onSelected(&tp)
@@ -172,13 +174,13 @@ func (d *SearchDialog) showCreateDialog() {
 	// ... (Misma lógica de creación, pero refresca la lista al final)
 	idEntry := widget.NewEntry()
 	idEntry.SetPlaceHolder("17900...")
-	
+
 	nameEntry := widget.NewEntry()
 	nameEntry.SetPlaceHolder("Razón Social")
-	
+
 	emailEntry := widget.NewEntry()
 	emailEntry.SetPlaceHolder("cliente@email.com")
-	
+
 	addrEntry := widget.NewEntry()
 	addrEntry.SetPlaceHolder("Dirección")
 
@@ -189,7 +191,7 @@ func (d *SearchDialog) showCreateDialog() {
 		widget.NewFormItem("Dirección", addrEntry),
 	}
 
-	dialog.ShowForm("Nuevo Cliente", "Guardar", "Cancelar", items, func(confirm bool) {
+	dForm := dialog.NewForm("Nuevo Cliente", "Guardar", "Cancelar", items, func(confirm bool) {
 		if !confirm {
 			return
 		}
@@ -201,7 +203,7 @@ func (d *SearchDialog) showCreateDialog() {
 			Email:              emailEntry.Text,
 			Address:            addrEntry.Text,
 		}
-		
+
 		if len(tp.Identification) == 10 {
 			tp.IdentificationType = "05" // Cédula
 		}
@@ -216,7 +218,7 @@ func (d *SearchDialog) showCreateDialog() {
 
 		// Recargar la lista y seleccionar
 		d.filterTaxPayers(tp.Identification) // Busca el nuevo
-		
+
 		// Auto-seleccionar si se encuentra
 		created, _ := d.service.GetByIdentification(ctx, tp.Identification)
 		if created != nil {
@@ -224,4 +226,7 @@ func (d *SearchDialog) showCreateDialog() {
 			d.dl.Hide()
 		}
 	}, d.window)
+
+	dForm.Resize(fyne.NewSize(520, 350))
+	dForm.Show()
 }

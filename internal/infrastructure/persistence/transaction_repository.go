@@ -155,6 +155,7 @@ func (r *TransactionRepositoryImpl) FindTransactionsByAccount(
 		er.access_key,
 		er.authorization_date,
 		er.ride_path,
+		er.created_at,
         (
             SELECT initial_balance FROM accounts WHERE id = t.account_id
         ) + (
@@ -176,8 +177,12 @@ func (r *TransactionRepositoryImpl) FindTransactionsByAccount(
 		users AS uc ON t.created_by_id = uc.id
 	LEFT JOIN
 		users AS uu ON t.updated_by_id = uu.id
-	LEFT JOIN
-		electronic_receipts AS er ON t.id = er.transaction_id
+  LEFT JOIN (
+      SELECT DISTINCT ON (transaction_id)
+          transaction_id, sri_status, access_key, authorization_date, ride_path, created_at
+      FROM electronic_receipts
+      ORDER BY transaction_id, created_at DESC
+    ) AS er ON t.id = er.transaction_id
     WHERE %s
     ORDER BY
         t.transaction_date DESC, t.id DESC
@@ -238,6 +243,7 @@ func (r *TransactionRepositoryImpl) FindAllTransactionsByAccount(
 		er.access_key,
 		er.authorization_date,
 		er.ride_path,
+		er.created_at,
         (
             SELECT initial_balance FROM accounts WHERE id = t.account_id
         ) + (
@@ -259,8 +265,12 @@ func (r *TransactionRepositoryImpl) FindAllTransactionsByAccount(
 		users AS uc ON t.created_by_id = uc.id
 	LEFT JOIN
 		users AS uu ON t.updated_by_id = uu.id
-	LEFT JOIN
-		electronic_receipts AS er ON t.id = er.transaction_id
+  LEFT JOIN (
+      SELECT DISTINCT ON (transaction_id)
+          transaction_id, sri_status, access_key, authorization_date, ride_path, created_at
+      FROM electronic_receipts
+      ORDER BY transaction_id, created_at DESC
+    ) AS er ON t.id = er.transaction_id
     WHERE %s
     ORDER BY
         t.transaction_date DESC, t.id DESC;`, whereCondition)
@@ -308,6 +318,7 @@ func (r *TransactionRepositoryImpl) FindAllTransactions(
 		er.access_key,
 		er.authorization_date,
 		er.ride_path,
+		er.created_at,
         (
             SELECT initial_balance FROM accounts WHERE id = t.account_id
         ) + (
@@ -329,8 +340,12 @@ func (r *TransactionRepositoryImpl) FindAllTransactions(
 				users AS uc ON t.created_by_id = uc.id
 		LEFT JOIN
 				users AS uu ON t.updated_by_id = uu.id
-	LEFT JOIN
-		electronic_receipts AS er ON t.id = er.transaction_id
+  LEFT JOIN (
+      SELECT DISTINCT ON (transaction_id)
+          transaction_id, sri_status, access_key, authorization_date, ride_path, created_at
+      FROM electronic_receipts
+      ORDER BY transaction_id, created_at DESC
+    ) AS er ON t.id = er.transaction_id
     WHERE %s
     ORDER BY
         t.transaction_date DESC, t.id DESC;`, whereCondition)
@@ -556,21 +571,27 @@ func (r *TransactionRepositoryImpl) GetTransactionByID(ctx context.Context, tran
 			er.access_key,
 			er.authorization_date,
 			er.ride_path,
+			er.created_at,
 			0.0 -- Running balance not needed for single ID usually
 		FROM transactions t
-		LEFT JOIN categories c ON t.category_id = c.id
-		LEFT JOIN users uc ON t.created_by_id = uc.id
-		LEFT JOIN users uu ON t.updated_by_id = uu.id
-		LEFT JOIN electronic_receipts er ON t.id = er.transaction_id
+	LEFT JOIN categories c ON t.category_id = c.id
+	LEFT JOIN users uc ON t.created_by_id = uc.id
+	LEFT JOIN users uu ON t.updated_by_id = uu.id
+  LEFT JOIN (
+      SELECT DISTINCT ON (transaction_id)
+          transaction_id, sri_status, access_key, authorization_date, ride_path, created_at
+      FROM electronic_receipts
+      ORDER BY transaction_id, created_at DESC
+    ) AS er ON t.id = er.transaction_id
 		WHERE t.id = $1
 	`
-	
+
 	rows, err := r.db.Query(ctx, queryJoin, transactionID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	
+
 	txs, err := r.scanTransactions(rows)
 	if err != nil {
 		return nil, err
@@ -578,7 +599,7 @@ func (r *TransactionRepositoryImpl) GetTransactionByID(ctx context.Context, tran
 	if len(txs) == 0 {
 		return nil, pgx.ErrNoRows
 	}
-	
+
 	return &txs[0], nil
 }
 
@@ -819,10 +840,10 @@ func (r *TransactionRepositoryImpl) scanTransactions(rows pgx.Rows) ([]domain.Tr
 		var attachment sql.NullString
 		var voidedBy sql.NullInt64
 		var voids sql.NullInt64
-		
+
 		// SRI Fields
 		var sriStatus, accessKey, ridePath sql.NullString
-		var authDate sql.NullTime
+		var authDate, createdAt sql.NullTime
 
 		err := rows.Scan(
 			&tx.ID,
@@ -844,10 +865,11 @@ func (r *TransactionRepositoryImpl) scanTransactions(rows pgx.Rows) ([]domain.Tr
 			&categoryType,
 			&createdBy,
 			&updatedBy,
-			&sriStatus,     // New
-			&accessKey,     // New
-			&authDate,      // New
-			&ridePath,      // New
+			&sriStatus, // New
+			&accessKey, // New
+			&authDate,  // New
+			&ridePath,  // New
+			&createdAt, // New
 			&tx.RunningBalance,
 		)
 		if err != nil {
@@ -876,7 +898,7 @@ func (r *TransactionRepositoryImpl) scanTransactions(rows pgx.Rows) ([]domain.Tr
 		if updatedBy.Valid {
 			tx.UpdatedByUser = &domain.User{Username: updatedBy.String}
 		}
-		
+
 		// Map SRI Receipt
 		if sriStatus.Valid {
 			tx.ElectronicReceipt = &domain.ElectronicReceipt{
@@ -886,6 +908,9 @@ func (r *TransactionRepositoryImpl) scanTransactions(rows pgx.Rows) ([]domain.Tr
 			}
 			if authDate.Valid {
 				tx.ElectronicReceipt.AuthorizationDate = &authDate.Time
+			}
+			if createdAt.Valid {
+				tx.ElectronicReceipt.CreatedAt = createdAt.Time
 			}
 		}
 
