@@ -26,3 +26,5 @@ database.yml
 
 dist/
 
+tool/
+build/logs/
