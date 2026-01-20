@@ -5,7 +5,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/nelsonmarro/accountable-holo/internal/domain"
+	"github.com/nelsonmarro/verith/internal/domain"
 )
 
 func GetAccountTypeFromString(accType string) domain.AccountType {

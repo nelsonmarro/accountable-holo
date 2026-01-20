@@ -28,7 +28,7 @@ dist-windows: ## Build and package for Windows
 	fyne package -os windows -src cmd/desktop_app
 
 	# 2. Move the resulting executable to the dist folder
-	@mv "cmd/desktop_app/Accountable Holo.exe" dist/windows/AccountableHolo.exe
+	@mv "cmd/desktop_app/Verith.exe" dist/windows/Verith.exe
 
 	# 3. Copy Assets and Config
 	@cp -r assets dist/windows/
@@ -46,7 +46,7 @@ dist-windows: ## Build and package for Windows
 
 	# 5. Create Windows Setup Script
 	@echo "@echo off" > dist/windows/setup_db.bat
-	@echo "echo Setting up Accountable Holo Database..." >> dist/windows/setup_db.bat
+	@echo "echo Setting up Verith Database..." >> dist/windows/setup_db.bat
 	@echo "set /p PGPASSWORD=Enter the password you set for the 'postgres' user during installation: " >> dist/windows/setup_db.bat
 	@echo "set PGUSER=postgres" >> dist/windows/setup_db.bat
 	@echo "REM Check if psql is in PATH, otherwise try default location" >> dist/windows/setup_db.bat
@@ -54,9 +54,9 @@ dist-windows: ## Build and package for Windows
 	@echo "if %ERRORLEVEL% NEQ 0 set PATH=%%PATH%%;C:\Program Files\PostgreSQL\16\bin" >> dist/windows/setup_db.bat
 	@echo "REM Set client encoding to UTF8 to correctly handle special characters" >> dist/windows/setup_db.bat
 	@echo "set PGCLIENTENCODING=UTF8" >> dist/windows/setup_db.bat
-	@echo "createdb -w -E UTF8 accountableholodb" >> dist/windows/setup_db.bat
-	@echo "psql -d accountableholodb -f schema.sql" >> dist/windows/setup_db.bat
-	@echo "echo Done! You can now run AccountableHolo.exe" >> dist/windows/setup_db.bat
+	@echo "createdb -w -E UTF8 verithdb" >> dist/windows/setup_db.bat
+	@echo "psql -d verithdb -f schema.sql" >> dist/windows/setup_db.bat
+	@echo "echo Done! You can now run Verith.exe" >> dist/windows/setup_db.bat
 	@echo "pause" >> dist/windows/setup_db.bat
 
 	@echo "Windows distribution package created in dist/windows"
@@ -68,11 +68,11 @@ dist-windows-debug: ## Build debug version for Windows (With Console)
 
 	# Build with console enabled (no -H=windowsgui)
 	CC=x86_64-w64-mingw32-gcc CXX=x86_64-w64-mingw32-g++ GOOS=windows GOARCH=amd64 CGO_ENABLED=1 \
-	go build -o dist/windows-debug/AccountableHoloDebug.exe $(DESKTOP_APP_SRC)
+	go build -o dist/windows-debug/VerithDebug.exe $(DESKTOP_APP_SRC)
 
 	@cp -r assets dist/windows-debug/
 	@mkdir -p dist/windows-debug/config
 	@cp config/config.yaml dist/windows-debug/config/config.yaml || cp config/config.yaml.example dist/windows-debug/config/config.yaml
 	@sed -i 's/user: nelson/user: postgres/g' dist/windows-debug/config/config.yaml
 	
-	@echo "Debug build created in dist/windows-debug. Run AccountableHoloDebug.exe from a command prompt."
+	@echo "Debug build created in dist/windows-debug. Run VerithDebug.exe from a command prompt."

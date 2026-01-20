@@ -1,4 +1,4 @@
-module github.com/nelsonmarro/accountable-holo
+module github.com/nelsonmarro/verith
 
 go 1.25.5
 

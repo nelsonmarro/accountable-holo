@@ -7,7 +7,7 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/nelsonmarro/accountable-holo/internal/domain"
+	"github.com/nelsonmarro/verith/internal/domain"
 )
 
 type ElectronicReceiptRepositoryImpl struct {

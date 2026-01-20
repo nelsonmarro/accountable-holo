@@ -13,7 +13,7 @@ import (
 	_ "github.com/golang-migrate/migrate/v4/database/postgres" // Import the postgres driver
 	_ "github.com/golang-migrate/migrate/v4/source/file"       // Import the file source driver
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/nelsonmarro/accountable-holo/internal/domain"
+	"github.com/nelsonmarro/verith/internal/domain"
 	"github.com/ory/dockertest/v3"
 	"github.com/ory/dockertest/v3/docker"
 	"github.com/stretchr/testify/require"

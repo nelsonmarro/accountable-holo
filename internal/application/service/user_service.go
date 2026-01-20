@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/nelsonmarro/accountable-holo/internal/domain"
+	"github.com/nelsonmarro/verith/internal/domain"
 	"golang.org/x/crypto/bcrypt"
 )
 

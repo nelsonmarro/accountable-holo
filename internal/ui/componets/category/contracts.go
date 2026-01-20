@@ -3,7 +3,7 @@ package category
 import (
 	"context"
 
-	"github.com/nelsonmarro/accountable-holo/internal/domain"
+	"github.com/nelsonmarro/verith/internal/domain"
 )
 
 type CategoryService interface {

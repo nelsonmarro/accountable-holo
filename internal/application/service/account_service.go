@@ -6,8 +6,8 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/nelsonmarro/accountable-holo/internal/application/validator"
-	"github.com/nelsonmarro/accountable-holo/internal/domain"
+	"github.com/nelsonmarro/verith/internal/application/validator"
+	"github.com/nelsonmarro/verith/internal/domain"
 )
 
 type AccountServiceImpl struct {

@@ -3,7 +3,7 @@ package taxpayer
 import (
 	"context"
 
-	"github.com/nelsonmarro/accountable-holo/internal/domain"
+	"github.com/nelsonmarro/verith/internal/domain"
 )
 
 // TaxPayerService defines the interface for taxpayer operations required by UI components.

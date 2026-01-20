@@ -10,8 +10,8 @@ import (
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/widget"
-	"github.com/nelsonmarro/accountable-holo/internal/application/helpers"
-	"github.com/nelsonmarro/accountable-holo/internal/domain"
+	"github.com/nelsonmarro/verith/internal/application/helpers"
+	"github.com/nelsonmarro/verith/internal/domain"
 	"github.com/shopspring/decimal"
 )
 

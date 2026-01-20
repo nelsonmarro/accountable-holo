@@ -28,7 +28,7 @@ func (m *LicenseManager) ActivateLicense(key string) (bool, error) {
 	// Lemon squeezy espera el lincense_key y opcionalmente un instance_name
 	payload := map[string]string{
 		"license_key":   key,
-		"instance_name": "AccountableHolo",
+		"instance_name": "Verith",
 	}
 
 	jsonPayload, err := json.Marshal(payload)

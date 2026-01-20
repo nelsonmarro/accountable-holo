@@ -1,6 +1,6 @@
 development:
   dialect: postgres
-  database: accountableholodb
+  database: verithdb
   user: postgres
   password: password
   host: 127.0.0.1
@@ -9,7 +9,7 @@ development:
 
 test:
   dialect: postgres
-  database: accountableholodb_test
+  database: verithdb_test
   user: postgres
   password: password
   host: 127.0.0.1
@@ -18,7 +18,7 @@ test:
 
 production:
   dialect: postgres
-  database: accountableholodb_production
+  database: verithdb_production
   user: postgres
   password: password
   host: 127.0.0.1

@@ -1,12 +1,12 @@
 ```mermaid
 C4Context
-  title Diagrama de Contexto del Sistema Accountable Holo
+  title Diagrama de Contexto del Sistema Verith
 
   Person(admin, "Administrador", "Configura el sistema.")
   Person(cashier, "Cajero", "Registra transacciones y emite facturas.")
 
   Boundary(b1, "Sistema Emisor de Facturas") {
-  System(app, "Accountable Holo", "Aplicación de escritorio para gestión financiera y facturación.")
+  System(app, "Verith", "Aplicación de escritorio para gestión financiera y facturación.")
 }
 
   Boundary(b2, "Sistema Externos") {

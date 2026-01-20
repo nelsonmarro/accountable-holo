@@ -1,4 +1,4 @@
-// Package ui provides the Fyne-based user interface for the Accountable Holo application.
+// Package ui provides the Fyne-based user interface for the Verith application.
 package ui
 
 import (
@@ -12,9 +12,9 @@ import (
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
-	"github.com/nelsonmarro/accountable-holo/internal/domain"
-	"github.com/nelsonmarro/accountable-holo/internal/licensing"
-	"github.com/nelsonmarro/accountable-holo/internal/ui/componets"
+	"github.com/nelsonmarro/verith/internal/domain"
+	"github.com/nelsonmarro/verith/internal/licensing"
+	"github.com/nelsonmarro/verith/internal/ui/componets"
 )
 
 type Services struct {
@@ -112,7 +112,7 @@ func (ui *UI) Run(licMgr *licensing.LicenseManager) {
 }
 
 func (ui *UI) openLoginWindow() {
-	loginWindow := ui.app.NewWindow("Login - Accountable Holo")
+	loginWindow := ui.app.NewWindow("Login - Verith")
 	ui.mainWindow = loginWindow // Update the reference so dialogs work
 	loginWindow.SetContent(ui.makeLoginUI(loginWindow))
 	loginWindow.Resize(fyne.NewSize(400, 300))
@@ -121,7 +121,7 @@ func (ui *UI) openLoginWindow() {
 }
 
 func (ui *UI) openMainWindow() {
-	mainWindow := ui.app.NewWindow("Accountable Holo")
+	mainWindow := ui.app.NewWindow("Verith")
 	ui.mainWindow = mainWindow // Update the reference for dialogs
 
 	// Create the menu with logout logic

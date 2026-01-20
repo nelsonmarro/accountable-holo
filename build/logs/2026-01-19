@@ -378,7 +378,7 @@ goroutine 1 [running, locked to thread]:
 runtime/debug.Stack()
 	/usr/lib/go/src/runtime/debug/stack.go:26 +0x5e
 main.main.func1()
-	/workspace/github/nelsonmarro/accountable-holo/cmd/desktop_app/main.go:39 +0x48
+	/workspace/github/nelsonmarro/verith/cmd/desktop_app/main.go:39 +0x48
 panic({0x10e80c0?, 0x1cd9470?})
 	/usr/lib/go/src/runtime/panic.go:783 +0x132
 fyne.io/fyne/v2/internal/widget.(*overlayRenderer).MinSize(0x14622f8?)
@@ -411,10 +411,10 @@ fyne.io/fyne/v2/internal/driver/glfw.(*gLDriver).Run(0xc000379130)
 	/home/nelson/go/pkg/mod/fyne.io/fyne/v2@v2.6.1/internal/driver/glfw/driver.go:162 +0x72
 fyne.io/fyne/v2/app.(*fyneApp).Run(0xc0003791e0)
 	/home/nelson/go/pkg/mod/fyne.io/fyne/v2@v2.6.1/app/app.go:77 +0x102
-github.com/nelsonmarro/accountable-holo/internal/ui.(*UI).Run(0xc000194180, 0x0?)
-	/workspace/github/nelsonmarro/accountable-holo/internal/ui/fyne_ui.go:111 +0x2b
+github.com/nelsonmarro/verith/internal/ui.(*UI).Run(0xc000194180, 0x0?)
+	/workspace/github/nelsonmarro/verith/internal/ui/fyne_ui.go:111 +0x2b
 main.main()
-	/workspace/github/nelsonmarro/accountable-holo/cmd/desktop_app/main.go:160 +0x149d
+	/workspace/github/nelsonmarro/verith/cmd/desktop_app/main.go:160 +0x149d
 INFO	 2026/01/19 21:08:29 Application starting...
 INFO	 2026/01/19 21:08:29 Config loaded.
 INFO	 2026/01/19 21:08:29 Connecting to database...

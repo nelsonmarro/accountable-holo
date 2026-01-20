@@ -10,7 +10,7 @@ import (
 	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
-	"github.com/nelsonmarro/accountable-holo/internal/licensing"
+	"github.com/nelsonmarro/verith/internal/licensing"
 )
 
 // ShowLincenseWindow muestra la ventana de control de acceso de licencias
@@ -23,7 +23,7 @@ func (ui *UI) ShowLincenseWindow(mgr *licensing.LicenseManager, onProceed func()
 		return
 	}
 
-	window := ui.app.NewWindow("Licencia - Accountable Holo")
+	window := ui.app.NewWindow("Licencia - Verith")
 
 	// Titulo y mensaje según el estado
 	title := widget.NewLabelWithStyle("Gestión de Licencia", fyne.TextAlignCenter, fyne.TextStyle{Bold: true})
@@ -65,7 +65,7 @@ func (ui *UI) ShowLincenseWindow(mgr *licensing.LicenseManager, onProceed func()
 
 			fyne.Do(func() {
 				if success {
-					dialog.ShowInformation("¡Activación Exitosa!", "Gracias por tu compra. Disfruta de Accountable Holo.", window)
+					dialog.ShowInformation("¡Activación Exitosa!", "Gracias por tu compra. Disfruta de Verith.", window)
 					// Damos tiempo al usuario para leer el mensaje antes de cerrar
 					time.AfterFunc(2*time.Second, func() {
 						window.Close()

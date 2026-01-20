@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"fyne.io/fyne/v2/test"
-	"github.com/nelsonmarro/accountable-holo/internal/ui/mocks"
+	"github.com/nelsonmarro/verith/internal/ui/mocks"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -65,7 +65,7 @@ func TestUI_openLoginWindow(t *testing.T) {
 
 	// Assert
 	assert.NotNil(t, ui.mainWindow, "Login window should be initialized")
-	assert.Equal(t, "Login - Accountable Holo", ui.mainWindow.Title())
+	assert.Equal(t, "Login - Verith", ui.mainWindow.Title())
 }
 
 // TODO: Refator TestBuildMainUI

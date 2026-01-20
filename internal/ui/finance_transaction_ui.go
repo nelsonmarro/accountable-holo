@@ -15,10 +15,10 @@ import (
 	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
-	"github.com/nelsonmarro/accountable-holo/internal/application/helpers"
-	"github.com/nelsonmarro/accountable-holo/internal/domain"
-	"github.com/nelsonmarro/accountable-holo/internal/ui/componets"
-	"github.com/nelsonmarro/accountable-holo/internal/ui/componets/transaction"
+	"github.com/nelsonmarro/verith/internal/application/helpers"
+	"github.com/nelsonmarro/verith/internal/domain"
+	"github.com/nelsonmarro/verith/internal/ui/componets"
+	"github.com/nelsonmarro/verith/internal/ui/componets/transaction"
 )
 
 func (ui *UI) makeTransactionUI() fyne.CanvasObject {

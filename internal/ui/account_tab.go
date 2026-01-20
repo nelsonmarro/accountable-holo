@@ -11,7 +11,7 @@ import (
 	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
-	"github.com/nelsonmarro/accountable-holo/internal/ui/componets/account"
+	"github.com/nelsonmarro/verith/internal/ui/componets/account"
 )
 
 func (ui *UI) makeAccountTab() fyne.CanvasObject {

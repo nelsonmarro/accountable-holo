@@ -3,7 +3,7 @@ package service
 import (
 	"testing"
 
-	"github.com/nelsonmarro/accountable-holo/config"
+	"github.com/nelsonmarro/verith/config"
 	"github.com/stretchr/testify/assert"
 )
 

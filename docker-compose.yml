@@ -3,12 +3,12 @@ version: '3.8'
 services:
   db:
     image: postgres:16-alpine
-    container_name: accountable_holo_db
+    container_name: verith_db
     restart: always
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: password
-      POSTGRES_DB: accountableholodb
+      POSTGRES_DB: verithdb
     ports:
       - "5432:5432"
     volumes:

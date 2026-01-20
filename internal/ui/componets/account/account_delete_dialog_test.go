@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/nelsonmarro/accountable-holo/internal/ui/mocks"
+	"github.com/nelsonmarro/verith/internal/ui/mocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )

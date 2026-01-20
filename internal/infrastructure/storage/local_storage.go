@@ -19,7 +19,7 @@ func NewLocalStorageService(attachmentsDir string) (*LocalStorageService, error)
 		return nil, fmt.Errorf("failed to get user config dir: %w", err)
 	}
 
-	storagePath := filepath.Join(userConfigDir, "accountable-holo", attachmentsDir)
+	storagePath := filepath.Join(userConfigDir, "verith", attachmentsDir)
 	if err := os.MkdirAll(storagePath, 0o755); err != nil {
 		return nil, fmt.Errorf("failed to create storage directory: %w", err)
 	}

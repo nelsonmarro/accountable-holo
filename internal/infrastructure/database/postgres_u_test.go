@@ -3,7 +3,7 @@ package database
 import (
 	"testing"
 
-	"github.com/nelsonmarro/accountable-holo/config"
+	"github.com/nelsonmarro/verith/config"
 )
 
 // TestBuildDSN is a unit test for the DSN fomatting logic.

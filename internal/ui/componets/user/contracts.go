@@ -3,7 +3,7 @@ package user
 import (
 	"context"
 
-	"github.com/nelsonmarro/accountable-holo/internal/domain"
+	"github.com/nelsonmarro/verith/internal/domain"
 )
 
 // UserService defines the interface for user-related business logic.

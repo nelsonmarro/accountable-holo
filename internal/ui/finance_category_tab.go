@@ -10,8 +10,8 @@ import (
 	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
-	"github.com/nelsonmarro/accountable-holo/internal/ui/componets"
-	"github.com/nelsonmarro/accountable-holo/internal/ui/componets/category"
+	"github.com/nelsonmarro/verith/internal/ui/componets"
+	"github.com/nelsonmarro/verith/internal/ui/componets/category"
 )
 
 var pageSizeOpts = []string{"10", "20", "50", "100"}

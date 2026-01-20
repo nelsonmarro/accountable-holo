@@ -12,10 +12,10 @@ import (
 	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
-	"github.com/nelsonmarro/accountable-holo/internal/domain"
-	"github.com/nelsonmarro/accountable-holo/internal/ui/componets"
-	"github.com/nelsonmarro/accountable-holo/internal/ui/componets/category"
-	"github.com/nelsonmarro/accountable-holo/internal/ui/componets/taxpayer"
+	"github.com/nelsonmarro/verith/internal/domain"
+	"github.com/nelsonmarro/verith/internal/ui/componets"
+	"github.com/nelsonmarro/verith/internal/ui/componets/category"
+	"github.com/nelsonmarro/verith/internal/ui/componets/taxpayer"
 )
 
 // AddTransactionDialog holds the state and logic for the 'Add Transaction' dialog.

@@ -13,8 +13,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/nelsonmarro/accountable-holo/internal/domain"
-	"github.com/nelsonmarro/accountable-holo/internal/sri"
+	"github.com/nelsonmarro/verith/internal/domain"
+	"github.com/nelsonmarro/verith/internal/sri"
 	"github.com/nelsonmarro/go_ec_sri_invoice_signer/pkg/signer"
 )
 

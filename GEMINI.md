@@ -1,6 +1,6 @@
-# Accountable Holo
+# Verith
 
-**Accountable Holo** is a desktop application for small business financial management. It tracks income, expenses, and accounts, offering reporting and reconciliation features.
+**Verith** is a desktop application for small business financial management. It tracks income, expenses, and accounts, offering reporting and reconciliation features.
 
 ## Project Overview
 

@@ -4,7 +4,7 @@ import (
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/widget"
-	"github.com/nelsonmarro/accountable-holo/internal/application/uivalidators"
+	"github.com/nelsonmarro/verith/internal/application/uivalidators"
 )
 
 func TransactionForm(

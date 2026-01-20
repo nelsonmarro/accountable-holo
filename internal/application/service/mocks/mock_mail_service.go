@@ -1,7 +1,7 @@
 package mocks
 
 import (
-	"github.com/nelsonmarro/accountable-holo/internal/domain"
+	"github.com/nelsonmarro/verith/internal/domain"
 	"github.com/stretchr/testify/mock"
 )
 

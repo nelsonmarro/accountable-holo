@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/nelsonmarro/accountable-holo/internal/domain"
+	"github.com/nelsonmarro/verith/internal/domain"
 	"github.com/zalando/go-keyring"
 )
 
@@ -53,10 +53,10 @@ func (s *IssuerService) SaveIssuerConfig(ctx context.Context, issuer *domain.Iss
 	}
 
 	// 2. Guardar contraseña en Keyring del SO de forma segura
-	// Service: "AccountableHolo", User: RUC
+	// Service: "Verith", User: RUC
 	// Solo actualizamos si se proporcionó una nueva contraseña
 	if password != "" {
-		err := keyring.Set("AccountableHolo", issuer.RUC, password)
+		err := keyring.Set("Verith", issuer.RUC, password)
 		if err != nil {
 			return fmt.Errorf("error guardando contraseña en llavero seguro: %w", err)
 		}
@@ -71,5 +71,5 @@ func (s *IssuerService) GetIssuerConfig(ctx context.Context) (*domain.Issuer, er
 
 // GetSignaturePassword recupera la contraseña del certificado desde el llavero seguro.
 func (s *IssuerService) GetSignaturePassword(ruc string) (string, error) {
-	return keyring.Get("AccountableHolo", ruc)
+	return keyring.Get("Verith", ruc)
 }

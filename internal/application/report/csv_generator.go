@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/nelsonmarro/accountable-holo/internal/domain"
+	"github.com/nelsonmarro/verith/internal/domain"
 )
 
 type CSVReportGenerator struct{}

@@ -5,8 +5,8 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/nelsonmarro/accountable-holo/internal/application/service/mocks"
-	"github.com/nelsonmarro/accountable-holo/internal/domain"
+	"github.com/nelsonmarro/verith/internal/application/service/mocks"
+	"github.com/nelsonmarro/verith/internal/domain"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

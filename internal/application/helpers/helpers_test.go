@@ -3,7 +3,7 @@ package helpers
 import (
 	"testing"
 
-	"github.com/nelsonmarro/accountable-holo/internal/domain"
+	"github.com/nelsonmarro/verith/internal/domain"
 	"github.com/stretchr/testify/assert"
 )
 

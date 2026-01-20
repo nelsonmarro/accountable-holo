@@ -10,7 +10,7 @@ import (
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/test"
-	"github.com/nelsonmarro/accountable-holo/internal/ui/mocks"
+	"github.com/nelsonmarro/verith/internal/ui/mocks"
 )
 
 // TestMain is the entry point for all tests in this package.

@@ -37,15 +37,15 @@ goroutine 1 [running, locked to thread]:
 runtime/debug.Stack()
 	/usr/lib/go/src/runtime/debug/stack.go:26 +0x5e
 main.main.func1()
-	/workspace/github/nelsonmarro/accountable-holo/cmd/desktop_app/main.go:39 +0x48
+	/workspace/github/nelsonmarro/verith/cmd/desktop_app/main.go:39 +0x48
 panic({0x10c7c60?, 0x1ca14a0?})
 	/usr/lib/go/src/runtime/panic.go:783 +0x132
-github.com/nelsonmarro/accountable-holo/internal/ui/componets/transaction.(*VoidTransactionDialog).showSRIVoidDialog(0xc0039a4c30, 0xc003285180)
-	/workspace/github/nelsonmarro/accountable-holo/internal/ui/componets/transaction/transaction_void_dialog.go:90 +0x38
-github.com/nelsonmarro/accountable-holo/internal/ui/componets/transaction.(*VoidTransactionDialog).Show(0xc0039a4c30)
-	/workspace/github/nelsonmarro/accountable-holo/internal/ui/componets/transaction/transaction_void_dialog.go:66 +0x13d
-github.com/nelsonmarro/accountable-holo/internal/ui.(*UI).updateTransactionItem.func3()
-	/workspace/github/nelsonmarro/accountable-holo/internal/ui/finance_transaction_ui.go:397 +0x238
+github.com/nelsonmarro/verith/internal/ui/componets/transaction.(*VoidTransactionDialog).showSRIVoidDialog(0xc0039a4c30, 0xc003285180)
+	/workspace/github/nelsonmarro/verith/internal/ui/componets/transaction/transaction_void_dialog.go:90 +0x38
+github.com/nelsonmarro/verith/internal/ui/componets/transaction.(*VoidTransactionDialog).Show(0xc0039a4c30)
+	/workspace/github/nelsonmarro/verith/internal/ui/componets/transaction/transaction_void_dialog.go:66 +0x13d
+github.com/nelsonmarro/verith/internal/ui.(*UI).updateTransactionItem.func3()
+	/workspace/github/nelsonmarro/verith/internal/ui/finance_transaction_ui.go:397 +0x238
 fyne.io/fyne/v2/widget.(*Button).Tapped(0xc0003f3b90, 0x1221fe0?)
 	/home/nelson/go/pkg/mod/fyne.io/fyne/v2@v2.6.1/widget/button.go:188 +0x3b
 fyne.io/fyne/v2/internal/driver/glfw.(*window).mouseClickedHandleTapDoubleTap(0xc0004f1d40, {0x1433640, 0xc0003f3b90}, 0xc00313c820)
@@ -68,10 +68,10 @@ fyne.io/fyne/v2/internal/driver/glfw.(*gLDriver).Run(0xc000377130)
 	/home/nelson/go/pkg/mod/fyne.io/fyne/v2@v2.6.1/internal/driver/glfw/driver.go:162 +0x72
 fyne.io/fyne/v2/app.(*fyneApp).Run(0xc0003771e0)
 	/home/nelson/go/pkg/mod/fyne.io/fyne/v2@v2.6.1/app/app.go:77 +0x102
-github.com/nelsonmarro/accountable-holo/internal/ui.(*UI).Run(0xc000194180, 0x0?)
-	/workspace/github/nelsonmarro/accountable-holo/internal/ui/fyne_ui.go:111 +0x2b
+github.com/nelsonmarro/verith/internal/ui.(*UI).Run(0xc000194180, 0x0?)
+	/workspace/github/nelsonmarro/verith/internal/ui/fyne_ui.go:111 +0x2b
 main.main()
-	/workspace/github/nelsonmarro/accountable-holo/cmd/desktop_app/main.go:157 +0x1445
+	/workspace/github/nelsonmarro/verith/cmd/desktop_app/main.go:157 +0x1445
 INFO	 2026/01/17 12:59:54 Application starting...
 INFO	 2026/01/17 12:59:54 Config loaded.
 INFO	 2026/01/17 12:59:54 Connecting to database...

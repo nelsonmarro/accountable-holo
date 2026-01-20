@@ -9,17 +9,17 @@ import (
 	"time"
 
 	"fyne.io/fyne/v2/app"
-	"github.com/nelsonmarro/accountable-holo/config"
-	"github.com/nelsonmarro/accountable-holo/internal/application/report"
-	"github.com/nelsonmarro/accountable-holo/internal/application/service"
-	"github.com/nelsonmarro/accountable-holo/internal/infrastructure/database"
-	persistence "github.com/nelsonmarro/accountable-holo/internal/infrastructure/persistence"
-	"github.com/nelsonmarro/accountable-holo/internal/infrastructure/storage"
-	"github.com/nelsonmarro/accountable-holo/internal/licensing"
-	"github.com/nelsonmarro/accountable-holo/internal/logging"
-	"github.com/nelsonmarro/accountable-holo/internal/security"
-	"github.com/nelsonmarro/accountable-holo/internal/sri"
-	"github.com/nelsonmarro/accountable-holo/internal/ui"
+	"github.com/nelsonmarro/verith/config"
+	"github.com/nelsonmarro/verith/internal/application/report"
+	"github.com/nelsonmarro/verith/internal/application/service"
+	"github.com/nelsonmarro/verith/internal/infrastructure/database"
+	persistence "github.com/nelsonmarro/verith/internal/infrastructure/persistence"
+	"github.com/nelsonmarro/verith/internal/infrastructure/storage"
+	"github.com/nelsonmarro/verith/internal/licensing"
+	"github.com/nelsonmarro/verith/internal/logging"
+	"github.com/nelsonmarro/verith/internal/security"
+	"github.com/nelsonmarro/verith/internal/sri"
+	"github.com/nelsonmarro/verith/internal/ui"
 )
 
 // Esta variable la llenará el compilador (linker)
@@ -115,7 +115,7 @@ func main() {
 	sriService := service.NewSriService(txRepo, issuerRepo, receiptRepo, clientRepo, emissionRepo, sriClient, mailService, infoLogger)
 
 	// ---- UI Initialization ----
-	myApp := app.NewWithID("com.accountable.holo")
+	myApp := app.NewWithID("com.verith")
 	myApp.Settings().SetTheme(ui.NewAppTheme())
 
 	userUI := ui.NewUI(
@@ -151,9 +151,9 @@ func main() {
 
 	}
 	// 2. Definir la carpeta específica de nuestra app
-	// En Windows será: AppData/Roaming/AccountableHolo/license.json
-	// En Linux: .config/AccountableHolo/license.json
-	licensePath := filepath.Join(userConfigDir, "AccountableHolo")
+	// En Windows será: AppData/Roaming/Verith/license.json
+	// En Linux: .config/Verith/license.json
+	licensePath := filepath.Join(userConfigDir, "Verith")
 	licenseMgr := licensing.NewLicenseManager(licensePath)
 
 	infoLogger.Println("Starting UI Loop...")

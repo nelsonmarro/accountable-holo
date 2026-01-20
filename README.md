@@ -1,6 +1,6 @@
-# accountable-holo 📊
+# verith 📊
 
-Welcome to **Accountable Holo**! ✨ A sleek, modern desktop application designed to help small businesses manage their finances with ease. Keep track of income, expenses, and generate insightful reports to understand your financial health at a glance.
+Welcome to **Verith**! ✨ A sleek, modern desktop application designed to help small businesses manage their finances with ease. Keep track of income, expenses, and generate insightful reports to understand your financial health at a glance.
 
 Built with Go and the Fyne toolkit for a beautiful, cross-platform user experience.
 
@@ -15,7 +15,7 @@ Built with Go and the Fyne toolkit for a beautiful, cross-platform user experien
 
 ## 🚀 Getting Started
 
-Follow these steps to get Accountable Holo running on your local machine.
+Follow these steps to get Verith running on your local machine.
 
 ### 1. Prerequisites
 
@@ -27,8 +27,8 @@ Make sure you have the following installed:
 ### 2. Clone the Repository
 
 ```bash
-git clone https://github.com/nelsonmarro/accountable-holo.git
-cd accountable-holo
+git clone https://github.com/nelsonmarro/verith.git
+cd verith
 ```
 
 ### 3. Configuration
@@ -75,7 +75,7 @@ Once the configuration and database setup are complete, you can run the applicat
 make run-desktop-app
 ```
 
-And that's it! 🎉 The Accountable Holo application window should appear on your screen.
+And that's it! 🎉 The Verith application window should appear on your screen.
 
 ## 🛠️ Available Commands
 

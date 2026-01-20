@@ -10,8 +10,8 @@ import (
 	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
-	"github.com/nelsonmarro/accountable-holo/internal/ui/componets"
-	"github.com/nelsonmarro/accountable-holo/internal/ui/componets/taxpayer"
+	"github.com/nelsonmarro/verith/internal/ui/componets"
+	"github.com/nelsonmarro/verith/internal/ui/componets/taxpayer"
 )
 
 func (ui *UI) makeTaxPayerTab() fyne.CanvasObject {

@@ -6,7 +6,7 @@ import (
 	"fmt"
 
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/nelsonmarro/accountable-holo/config"
+	"github.com/nelsonmarro/verith/config"
 )
 
 // buildDSN creates the Data Source Name string from the config.

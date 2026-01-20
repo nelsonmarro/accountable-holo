@@ -2,8 +2,8 @@ package taxpayer
 
 import (
 	"fyne.io/fyne/v2/widget"
-	"github.com/nelsonmarro/accountable-holo/internal/application/uivalidators"
-	"github.com/nelsonmarro/accountable-holo/internal/domain"
+	"github.com/nelsonmarro/verith/internal/application/uivalidators"
+	"github.com/nelsonmarro/verith/internal/domain"
 )
 
 type TaxPayerForm struct {

@@ -8,9 +8,9 @@ import (
 	"os"
 	"time"
 
-	"github.com/nelsonmarro/accountable-holo/config"
-	"github.com/nelsonmarro/accountable-holo/internal/domain"
-	"github.com/nelsonmarro/accountable-holo/internal/sri"
+	"github.com/nelsonmarro/verith/config"
+	"github.com/nelsonmarro/verith/internal/domain"
+	"github.com/nelsonmarro/verith/internal/sri"
 	"github.com/resend/resend-go/v3"
 )
 

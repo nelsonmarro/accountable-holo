@@ -1,8 +1,8 @@
-Website = "https://github.com/nelsonmarro/accountable-holo"
+Website = "https://github.com/nelsonmarro/verith"
 
 [Details]
   Icon = "../../assets/accounts_tab_icon_dark.png"
-  Name = "Accountable Holo"
+  Name = "Verith"
   ID = "51af2ee4-c61c-4608-a3f1-d8576343af14"
   Version = "1.0.0"
   Build = 20

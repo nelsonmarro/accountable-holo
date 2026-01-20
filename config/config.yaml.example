@@ -1,5 +1,5 @@
 app:
-  name: "AccountableHolo"
+  name: "Verith"
   environment: "development"
   version: "1.0.0"
 
@@ -8,7 +8,7 @@ database:
   port: 5432
   user: "postgres"
   password: "password"
-  name: "accountableholodb"
+  name: "verithdb"
   sslmode: "disable"
   timezone: "America/Guayaquil"
 

@@ -1,6 +1,6 @@
 ```mermaid
 C4Container
-  title Diagrama de Contenedores - Accountable Holo
+  title Diagrama de Contenedores - Verith
 
   Person(admin, "Administrador", "Configura el sistema y gestiona usuarios.")
   Person(cashier, "Cajero", "Registra transacciones y emite facturas.")
@@ -8,7 +8,7 @@ C4Container
   System_Ext(sri, "SRI (Ecuador)", "Servicio de Rentas Internas para validar y autorizar comprobantes.")
   System_Ext(smtp, "Servidor de Email", "Servicio externo (ej. Gmail) para el envío de correos.")
 
-  System_Boundary(c1, "Sistema Accountable Holo") {
+  System_Boundary(c1, "Sistema Verith") {
 
       Container(gui, "Aplicación de Escritorio (GUI)", "Go & Fyne", "Interfaz gráfica con la que interactúan los usuarios.")
 

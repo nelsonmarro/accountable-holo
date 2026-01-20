@@ -57,7 +57,7 @@ func LoadConfig(path string) (*Config, error) {
 		viper.SetConfigName("config")
 		viper.SetConfigType("yaml")
 		viper.AutomaticEnv()
-		viper.SetEnvPrefix("HOLO")
+		viper.SetEnvPrefix("VERITH")
 
 		if err := viper.ReadInConfig(); err != nil {
 			configErr = fmt.Errorf("error reading config file: %w", err)

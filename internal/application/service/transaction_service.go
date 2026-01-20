@@ -7,8 +7,8 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/nelsonmarro/accountable-holo/internal/application/validator"
-	"github.com/nelsonmarro/accountable-holo/internal/domain"
+	"github.com/nelsonmarro/verith/internal/application/validator"
+	"github.com/nelsonmarro/verith/internal/domain"
 	"github.com/shopspring/decimal"
 )
 
