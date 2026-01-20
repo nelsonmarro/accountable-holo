@@ -65,7 +65,6 @@ func (p *Pagination) GetCurrentPage() int {
 
 // CreateRenderer is the entry point for Fyne to create the visual component.
 func (p *Pagination) CreateRenderer() fyne.WidgetRenderer {
-	p.ExtendBaseWidget(p)
 	// A reference to the widget is passed to the renderer.
 	r := &paginationRenderer{widget: p}
 

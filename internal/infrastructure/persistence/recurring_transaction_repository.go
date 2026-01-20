@@ -44,6 +44,33 @@ func (r *RecurringTransactionRepositoryImpl) Create(ctx context.Context, rt *dom
 	return nil
 }
 
+func (r *RecurringTransactionRepositoryImpl) GetAll(ctx context.Context) ([]domain.RecurringTransaction, error) {
+	query := `
+		SELECT id, description, amount, account_id, category_id, interval, start_date, next_run_date, is_active
+		FROM recurring_transactions
+		ORDER BY id ASC
+	`
+	rows, err := r.db.Query(ctx, query)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query active recurring transactions: %w", err)
+	}
+	defer rows.Close()
+
+	var results []domain.RecurringTransaction
+	for rows.Next() {
+		var rt domain.RecurringTransaction
+		err := rows.Scan(
+			&rt.ID, &rt.Description, &rt.Amount, &rt.AccountID, &rt.CategoryID,
+			&rt.Interval, &rt.StartDate, &rt.NextRunDate, &rt.IsActive,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan recurring transaction: %w", err)
+		}
+		results = append(results, rt)
+	}
+	return results, nil
+}
+
 func (r *RecurringTransactionRepositoryImpl) GetAllActive(ctx context.Context) ([]domain.RecurringTransaction, error) {
 	query := `
 		SELECT id, description, amount, account_id, category_id, interval, start_date, next_run_date, is_active
@@ -74,10 +101,19 @@ func (r *RecurringTransactionRepositoryImpl) GetAllActive(ctx context.Context) (
 func (r *RecurringTransactionRepositoryImpl) Update(ctx context.Context, rt *domain.RecurringTransaction) error {
 	query := `
 		UPDATE recurring_transactions
-		SET next_run_date = $1, updated_at = $2
-		WHERE id = $3
+		SET description = $1, amount = $2, interval = $3, start_date = $4, next_run_date = $5, is_active = $6, updated_at = $7
+		WHERE id = $8
 	`
-	_, err := r.db.Exec(ctx, query, rt.NextRunDate, time.Now(), rt.ID)
+	_, err := r.db.Exec(ctx, query,
+		rt.Description,
+		rt.Amount,
+		rt.Interval,
+		rt.StartDate,
+		rt.NextRunDate,
+		rt.IsActive,
+		time.Now(),
+		rt.ID,
+	)
 	if err != nil {
 		return fmt.Errorf("failed to update recurring transaction: %w", err)
 	}
@@ -85,7 +121,7 @@ func (r *RecurringTransactionRepositoryImpl) Update(ctx context.Context, rt *dom
 }
 
 func (r *RecurringTransactionRepositoryImpl) Delete(ctx context.Context, id int) error {
-	query := `UPDATE recurring_transactions SET is_active = FALSE, updated_at = $1 WHERE id = $2`
-	_, err := r.db.Exec(ctx, query, time.Now(), id)
+	query := `DELETE FROM recurring_transactions WHERE id = $1`
+	_, err := r.db.Exec(ctx, query, id)
 	return err
 }

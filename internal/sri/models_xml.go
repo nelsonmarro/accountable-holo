@@ -34,6 +34,16 @@ type Pago struct {
 	UnidadTiempo string `xml:"unidadTiempo,omitempty"`
 }
 
+// TotalConImpuestos estructura contenedora para impuestos globales
+type TotalConImpuestos struct {
+	TotalImpuesto []TotalImpuesto `xml:"totalImpuesto"`
+}
+
+// Detalles estructura contenedora para la lista de items
+type Detalles struct {
+	Detalle []Detalle `xml:"detalle"`
+}
+
 // InfoFactura contiene la información específica de una factura
 type InfoFactura struct {
 	FechaEmision                string `xml:"fechaEmision"`
@@ -47,9 +57,7 @@ type InfoFactura struct {
 	TotalSinImpuestos           string `xml:"totalSinImpuestos"`
 	TotalDescuento              string `xml:"totalDescuento"`
 
-	TotalConImpuestos struct {
-		TotalImpuesto []TotalImpuesto `xml:"totalImpuesto"`
-	} `xml:"totalConImpuestos"`
+	TotalConImpuestos TotalConImpuestos `xml:"totalConImpuestos"`
 
 	Propina      string `xml:"propina"`
 	ImporteTotal string `xml:"importeTotal"`
@@ -90,7 +98,6 @@ type Factura struct {
 
 	InfoTributaria InfoTributaria `xml:"infoTributaria"`
 	InfoFactura    InfoFactura    `xml:"infoFactura"`
-	Detalles       struct {
-		Detalle []Detalle `xml:"detalle"`
-	} `xml:"detalles"`
+	Detalles       Detalles       `xml:"detalles"`
 }
+

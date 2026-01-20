@@ -96,18 +96,20 @@ func TestVoidTransaction(t *testing.T) {
 		// Expect check first
 		mockTxRepo.On("GetTransactionByID", ctx, 10).Return(tx, nil).Once()
 		// Then void
-		mockTxRepo.On("VoidTransaction", ctx, 10, user).Return(nil).Once()
+		mockTxRepo.On("VoidTransaction", ctx, 10, user).Return(11, nil).Once()
 
-		err := svc.VoidTransaction(ctx, 10, user)
+		voidID, err := svc.VoidTransaction(ctx, 10, user)
 		assert.NoError(t, err)
+		assert.Equal(t, 11, voidID)
 	})
 
 	t.Run("Fail - Already Voided", func(t *testing.T) {
 		tx := &domain.Transaction{IsVoided: true}
 		mockTxRepo.On("GetTransactionByID", ctx, 10).Return(tx, nil).Once()
 
-		err := svc.VoidTransaction(ctx, 10, user)
+		voidID, err := svc.VoidTransaction(ctx, 10, user)
 		assert.Error(t, err)
+		assert.Equal(t, 0, voidID)
 		assert.Contains(t, err.Error(), "ya ha sido anulada")
 		mockTxRepo.AssertNotCalled(t, "VoidTransaction")
 	})
@@ -134,19 +136,29 @@ func TestReconcileAccount(t *testing.T) {
 		assert.True(t, recon.Difference.IsZero())
 	})
 
-	t.Run("Discrepancy", func(t *testing.T) {
-		systemBalance := decimal.NewFromFloat(100.00)
-		userBalance := decimal.NewFromFloat(80.00) // User has less money
+	t.Run("Complex Calculation", func(t *testing.T) {
+		// Start with 1000
+		startBalance := decimal.NewFromFloat(1000.00)
+		startDate := time.Now().Add(-48 * time.Hour)
 		endDate := time.Now()
-		startDate := endDate.Add(-24 * time.Hour)
 
-		mockTxRepo.On("GetBalanceAsOf", ctx, 1, startDate).Return(systemBalance, nil).Once()
-		mockTxRepo.On("FindAllTransactionsByAccount", ctx, 1, mock.Anything, mock.Anything).Return([]domain.Transaction{}, nil).Once()
+		// Transactions in period: +200, -50, +300 = +450 net
+		txs := []domain.Transaction{
+			{Amount: 200, Category: &domain.Category{Type: domain.Income}},
+			{Amount: 50, Category: &domain.Category{Type: domain.Outcome}},
+			{Amount: 300, Category: &domain.Category{Type: domain.Income}},
+		}
 
-		recon, err := svc.ReconcileAccount(ctx, 1, startDate, endDate, userBalance)
+		mockTxRepo.On("GetBalanceAsOf", ctx, 1, startDate).Return(startBalance, nil).Once()
+		mockTxRepo.On("FindAllTransactionsByAccount", ctx, 1, mock.Anything, mock.Anything).Return(txs, nil).Once()
+
+		// Calculated should be 1000 + 450 = 1450
+		// If user says they have 1400, discrepancy is -50
+		actualBalance := decimal.NewFromFloat(1400.00)
+		recon, err := svc.ReconcileAccount(ctx, 1, startDate, endDate, actualBalance)
 
 		assert.NoError(t, err)
-		// Difference = Actual - Calculated = 80 - 100 = -20
-		assert.Equal(t, "-20", recon.Difference.String())
+		assert.Equal(t, "1450", recon.CalculatedEndingBalance.String())
+		assert.Equal(t, "-50", recon.Difference.String())
 	})
 }

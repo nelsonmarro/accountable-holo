@@ -156,6 +156,8 @@ func (r *TransactionRepositoryImpl) FindTransactionsByAccount(
 		er.authorization_date,
 		er.ride_path,
 		er.created_at,
+		er.receipt_type,
+		er.email_sent,
         (
             SELECT initial_balance FROM accounts WHERE id = t.account_id
         ) + (
@@ -179,7 +181,7 @@ func (r *TransactionRepositoryImpl) FindTransactionsByAccount(
 		users AS uu ON t.updated_by_id = uu.id
   LEFT JOIN (
       SELECT DISTINCT ON (transaction_id)
-          transaction_id, sri_status, access_key, authorization_date, ride_path, created_at
+          transaction_id, sri_status, access_key, authorization_date, ride_path, created_at, receipt_type, email_sent
       FROM electronic_receipts
       ORDER BY transaction_id, created_at DESC
     ) AS er ON t.id = er.transaction_id
@@ -244,6 +246,8 @@ func (r *TransactionRepositoryImpl) FindAllTransactionsByAccount(
 		er.authorization_date,
 		er.ride_path,
 		er.created_at,
+		er.receipt_type,
+		er.email_sent,
         (
             SELECT initial_balance FROM accounts WHERE id = t.account_id
         ) + (
@@ -267,7 +271,7 @@ func (r *TransactionRepositoryImpl) FindAllTransactionsByAccount(
 		users AS uu ON t.updated_by_id = uu.id
   LEFT JOIN (
       SELECT DISTINCT ON (transaction_id)
-          transaction_id, sri_status, access_key, authorization_date, ride_path, created_at
+          transaction_id, sri_status, access_key, authorization_date, ride_path, created_at, receipt_type, email_sent
       FROM electronic_receipts
       ORDER BY transaction_id, created_at DESC
     ) AS er ON t.id = er.transaction_id
@@ -319,6 +323,8 @@ func (r *TransactionRepositoryImpl) FindAllTransactions(
 		er.authorization_date,
 		er.ride_path,
 		er.created_at,
+		er.receipt_type,
+		er.email_sent,
         (
             SELECT initial_balance FROM accounts WHERE id = t.account_id
         ) + (
@@ -342,7 +348,7 @@ func (r *TransactionRepositoryImpl) FindAllTransactions(
 				users AS uu ON t.updated_by_id = uu.id
   LEFT JOIN (
       SELECT DISTINCT ON (transaction_id)
-          transaction_id, sri_status, access_key, authorization_date, ride_path, created_at
+          transaction_id, sri_status, access_key, authorization_date, ride_path, created_at, receipt_type, email_sent
       FROM electronic_receipts
       ORDER BY transaction_id, created_at DESC
     ) AS er ON t.id = er.transaction_id
@@ -390,10 +396,10 @@ func (r *TransactionRepositoryImpl) VoidTransaction(
 	ctx context.Context,
 	transactionID int,
 	currentUser domain.User,
-) error {
+) (int, error) {
 	tx, err := r.db.Begin(ctx)
 	if err != nil {
-		return fmt.Errorf("failed to begin transaction: %w", err)
+		return 0, fmt.Errorf("failed to begin transaction: %w", err)
 	}
 	defer func() { _ = tx.Rollback(ctx) }()
 
@@ -440,13 +446,13 @@ func (r *TransactionRepositoryImpl) VoidTransaction(
 	)
 	if err != nil {
 		if err == pgx.ErrNoRows {
-			return fmt.Errorf("transaction with ID %d not found", transactionID)
+			return 0, fmt.Errorf("transaction with ID %d not found", transactionID)
 		}
-		return fmt.Errorf("failed to get original transaction: %w", err)
+		return 0, fmt.Errorf("failed to get original transaction: %w", err)
 	}
 
 	if originalTransaction.IsVoided || originalTransaction.VoidsTransactionID != nil {
-		return fmt.Errorf("no se puede anular una transacción previamente anulada o una transacción que anule a otra")
+		return 0, fmt.Errorf("no se puede anular una transacción previamente anulada o una transacción que anule a otra")
 	}
 
 	var opposingCatType domain.CategoryType
@@ -467,7 +473,7 @@ func (r *TransactionRepositoryImpl) VoidTransaction(
 	err = tx.QueryRow(ctx, adjustmentCatQuery, opposingCatType).
 		Scan(&opposingCatID, &opposingCatName)
 	if err != nil {
-		return fmt.Errorf("failed to get the opposing category: %w", err)
+		return 0, fmt.Errorf("failed to get the opposing category: %w", err)
 	}
 
 	newDescription := "Anulación de la transacción #" + originalTransaction.TransactionNumber + ":\n" + originalTransaction.Description
@@ -480,7 +486,7 @@ func (r *TransactionRepositoryImpl) VoidTransaction(
 		newTransactionDate,
 	)
 	if err != nil {
-		return fmt.Errorf("failed to generate void transaction number: %w", err)
+		return 0, fmt.Errorf("failed to generate void transaction number: %w", err)
 	}
 
 	voidTransactionQuery := `
@@ -512,7 +518,7 @@ func (r *TransactionRepositoryImpl) VoidTransaction(
 		originalTransaction.TaxPayerID,
 	).Scan(&voidTransactionID)
 	if err != nil {
-		return fmt.Errorf("failed to create void transaction: %w", err)
+		return 0, fmt.Errorf("failed to create void transaction: %w", err)
 	}
 
 	// Mark the original transaction as voided
@@ -522,7 +528,7 @@ func (r *TransactionRepositoryImpl) VoidTransaction(
 	`
 	_, err = tx.Exec(ctx, markAsVoidedQuery, voidTransactionID, currentUser.ID, originalTransaction.ID)
 	if err != nil {
-		return fmt.Errorf("error when voiding the transaction: %d\nerror: %w", originalTransaction.ID, err)
+		return 0, fmt.Errorf("error when voiding the transaction: %d\nerror: %w", originalTransaction.ID, err)
 	}
 
 	// Mark that original transaction voids the new transaction
@@ -533,16 +539,57 @@ func (r *TransactionRepositoryImpl) VoidTransaction(
 
 	_, err = tx.Exec(ctx, markVoidsQuery, originalTransaction.ID, voidTransactionID)
 	if err != nil {
-		return fmt.Errorf("error when assigning the voids_transaction_id on the new void transaction: %d\nerror: %w", voidTransactionID, err)
+		return 0, fmt.Errorf("error when assigning the voids_transaction_id on the new void transaction: %d\nerror: %w", voidTransactionID, err)
 	}
 
 	// Commit transactions
 	err = tx.Commit(ctx)
 	if err != nil {
-		return fmt.Errorf("failed to commit transaction: %w", err)
+		return 0, fmt.Errorf("failed to commit transaction: %w", err)
 	}
 
-	return nil
+	return voidTransactionID, nil
+}
+
+func (r *TransactionRepositoryImpl) RevertVoidTransaction(ctx context.Context, voidTransactionID int) error {
+	tx, err := r.db.Begin(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to begin transaction: %w", err)
+	}
+	defer func() { _ = tx.Rollback(ctx) }()
+
+	// 1. Get Original Transaction ID
+	var originalTxID int
+	err = tx.QueryRow(ctx, "SELECT voids_transaction_id FROM transactions WHERE id = $1", voidTransactionID).Scan(&originalTxID)
+	if err != nil {
+		return fmt.Errorf("failed to find original transaction from void id %d: %w", voidTransactionID, err)
+	}
+
+	// 2. Restore Original Transaction State
+	_, err = tx.Exec(ctx, "UPDATE transactions SET is_voided = FALSE, voided_by_transaction_id = NULL, updated_at = NOW() WHERE id = $1", originalTxID)
+	if err != nil {
+		return fmt.Errorf("failed to restore original transaction: %w", err)
+	}
+
+	// 3. Delete Electronic Receipts for the Void Transaction (NC)
+	_, err = tx.Exec(ctx, "DELETE FROM electronic_receipts WHERE transaction_id = $1", voidTransactionID)
+	if err != nil {
+		return fmt.Errorf("failed to delete electronic receipt for void transaction: %w", err)
+	}
+
+	// 4. Delete Transaction Items of Void Transaction
+	_, err = tx.Exec(ctx, "DELETE FROM transaction_items WHERE transaction_id = $1", voidTransactionID)
+	if err != nil {
+		return fmt.Errorf("failed to delete items for void transaction: %w", err)
+	}
+
+	// 5. Delete the Void Transaction itself
+	_, err = tx.Exec(ctx, "DELETE FROM transactions WHERE id = $1", voidTransactionID)
+	if err != nil {
+		return fmt.Errorf("failed to delete void transaction: %w", err)
+	}
+
+	return tx.Commit(ctx)
 }
 
 func (r *TransactionRepositoryImpl) GetTransactionByID(ctx context.Context, transactionID int) (*domain.Transaction, error) {
@@ -572,6 +619,8 @@ func (r *TransactionRepositoryImpl) GetTransactionByID(ctx context.Context, tran
 			er.authorization_date,
 			er.ride_path,
 			er.created_at,
+			er.receipt_type,
+			er.email_sent,
 			0.0 -- Running balance not needed for single ID usually
 		FROM transactions t
 	LEFT JOIN categories c ON t.category_id = c.id
@@ -579,7 +628,7 @@ func (r *TransactionRepositoryImpl) GetTransactionByID(ctx context.Context, tran
 	LEFT JOIN users uu ON t.updated_by_id = uu.id
   LEFT JOIN (
       SELECT DISTINCT ON (transaction_id)
-          transaction_id, sri_status, access_key, authorization_date, ride_path, created_at
+          transaction_id, sri_status, access_key, authorization_date, ride_path, created_at, receipt_type, email_sent
       FROM electronic_receipts
       ORDER BY transaction_id, created_at DESC
     ) AS er ON t.id = er.transaction_id
@@ -842,8 +891,9 @@ func (r *TransactionRepositoryImpl) scanTransactions(rows pgx.Rows) ([]domain.Tr
 		var voids sql.NullInt64
 
 		// SRI Fields
-		var sriStatus, accessKey, ridePath sql.NullString
+		var sriStatus, accessKey, ridePath, receiptType sql.NullString
 		var authDate, createdAt sql.NullTime
+		var emailSent sql.NullBool
 
 		err := rows.Scan(
 			&tx.ID,
@@ -865,11 +915,13 @@ func (r *TransactionRepositoryImpl) scanTransactions(rows pgx.Rows) ([]domain.Tr
 			&categoryType,
 			&createdBy,
 			&updatedBy,
-			&sriStatus, // New
-			&accessKey, // New
-			&authDate,  // New
-			&ridePath,  // New
-			&createdAt, // New
+			&sriStatus,   // New
+			&accessKey,   // New
+			&authDate,    // New
+			&ridePath,    // New
+			&createdAt,   // New
+			&receiptType, // New
+			&emailSent,   // New
 			&tx.RunningBalance,
 		)
 		if err != nil {
@@ -902,15 +954,19 @@ func (r *TransactionRepositoryImpl) scanTransactions(rows pgx.Rows) ([]domain.Tr
 		// Map SRI Receipt
 		if sriStatus.Valid {
 			tx.ElectronicReceipt = &domain.ElectronicReceipt{
-				SRIStatus: sriStatus.String,
-				AccessKey: accessKey.String,
-				RidePath:  ridePath.String,
+				SRIStatus:   sriStatus.String,
+				AccessKey:   accessKey.String,
+				RidePath:    ridePath.String,
+				ReceiptType: receiptType.String,
 			}
 			if authDate.Valid {
 				tx.ElectronicReceipt.AuthorizationDate = &authDate.Time
 			}
 			if createdAt.Valid {
 				tx.ElectronicReceipt.CreatedAt = createdAt.Time
+			}
+			if emailSent.Valid {
+				tx.ElectronicReceipt.EmailSent = emailSent.Bool
 			}
 		}
 

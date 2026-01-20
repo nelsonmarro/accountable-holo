@@ -57,8 +57,9 @@ type TransactionService interface {
 	) ([]domain.Transaction, error)
 
 	GetTransactionByID(ctx context.Context, id int) (*domain.Transaction, error)
-	GetItemsByTransactionID(ctx context.Context, id int) ([]domain.TransactionItem, error)
-	VoidTransaction(ctx context.Context, transactionID int, currentUser domain.User) error
+	GetItemsByTransactionID(ctx context.Context, transactionID int) ([]domain.TransactionItem, error)
+	VoidTransaction(ctx context.Context, transactionID int, currentUser domain.User) (int, error)
+	RevertVoidTransaction(ctx context.Context, voidTransactionID int) error
 	UpdateTransaction(ctx context.Context, tx *domain.Transaction, currentUser domain.User) error
 	ReconcileAccount(
 		ctx context.Context,
@@ -87,6 +88,9 @@ type ReportService interface {
 
 type RecurringTransactionService interface {
 	Create(ctx context.Context, rt *domain.RecurringTransaction) error
+	GetAll(ctx context.Context) ([]domain.RecurringTransaction, error)
+	Update(ctx context.Context, rt *domain.RecurringTransaction) error
+	Delete(ctx context.Context, id int) error
 	ProcessPendingRecurrences(ctx context.Context, systemUser domain.User) error
 }
 
@@ -94,13 +98,18 @@ type IssuerService interface {
 	SaveIssuerConfig(ctx context.Context, issuer *domain.Issuer, password string) error
 	GetIssuerConfig(ctx context.Context) (*domain.Issuer, error)
 	GetSignaturePassword(ruc string) (string, error)
+	GetEmissionPoints(ctx context.Context) ([]domain.EmissionPoint, error)
+	UpdateEmissionPoint(ctx context.Context, ep *domain.EmissionPoint) error
 }
 
 type SriService interface {
 	EmitirFactura(ctx context.Context, transactionID int, signaturePassword string) error
+	EmitirNotaCredito(ctx context.Context, voidTxID int, originalTxID int, motivo string, signaturePassword string) (string, error)
 	GenerateRide(ctx context.Context, transactionID int) (string, error)
 	SyncReceipt(ctx context.Context, receipt *domain.ElectronicReceipt) (string, error)
 	ProcessBackgroundSync(ctx context.Context) (int, error)
+	ResendEmail(ctx context.Context, transactionID int) error
+	GetPendingQueue(ctx context.Context) ([]domain.ElectronicReceipt, error)
 }
 
 type UserService interface {

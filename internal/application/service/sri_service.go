@@ -15,23 +15,32 @@ import (
 
 	"github.com/nelsonmarro/accountable-holo/internal/domain"
 	"github.com/nelsonmarro/accountable-holo/internal/sri"
+	"github.com/nelsonmarro/go_ec_sri_invoice_signer/pkg/signer"
 )
 
 // MailService define el contrato para enviar notificaciones, requerido por SriService.
 type MailService interface {
-	SendReceipt(issuer *domain.Issuer, recipientEmail string, xmlPath string, pdfPath string) error
+	SendReceipt(issuer *domain.Issuer, recipientEmail string, receipt *domain.ElectronicReceipt, xmlPath string, pdfPath string) error
+}
+
+// DocumentSigner define la interfaz para firmar documentos XML.
+// Esto permite mockear el proceso de firma en los tests.
+type DocumentSigner interface {
+	Sign(xmlBytes []byte, algo signer.HashAlgorithm) ([]byte, error)
+	SignCreditNote(xmlBytes []byte, algo signer.HashAlgorithm) ([]byte, error)
 }
 
 type SriService struct {
-	txRepo      TransactionRepository
-	issuerRepo  IssuerRepository
-	receiptRepo ElectronicReceiptRepository
-	clientRepo  TaxPayerRepository
-	epRepo      EmissionPointRepository // Added
-	sriClient   sri.Client
-	rideGen     *sri.RideGenerator
-	mailService MailService
-	logger      *log.Logger
+	txRepo        TransactionRepository
+	issuerRepo    IssuerRepository
+	receiptRepo   ElectronicReceiptRepository
+	clientRepo    TaxPayerRepository
+	epRepo        EmissionPointRepository // Added
+	sriClient     sri.Client
+	rideGen       *sri.RideGenerator
+	mailService   MailService
+	logger        *log.Logger
+	signerFactory func(path, password string) DocumentSigner
 }
 
 func NewSriService(
@@ -54,7 +63,15 @@ func NewSriService(
 		mailService: mailService,
 		rideGen:     sri.NewRideGenerator(),
 		logger:      logger,
+		signerFactory: func(path, password string) DocumentSigner {
+			return sri.NewDocumentSigner(path, password)
+		},
 	}
+}
+
+// SetSignerFactory permite inyectar un factory de firmantes para testing.
+func (s *SriService) SetSignerFactory(factory func(path, password string) DocumentSigner) {
+	s.signerFactory = factory
 }
 
 // GenerateRide genera el PDF (RIDE) de una factura ya emitida.
@@ -81,20 +98,17 @@ func (s *SriService) GenerateRide(ctx context.Context, transactionID int) (strin
 	if xmlContent == "" {
 		fullReceipt, err := s.receiptRepo.GetByAccessKey(ctx, tx.ElectronicReceipt.AccessKey)
 		if err != nil {
-			return "", fmt.Errorf("error recuperando contenido XML de la factura: %w", err)
+			return "", fmt.Errorf("error recuperando contenido XML: %w", err)
 		}
 		if fullReceipt == nil {
-			return "", errors.New("el recibo electrónico existe en la transacción pero no se encontró en la tabla de recibos")
+			return "", errors.New("el recibo electrónico no se encontró en la base de datos")
 		}
+		// CRITICAL FIX: Actualizar el objeto en memoria con los datos completos (incluyendo ReceiptType)
+		tx.ElectronicReceipt = fullReceipt
 		xmlContent = fullReceipt.XMLContent
 	}
 
-	var factura sri.Factura
-	if err := xml.Unmarshal([]byte(xmlContent), &factura); err != nil {
-		return "", fmt.Errorf("error al leer el XML guardado: %w", err)
-	}
-
-	// 4. Definir ruta de salida (temp o persistente)
+	// 4. Definir ruta de salida
 	tmpFile, err := os.CreateTemp("", fmt.Sprintf("ride-%s-*.pdf", tx.ElectronicReceipt.AccessKey))
 	if err != nil {
 		return "", fmt.Errorf("error creando archivo temporal: %w", err)
@@ -102,19 +116,30 @@ func (s *SriService) GenerateRide(ctx context.Context, transactionID int) (strin
 	outputPath := tmpFile.Name()
 	tmpFile.Close()
 
-	// 5. Generar PDF
-	// Usamos la fecha de autorización si existe, sino la actual
+	// 5. Generar según Tipo
 	authDate := time.Now()
 	if tx.ElectronicReceipt.AuthorizationDate != nil {
 		authDate = *tx.ElectronicReceipt.AuthorizationDate
 	}
 
-	err = s.rideGen.GenerateFacturaRide(&factura, outputPath, issuer.LogoPath, authDate, tx.ElectronicReceipt.AccessKey)
+	if tx.ElectronicReceipt.ReceiptType == "04" {
+		var nc sri.NotaCredito
+		if err := xml.Unmarshal([]byte(xmlContent), &nc); err != nil {
+			return "", fmt.Errorf("error al leer XML de Nota de Crédito: %w", err)
+		}
+		err = s.rideGen.GenerateNotaCreditoRide(&nc, outputPath, issuer.LogoPath, authDate, tx.ElectronicReceipt.AccessKey)
+	} else {
+		var factura sri.Factura
+		if err := xml.Unmarshal([]byte(xmlContent), &factura); err != nil {
+			return "", fmt.Errorf("error al leer XML de Factura: %w", err)
+		}
+		err = s.rideGen.GenerateFacturaRide(&factura, outputPath, issuer.LogoPath, authDate, tx.ElectronicReceipt.AccessKey)
+	}
+
 	if err != nil {
 		return "", fmt.Errorf("error generando PDF: %w", err)
 	}
 
-	// TODO: Guardar path en ElectronicReceipt si queremos cachearlo
 	return outputPath, nil
 }
 
@@ -169,8 +194,11 @@ func (s *SriService) SyncReceipt(ctx context.Context, receipt *domain.Electronic
 				receipt.AuthorizationDate = &authDate
 
 				// 3. Generar RIDE y enviar email
-
-				go s.finalizeAndEmail(context.Background(), receipt)
+				go func() {
+					if err := s.finalizeAndEmail(context.Background(), receipt); err != nil {
+						s.logger.Printf("Error procesando comprobante %s en segundo plano: %v", receipt.AccessKey, err)
+					}
+				}()
 
 				return "AUTORIZADO", nil
 
@@ -223,6 +251,11 @@ func (s *SriService) ProcessBackgroundSync(ctx context.Context) (int, error) {
 	return authorizedCount, nil
 }
 
+// GetPendingQueue returns the list of receipts currently being processed.
+func (s *SriService) GetPendingQueue(ctx context.Context) ([]domain.ElectronicReceipt, error) {
+	return s.receiptRepo.FindPendingReceipts(ctx)
+}
+
 // EmitirFactura orquesta el proceso completo de facturación electrónica.
 func (s *SriService) EmitirFactura(ctx context.Context, transactionID int, signaturePassword string) error {
 	s.logger.Printf("Iniciando emisión de factura para transacción ID: %d", transactionID)
@@ -231,6 +264,12 @@ func (s *SriService) EmitirFactura(ctx context.Context, transactionID int, signa
 	tx, err := s.txRepo.GetTransactionByID(ctx, transactionID)
 	if err != nil {
 		return fmt.Errorf("error obteniendo transacción: %w", err)
+	}
+
+	if tx.TaxPayerID != nil {
+		s.logger.Printf("DEBUG: EmitirFactura: Transacción %d tiene TaxPayerID: %d", transactionID, *tx.TaxPayerID)
+	} else {
+		s.logger.Printf("DEBUG: EmitirFactura: Transacción %d NO tiene TaxPayerID (es nil)", transactionID)
 	}
 
 	// VALIDACIÓN CRÍTICA: Solo se pueden facturar INGRESOS (Ventas)
@@ -295,12 +334,20 @@ func (s *SriService) EmitirFactura(ctx context.Context, transactionID int, signa
 		}
 		if ep == nil {
 			ep = &domain.EmissionPoint{IssuerID: issuer.ID, EstablishmentCode: issuer.EstablishmentCode, EmissionPointCode: issuer.EmissionPointCode, ReceiptType: "01", CurrentSequence: 0, IsActive: true}
-			_ = s.epRepo.Create(ctx, ep)
+			if err := s.epRepo.Create(ctx, ep); err != nil {
+				return fmt.Errorf("error al crear punto de emisión inicial: %w", err)
+			}
 		}
 		if err := s.epRepo.IncrementSequence(ctx, ep.ID); err != nil {
 			return err
 		}
-		secuencialSRI = fmt.Sprintf("%09d", ep.CurrentSequence+1)
+
+		// Refrescamos para obtener el secuencial actualizado por la base de datos (considerando InitialSequence)
+		ep, err = s.epRepo.GetByPoint(ctx, issuer.ID, issuer.EstablishmentCode, issuer.EmissionPointCode, "01")
+		if err != nil {
+			return fmt.Errorf("error al refrescar punto de emisión: %w", err)
+		}
+		secuencialSRI = fmt.Sprintf("%09d", ep.CurrentSequence)
 
 		// Generación de Código Numérico Seguro
 		// Usamos crypto/rand para evitar colisiones de claves en reinicios
@@ -312,12 +359,28 @@ func (s *SriService) EmitirFactura(ctx context.Context, transactionID int, signa
 	// 3. Generar y Firmar XML
 	// Recuperar cliente para mapeo (por si cambió isNewReceipt)
 	var clientMapping *domain.TaxPayer
-	if tx.TaxPayerID != nil {
+	if tx.TaxPayerID != nil && *tx.TaxPayerID != 0 {
 		clientMapping, _ = s.clientRepo.GetByID(ctx, *tx.TaxPayerID)
 	}
 	if clientMapping == nil {
 		clientMapping, _ = s.clientRepo.GetByIdentification(ctx, "9999999999999")
+		// Si aún así es nil, crearlo (caso extremo)
+		if clientMapping == nil {
+			clientMapping = &domain.TaxPayer{Identification: "9999999999999", Name: "CONSUMIDOR FINAL", Email: ""}
+			_ = s.clientRepo.Create(ctx, clientMapping)
+		}
 	}
+
+	// IMPORTANTE: Actualizar el ID del cliente en la transacción si no estaba o era inválido
+	if tx.TaxPayerID == nil || *tx.TaxPayerID != clientMapping.ID {
+		newID := clientMapping.ID
+		tx.TaxPayerID = &newID
+	}
+
+	if clientMapping == nil {
+		return fmt.Errorf("error crítico: no se pudo asignar un cliente a la factura")
+	}
+	s.logger.Printf("DEBUG: clientMapping ID antes de crear recibo: %d", clientMapping.ID)
 
 	facturaXML := s.mapTransactionToFactura(tx, issuer, clientMapping, claveAcceso, secuencialSRI)
 	xmlBytes, err := sri.MarshalFactura(facturaXML)
@@ -325,10 +388,10 @@ func (s *SriService) EmitirFactura(ctx context.Context, transactionID int, signa
 		return err
 	}
 
+	// 6. Firmar XML Real usando el paquete propio
 	s.logger.Printf("Firmando XML...")
-	signerObj := sri.NewDocumentSigner(issuer.SignaturePath, signaturePassword)
+	signerObj := s.signerFactory(issuer.SignaturePath, signaturePassword)
 	// Usamos la nueva opción de algoritmo.
-	// Prueba sri.SHA1 para máxima compatibilidad o sri.SHA256 para modernidad.
 	signedXML, err := signerObj.Sign(xmlBytes, sri.SHA1)
 	if err != nil {
 		s.logger.Printf("ERROR CRÍTICO AL FIRMAR: %v", err)
@@ -353,12 +416,14 @@ func (s *SriService) EmitirFactura(ctx context.Context, transactionID int, signa
 			AccessKey: claveAcceso, ReceiptType: "01", XMLContent: signedXMLStr,
 			SRIStatus: "PENDIENTE", Environment: issuer.Environment,
 		}
+		receipt.CreatedAt = time.Now() // Fix: Set timestamp explicitly for UI logic
 		if err := s.receiptRepo.Create(ctx, receipt); err != nil {
 			return err
 		}
 	} else {
 		_ = s.receiptRepo.UpdateXML(ctx, claveAcceso, signedXMLStr)
 		_ = s.receiptRepo.UpdateStatus(ctx, claveAcceso, "PENDIENTE", "Re-emisión corregida", nil)
+		_ = s.receiptRepo.UpdateTaxPayerID(ctx, claveAcceso, clientMapping.ID)
 	}
 
 	// 6. Enviar al SRI
@@ -409,8 +474,13 @@ func (s *SriService) EmitirFactura(ctx context.Context, transactionID int, signa
 			receipt := &domain.ElectronicReceipt{
 				TransactionID: tx.ID, AccessKey: claveAcceso, SRIStatus: "AUTORIZADO",
 				XMLContent: string(signedXML), AuthorizationDate: &authDate,
+				TaxPayerID: clientMapping.ID, // CORRECCIÓN: Asignar el ID del cliente
 			}
-			go s.finalizeAndEmail(context.Background(), receipt)
+			go func() {
+				if err := s.finalizeAndEmail(context.Background(), receipt); err != nil {
+					s.logger.Printf("Error procesando factura %s en segundo plano: %v", receipt.AccessKey, err)
+				}
+			}()
 		}
 	} else if err == nil {
 		// No hay error de red, pero tampoco autorizaciones -> SRI sigue procesando
@@ -422,13 +492,13 @@ func (s *SriService) EmitirFactura(ctx context.Context, transactionID int, signa
 }
 
 // finalizeAndEmail handles the post-authorization steps: RIDE generation and Email sending.
-func (s *SriService) finalizeAndEmail(ctx context.Context, receipt *domain.ElectronicReceipt) {
+func (s *SriService) finalizeAndEmail(ctx context.Context, receipt *domain.ElectronicReceipt) error {
 	// 1. Generate RIDE (PDF) in a temporary file
 	// We create a temp file pattern. The generator will write to this path.
 	tmpPDF, err := os.CreateTemp("", fmt.Sprintf("ride-%s-*.pdf", receipt.AccessKey))
 	if err != nil {
 		s.logger.Printf("Failed to create temp PDF file: %v", err)
-		return
+		return err
 	}
 	pdfPath := tmpPDF.Name()
 	if err := tmpPDF.Close(); err != nil {
@@ -442,53 +512,110 @@ func (s *SriService) finalizeAndEmail(ctx context.Context, receipt *domain.Elect
 	issuer, err := s.issuerRepo.GetActive(ctx)
 	if err != nil {
 		s.logger.Printf("Failed to get issuer for RIDE generation: %v", err)
-		return
+		return err
 	}
 
-	// 3. Parse XML stored in DB
-	var factura sri.Factura
-	if err := xml.Unmarshal([]byte(receipt.XMLContent), &factura); err != nil {
-		s.logger.Printf("Failed to unmarshal XML for RIDE generation: %v", err)
-		return
-	}
-
-	// 4. Generate the PDF content into the temp path
-	// Use Authorization Date if available, else Now
+	// 3. Parse XML and Generate RIDE based on type
 	authDate := time.Now()
 	if receipt.AuthorizationDate != nil {
 		authDate = *receipt.AuthorizationDate
 	}
 
-	err = s.rideGen.GenerateFacturaRide(&factura, pdfPath, issuer.LogoPath, authDate, receipt.AccessKey)
+	if receipt.ReceiptType == "04" {
+		var nc sri.NotaCredito
+		if err := xml.Unmarshal([]byte(receipt.XMLContent), &nc); err != nil {
+			s.logger.Printf("Failed to unmarshal NC XML for RIDE: %v", err)
+			return err
+		}
+		err = s.rideGen.GenerateNotaCreditoRide(&nc, pdfPath, issuer.LogoPath, authDate, receipt.AccessKey)
+	} else {
+		var factura sri.Factura
+		if err := xml.Unmarshal([]byte(receipt.XMLContent), &factura); err != nil {
+			s.logger.Printf("Failed to unmarshal Factura XML for RIDE: %v", err)
+			return err
+		}
+		err = s.rideGen.GenerateFacturaRide(&factura, pdfPath, issuer.LogoPath, authDate, receipt.AccessKey)
+	}
+
 	if err != nil {
 		s.logger.Printf("Failed to generate RIDE PDF for %s: %v", receipt.AccessKey, err)
-		return
+		return err
 	}
 
 	// 5. Get Recipient
-	client, _ := s.clientRepo.GetByID(ctx, receipt.TaxPayerID)
-	if client == nil || client.Email == "" {
-		s.logger.Printf("Skipping email for %s: no recipient email found", receipt.AccessKey)
-		return
+	client, err := s.clientRepo.GetByID(ctx, receipt.TaxPayerID)
+	if err != nil {
+		s.logger.Printf("DEBUG: finalizeAndEmail: error al buscar cliente ID %d: %v", receipt.TaxPayerID, err)
+	}
+
+	if client == nil {
+		s.logger.Printf("ERROR: Skipping email for %s: no recipient found in DB for ID %d", receipt.AccessKey, receipt.TaxPayerID)
+		return fmt.Errorf("recipient not found")
+	}
+
+	if client.Email == "" {
+		s.logger.Printf("WARNING: Skipping email for %s: client %s (ID %d) has no email address", receipt.AccessKey, client.Name, client.ID)
+		return fmt.Errorf("recipient has no email")
 	}
 
 	// 6. Write XML to temp file for attachment
 	tmpXML, err := os.CreateTemp("", "factura-*.xml")
 	if err != nil {
 		s.logger.Printf("Failed to create temp XML file: %v", err)
-		return
+		return err
 	}
 	defer func() { _ = os.Remove(tmpXML.Name()) }()
 	_, _ = tmpXML.WriteString(receipt.XMLContent)
 	_ = tmpXML.Close()
 
 	// 7. Send Email with both temp files
-	err = s.mailService.SendReceipt(issuer, client.Email, tmpXML.Name(), pdfPath)
+	err = s.mailService.SendReceipt(issuer, client.Email, receipt, tmpXML.Name(), pdfPath)
 	if err != nil {
 		s.logger.Printf("Failed to send email for %s: %v", receipt.AccessKey, err)
-	} else {
-		s.logger.Printf("Email successfully sent for %s to %s", receipt.AccessKey, client.Email)
+		return err
+	} 
+	
+	s.logger.Printf("Email successfully sent for %s to %s", receipt.AccessKey, client.Email)
+	// Update DB
+	_ = s.receiptRepo.UpdateEmailSent(ctx, receipt.AccessKey, true)
+	
+	return nil
+}
+
+// ResendEmail allows manually re-sending the receipt email for a transaction.
+func (s *SriService) ResendEmail(ctx context.Context, transactionID int) error {
+	tx, err := s.txRepo.GetTransactionByID(ctx, transactionID)
+	if err != nil {
+		return fmt.Errorf("error obteniendo transacción: %w", err)
 	}
+	if tx.ElectronicReceipt == nil {
+		return errors.New("esta transacción no tiene factura electrónica asociada")
+	}
+	
+	// If the receipt struct in tx is incomplete (missing XMLContent), fetch full receipt
+	if tx.ElectronicReceipt.XMLContent == "" {
+		fullReceipt, err := s.receiptRepo.GetByAccessKey(ctx, tx.ElectronicReceipt.AccessKey)
+		if err != nil {
+			return fmt.Errorf("error fetching full receipt: %w", err)
+		}
+		if fullReceipt == nil {
+			return errors.New("receipt not found in database")
+		}
+		tx.ElectronicReceipt = fullReceipt
+	}
+
+	if tx.ElectronicReceipt.SRIStatus != "AUTORIZADO" {
+		return errors.New("solo se pueden reenviar correos de comprobantes AUTORIZADOS")
+	}
+
+	// Trigger email sending asynchronously
+	go func() {
+		if err := s.finalizeAndEmail(context.Background(), tx.ElectronicReceipt); err != nil {
+			s.logger.Printf("Error al reenviar correo para %s: %v", tx.ElectronicReceipt.AccessKey, err)
+		}
+	}()
+	
+	return nil
 }
 
 func (s *SriService) mapTransactionToFactura(tx *domain.Transaction, issuer *domain.Issuer, client *domain.TaxPayer, claveAcceso string, secuencialSRI string) *sri.Factura {
@@ -621,4 +748,311 @@ func (s *SriService) mapTransactionToFactura(tx *domain.Transaction, issuer *dom
 	}
 
 	return f
+}
+
+// EmitirNotaCredito emite una Nota de Crédito electrónica para anular una factura.
+func (s *SriService) EmitirNotaCredito(ctx context.Context, voidTxID int, originalTxID int, motivo string, signaturePassword string) (string, error) {
+	s.logger.Printf("Iniciando emisión de Nota de Crédito para anular factura ID: %d", originalTxID)
+
+	// 1. Cargar Datos
+	// Necesitamos la transacción de anulación para vincular el recibo
+	voidTx, err := s.txRepo.GetTransactionByID(ctx, voidTxID)
+	if err != nil {
+		return "", fmt.Errorf("error cargando transacción de anulación: %w", err)
+	}
+	// Necesitamos la original para obtener los datos fiscales
+	originalTx, err := s.txRepo.GetTransactionByID(ctx, originalTxID)
+	if err != nil {
+		return "", fmt.Errorf("error cargando factura original: %w", err)
+	}
+
+	// Validar que la original tenga factura autorizada
+	if originalTx.ElectronicReceipt == nil || originalTx.ElectronicReceipt.SRIStatus != "AUTORIZADO" {
+		return "", fmt.Errorf("la transacción original no tiene una factura autorizada para anular")
+	}
+
+	// Cargar items de la original (la NC debe replicar los ítems para anular el valor total)
+	originalItems, err := s.txRepo.GetItemsByTransactionID(ctx, originalTxID)
+	if err != nil {
+		return "", fmt.Errorf("error cargando items originales: %w", err)
+	}
+	originalTx.Items = originalItems
+
+	issuer, err := s.issuerRepo.GetActive(ctx)
+	if err != nil {
+		return "", err
+	}
+
+	client, err := s.clientRepo.GetByID(ctx, *originalTx.TaxPayerID)
+	if err != nil || client == nil {
+		return "", fmt.Errorf("error obteniendo cliente de la factura original")
+	}
+
+	// 2. Generar Secuencial y Clave para la NC
+	// Usamos un nuevo punto de emisión o el mismo, pero con tipo '04' (Nota de Crédito)
+	ep, err := s.epRepo.GetByPoint(ctx, issuer.ID, issuer.EstablishmentCode, issuer.EmissionPointCode, "04")
+	if err != nil {
+		return "", err
+	}
+	if ep == nil {
+		ep = &domain.EmissionPoint{
+			IssuerID:          issuer.ID,
+			EstablishmentCode: issuer.EstablishmentCode,
+			EmissionPointCode: issuer.EmissionPointCode,
+			ReceiptType:       "04",
+			CurrentSequence:   0,
+			IsActive:          true,
+		}
+		if err := s.epRepo.Create(ctx, ep); err != nil {
+			return "", fmt.Errorf("error al crear punto de emisión para NC: %w", err)
+		}
+	}
+	if err := s.epRepo.IncrementSequence(ctx, ep.ID); err != nil {
+		return "", err
+	}
+
+	// Refrescamos para obtener el secuencial actualizado por la base de datos (considerando InitialSequence)
+	ep, err = s.epRepo.GetByPoint(ctx, issuer.ID, issuer.EstablishmentCode, issuer.EmissionPointCode, "04")
+	if err != nil {
+		return "", fmt.Errorf("error al refrescar punto de emisión: %w", err)
+	}
+	secuencialSRI := fmt.Sprintf("%09d", ep.CurrentSequence)
+
+	nSafe, _ := rand.Int(rand.Reader, big.NewInt(100000000))
+	numericCode := fmt.Sprintf("%08d", nSafe.Int64())
+
+	// Generar Clave (Tipo 04)
+	claveAcceso := sri.GenerateAccessKey(
+		time.Now(), // Fecha de emisión de la NC
+		"04",       // Tipo Nota de Crédito
+		issuer.RUC,
+		issuer.Environment,
+		issuer.EstablishmentCode,
+		issuer.EmissionPointCode,
+		secuencialSRI,
+		numericCode,
+		1,
+	)
+
+	// 3. Generar XML
+	ncXML := s.mapToNotaCredito(originalTx, issuer, client, claveAcceso, secuencialSRI, motivo)
+	xmlBytes, err := sri.MarshalNotaCredito(ncXML)
+	if err != nil {
+		return "", err
+	}
+
+	// 4. Firmar
+	signerObj := s.signerFactory(issuer.SignaturePath, signaturePassword)
+	// Usamos el método específico para Notas de Crédito que expusimos en el wrapper
+	signedXML, err := signerObj.SignCreditNote(xmlBytes, sri.SHA1)
+	if err != nil {
+		return "", fmt.Errorf("error firmando NC: %w", err)
+	}
+	signedXMLStr := strings.TrimSpace(string(signedXML))
+
+	// 5. Guardar Recibo (NC)
+	// Verificar si ya existe para actualizarlo en lugar de crear duplicados
+	var receipt *domain.ElectronicReceipt
+	
+	// Si la transacción ya tiene un recibo (aunque sea fallido), lo recuperamos para actualizar
+	if voidTx.ElectronicReceipt != nil {
+		receipt = voidTx.ElectronicReceipt
+		receipt.AccessKey = claveAcceso
+		receipt.XMLContent = signedXMLStr
+		receipt.SRIStatus = "PENDIENTE"
+		receipt.SRIMessage = ""
+		receipt.AuthorizationDate = nil
+		receipt.Environment = issuer.Environment
+		receipt.CreatedAt = time.Now()
+		receipt.ReceiptType = "04"
+		
+		if err := s.receiptRepo.Update(ctx, receipt); err != nil {
+			return "", fmt.Errorf("error actualizando recibo NC: %w", err)
+		}
+	} else {
+		receipt = &domain.ElectronicReceipt{
+			TransactionID: voidTx.ID,
+			IssuerID:      issuer.ID,
+			TaxPayerID:    client.ID,
+			AccessKey:     claveAcceso,
+			ReceiptType:   "04",
+			XMLContent:    signedXMLStr,
+			SRIStatus:     "PENDIENTE",
+			Environment:   issuer.Environment,
+		}
+		receipt.CreatedAt = time.Now()
+		if err := s.receiptRepo.Create(ctx, receipt); err != nil {
+			return "", err
+		}
+	}
+
+
+
+	// 6. Enviar
+	resp, err := s.sriClient.EnviarComprobante([]byte(signedXMLStr), issuer.Environment)
+	if err != nil {
+		_ = s.receiptRepo.UpdateStatus(ctx, claveAcceso, "ERROR_RED", err.Error(), nil)
+		return "", err
+	}
+
+	if resp.Estado == "DEVUELTA" {
+		msg := "Devuelta"
+		if len(resp.Comprobantes.Comprobante) > 0 && len(resp.Comprobantes.Comprobante[0].Mensajes.Mensaje) > 0 {
+			msg = resp.Comprobantes.Comprobante[0].Mensajes.Mensaje[0].Mensaje
+		}
+
+		// TOLERANCIA A FALLOS: Si ya está en procesamiento, NO es un error fatal.
+		if strings.Contains(strings.ToUpper(msg), "PROCESAMIENTO") {
+			s.logger.Printf("ADVERTENCIA SRI: Clave ya en procesamiento. Continuando flujo de consulta. Msg: %s", msg)
+			_ = s.receiptRepo.UpdateStatus(ctx, claveAcceso, "EN PROCESO", "SRI reporta procesamiento previo", nil)
+		} else {
+			_ = s.receiptRepo.UpdateStatus(ctx, claveAcceso, "DEVUELTA", msg, nil)
+			return "", fmt.Errorf("SRI devolvió la NC: %s", msg)
+		}
+	} else {
+		_ = s.receiptRepo.UpdateStatus(ctx, claveAcceso, "RECIBIDA", "Enviado a SRI", nil)
+	}
+
+	// 7. Autorizar
+	time.Sleep(3 * time.Second)
+	authResp, err := s.sriClient.AutorizarComprobante(claveAcceso, issuer.Environment)
+	if err == nil && len(authResp.Autorizaciones.Autorizacion) > 0 {
+		auth := authResp.Autorizaciones.Autorizacion[0]
+		authDate, _ := time.Parse(time.RFC3339, auth.FechaAutorizacion)
+
+		_ = s.receiptRepo.UpdateStatus(ctx, claveAcceso, auth.Estado, "Procesado", &authDate)
+
+		switch auth.Estado {
+		case "AUTORIZADO":
+			receipt.AuthorizationDate = &authDate
+			receipt.SRIStatus = "AUTORIZADO"
+			s.logger.Printf("Nota de Crédito Autorizada: %s", claveAcceso)
+
+			go func() {
+				if err := s.finalizeAndEmail(context.Background(), receipt); err != nil {
+					s.logger.Printf("Error procesando nota de crédito %s en segundo plano: %v", receipt.AccessKey, err)
+				}
+			}()
+			return claveAcceso, nil
+		case "EN PROCESO":
+			s.logger.Printf("Nota de Crédito EN PROCESO. Se verificará en background.")
+			return claveAcceso, nil
+		default:
+			msg := "Rechazado por SRI"
+			if len(auth.Mensajes.Mensaje) > 0 {
+				msg = auth.Mensajes.Mensaje[0].Mensaje
+			}
+			return "", fmt.Errorf("NC no autorizada (%s): %s", auth.Estado, msg)
+		}
+	}
+
+	s.logger.Printf("SRI no respondió autorización inmediata. Estado queda PENDIENTE/RECIBIDA. Clave: %s", claveAcceso)
+	return claveAcceso, nil
+}
+
+func (s *SriService) mapToNotaCredito(originalTx *domain.Transaction, issuer *domain.Issuer, client *domain.TaxPayer, claveAcceso, secuencial, motivo string) *sri.NotaCredito {
+	nc := &sri.NotaCredito{}
+
+	clean := func(str string) string {
+		str = strings.ReplaceAll(str, "\n", " ")
+		str = strings.ReplaceAll(str, "\r", "")
+		str = strings.ReplaceAll(str, "\t", " ")
+		return strings.TrimSpace(str)
+	}
+
+	nc.InfoTributaria = sri.InfoTributaria{
+		Ambiente:        strconv.Itoa(issuer.Environment),
+		TipoEmision:     "1",
+		RazonSocial:     clean(issuer.BusinessName),
+		NombreComercial: clean(issuer.TradeName),
+		Ruc:             issuer.RUC,
+		ClaveAcceso:     claveAcceso,
+		CodDoc:          "04", // Nota de Crédito
+		Estab:           issuer.EstablishmentCode,
+		PtoEmi:          issuer.EmissionPointCode,
+		Secuencial:      secuencial,
+		DirMatriz:       clean(issuer.MainAddress),
+	}
+
+	// Recuperar datos de la factura original para referencia
+	// Formato: 001-001-000000123
+	originalDocNum := "000-000-000000000"
+	if originalTx.ElectronicReceipt != nil {
+		key := originalTx.ElectronicReceipt.AccessKey
+		if len(key) == 49 {
+			originalDocNum = fmt.Sprintf("%s-%s-%s", key[24:27], key[27:30], key[30:39])
+		}
+	}
+
+	s15Str := fmt.Sprintf("%.2f", originalTx.Subtotal15)
+	s0Str := fmt.Sprintf("%.2f", originalTx.Subtotal0)
+	taxStr := fmt.Sprintf("%.2f", originalTx.TaxAmount)
+	totalStr := fmt.Sprintf("%.2f", originalTx.Amount)
+
+	nc.InfoNotaCredito = sri.InfoNotaCredito{
+		FechaEmision:                time.Now().Format("02/01/2006"),
+		DirEstablecimiento:          clean(issuer.EstablishmentAddress),
+		TipoIdentificacionComprador: client.IdentificationType,
+		RazonSocialComprador:        clean(client.Name),
+		IdentificacionComprador:     client.Identification,
+		ObligadoContabilidad:        map[bool]string{true: "SI", false: "NO"}[issuer.KeepAccounting],
+		CodDocModificado:            "01", // Factura
+		NumDocModificado:            originalDocNum,
+		FechaEmisionDocSustento:     originalTx.TransactionDate.Format("02/01/2006"),
+		TotalSinImpuestos:           fmt.Sprintf("%.2f", originalTx.Subtotal15+originalTx.Subtotal0),
+		ValorModificacion:           totalStr,
+		Moneda:                      "DOLAR",
+		Motivo:                      motivo,
+	}
+
+	// Impuestos Totales
+	if originalTx.Subtotal15 > 0 {
+		nc.InfoNotaCredito.TotalConImpuestos.TotalImpuesto = append(nc.InfoNotaCredito.TotalConImpuestos.TotalImpuesto, sri.TotalImpuesto{
+			Codigo:           "2",
+			CodigoPorcentaje: "4",
+			BaseImponible:    s15Str,
+			Valor:            taxStr,
+		})
+	}
+	if originalTx.Subtotal0 > 0 {
+		nc.InfoNotaCredito.TotalConImpuestos.TotalImpuesto = append(nc.InfoNotaCredito.TotalConImpuestos.TotalImpuesto, sri.TotalImpuesto{
+			Codigo:           "2",
+			CodigoPorcentaje: "0",
+			BaseImponible:    s0Str,
+			Valor:            "0.00",
+		})
+	}
+
+	// Detalles (Replicamos los originales)
+	for _, item := range originalTx.Items {
+		codPerc := "0"
+		tarifa := "0"
+		valTax := 0.0
+		if item.TaxRate == 4 {
+			codPerc = "4"
+			tarifa = "15"
+			valTax = item.Subtotal * 0.15
+		}
+
+		det := sri.DetalleNC{
+			CodigoInterno:          "NC-RET", // Usamos CodigoInterno según XSD de NC
+			Descripcion:            clean(item.Description),
+			Cantidad:               fmt.Sprintf("%.6f", item.Quantity),
+			PrecioUnitario:         fmt.Sprintf("%.6f", item.UnitPrice),
+			Descuento:              "0.00",
+			PrecioTotalSinImpuesto: fmt.Sprintf("%.2f", item.Subtotal),
+		}
+
+		impDet := sri.Impuesto{
+			Codigo:           "2",
+			CodigoPorcentaje: codPerc,
+			Tarifa:           tarifa,
+			BaseImponible:    fmt.Sprintf("%.2f", item.Subtotal),
+			Valor:            fmt.Sprintf("%.2f", valTax),
+		}
+		det.Impuestos.Impuesto = append(det.Impuestos.Impuesto, impDet)
+		nc.Detalles.Detalle = append(nc.Detalles.Detalle, det)
+	}
+
+	return nc
 }

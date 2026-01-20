@@ -79,8 +79,13 @@ func (m *MockTransactionRepository) GetItemsByTransactionID(ctx context.Context,
 	return args.Get(0).([]domain.TransactionItem), args.Error(1)
 }
 
-func (m *MockTransactionRepository) VoidTransaction(ctx context.Context, transactionID int, currentUser domain.User) error {
+func (m *MockTransactionRepository) VoidTransaction(ctx context.Context, transactionID int, currentUser domain.User) (int, error) {
 	args := m.Called(ctx, transactionID, currentUser)
+	return args.Int(0), args.Error(1)
+}
+
+func (m *MockTransactionRepository) RevertVoidTransaction(ctx context.Context, voidTransactionID int) error {
+	args := m.Called(ctx, voidTransactionID)
 	return args.Error(0)
 }
 

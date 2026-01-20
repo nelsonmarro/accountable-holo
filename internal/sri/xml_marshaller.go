@@ -31,3 +31,24 @@ func MarshalFactura(factura *Factura) ([]byte, error) {
 
 	return buffer.Bytes(), nil
 }
+
+// MarshalNotaCredito serializa la Nota de Crédito.
+func MarshalNotaCredito(nc *NotaCredito) ([]byte, error) {
+	if nc.ID != "comprobante" {
+		nc.ID = "comprobante"
+	}
+	if nc.Version == "" {
+		nc.Version = "1.0.0" // Versión estándar para NC
+	}
+
+	xmlBytes, err := xml.Marshal(nc)
+	if err != nil {
+		return nil, fmt.Errorf("error al serializar nota de crédito: %w", err)
+	}
+
+	var buffer bytes.Buffer
+	buffer.WriteString(`<?xml version="1.0" encoding="UTF-8"?>`)
+	buffer.Write(xmlBytes)
+
+	return buffer.Bytes(), nil
+}

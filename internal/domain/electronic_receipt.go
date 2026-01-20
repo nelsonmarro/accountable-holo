@@ -15,6 +15,12 @@ type ElectronicReceipt struct {
 	SRIMessage        string     `db:"sri_message"`
 	RidePath          string     `db:"ride_path"`
 	Environment       int        `db:"environment"`
+	EmailSent         bool       `db:"email_sent"`
+
+	// Campos enriquecidos para UI (Joins)
+	ClientName        string  `db:"-"`
+	TransactionNumber string  `db:"-"`
+	TotalAmount       float64 `db:"-"`
 
 	// Relaciones (opcionales para carga en memoria)
 	Issuer   *Issuer   `db:"-"`

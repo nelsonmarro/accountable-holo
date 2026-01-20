@@ -10,8 +10,8 @@ import (
 )
 
 // HandleLongRunningOperation shows a cancelable progress dialog and runs the provided function in a goroutine.
-// It handles error display and dialog dismissal automatically without using defer.
-func HandleLongRunningOperation(win fyne.Window, title string, operation func(ctx context.Context) error) {
+// onSuccess is an optional callback that runs on the UI thread after the operation completes successfully and the dialog closes.
+func HandleLongRunningOperation(win fyne.Window, title string, operation func(ctx context.Context) error, onSuccess func()) {
 	ctx, cancel := context.WithCancel(context.Background())
 
 	progressBar := widget.NewProgressBarInfinite()
@@ -40,6 +40,9 @@ func HandleLongRunningOperation(win fyne.Window, title string, operation func(ct
 		// Cerrar el diálogo de progreso explícitamente después de la operación
 		fyne.Do(func() {
 			progressDialog.Hide()
+			if err == nil && onSuccess != nil {
+				onSuccess()
+			}
 		})
 
 		if err != nil {

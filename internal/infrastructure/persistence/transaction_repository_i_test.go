@@ -548,6 +548,58 @@ func TestFindAllTransactions(t *testing.T) {
 	})
 }
 
+func TestGetBalanceAsOf(t *testing.T) {
+	// Setup Repositories
+	accountRepo := NewAccountRepository(dbPool)
+	categoryRepo := NewCategoryRepository(dbPool)
+	txRepo := NewTransactionRepository(dbPool)
+	ctx := context.Background()
+
+	truncateTables(t)
+	user := createTestUser(t, testUserRepo, "testuser_balance", domain.AdminRole)
+	
+	// Account with 1000 initial balance
+	acc := &domain.Account{
+		Name: "Balance Test Account", Number: "BAL-001", Type: domain.SavingAccount, InitialBalance: 1000.00,
+	}
+	err := accountRepo.CreateAccount(ctx, acc)
+	require.NoError(t, err)
+
+	catIncome := createTestCategory(t, categoryRepo, "Income", domain.Income)
+	catOutcome := createTestCategory(t, categoryRepo, "Outcome", domain.Outcome)
+
+	// Dates
+	t1 := time.Now().AddDate(0, 0, -10)
+	t2 := time.Now().AddDate(0, 0, -5)
+	t3 := time.Now().AddDate(0, 0, -2) // Point of interest
+	t4 := time.Now()
+
+	// Transactions
+	createTestTransaction(t, txRepo, acc.ID, catIncome.ID, 500.00, t1, user.ID)  // +500 (Total: 1500)
+	createTestTransaction(t, txRepo, acc.ID, catOutcome.ID, 200.00, t2, user.ID) // -200 (Total: 1300)
+	createTestTransaction(t, txRepo, acc.ID, catIncome.ID, 100.00, t4, user.ID)  // This is AFTER t3, should NOT be counted
+
+	t.Run("should return initial balance if no transactions before date", func(t *testing.T) {
+		balance, err := txRepo.GetBalanceAsOf(ctx, acc.ID, t1.Add(-1 * time.Hour))
+		require.NoError(t, err)
+		assert.Equal(t, "1000", balance.String())
+	})
+
+	t.Run("should calculate correctly including transactions up to t3", func(t *testing.T) {
+		// Expect: 1000 + 500 - 200 = 1300
+		balance, err := txRepo.GetBalanceAsOf(ctx, acc.ID, t3)
+		require.NoError(t, err)
+		assert.Equal(t, "1300", balance.String())
+	})
+
+	t.Run("should include all transactions if date is far in future", func(t *testing.T) {
+		// Expect: 1000 + 500 - 200 + 100 = 1400
+		balance, err := txRepo.GetBalanceAsOf(ctx, acc.ID, t4.AddDate(0, 0, 1))
+		require.NoError(t, err)
+		assert.Equal(t, "1400", balance.String())
+	})
+}
+
 func TestFindTransactionsWithMultipleReceipts(t *testing.T) {
 	// Setup Repositories
 	accountRepo := NewAccountRepository(dbPool)

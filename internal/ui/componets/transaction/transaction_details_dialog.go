@@ -2,6 +2,7 @@ package transaction
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"image/color"
 	"io"
@@ -51,7 +52,18 @@ func (d *DetailsDialog) Show() {
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()
 
-		// Cargar ítems desde la base de datos
+		// 1. Recargar Transacción Completa (CRÍTICO para tener ReceiptType y estado actualizado)
+		fullTx, err := d.txService.GetTransactionByID(ctx, d.tx.ID)
+		if err != nil {
+			fyne.Do(func() {
+				progress.Hide()
+				dialog.ShowError(fmt.Errorf("error cargando datos de transacción: %w", err), d.parent)
+			})
+			return
+		}
+		d.tx = fullTx // Actualizar referencia
+
+		// 2. Cargar ítems
 		items, err := d.txService.GetItemsByTransactionID(ctx, d.tx.ID)
 		if err != nil {
 			fyne.Do(func() {
@@ -66,7 +78,7 @@ func (d *DetailsDialog) Show() {
 			progress.Hide()
 			content := d.buildContent()
 			d.dialog = dialog.NewCustom("Comprobante de Transacción", "Cerrar", content, d.parent)
-			d.dialog.Resize(fyne.NewSize(650, 600))
+			d.dialog.Resize(fyne.NewSize(750, 650))
 			d.dialog.Show()
 		})
 	}()
@@ -80,10 +92,12 @@ func (d *DetailsDialog) buildContent() fyne.CanvasObject {
 		catTypeColor = color.NRGBA{R: 200, G: 0, B: 0, A: 255}
 	}
 
+	descriptionEntry := widget.NewMultiLineEntry()
+	descriptionEntry.SetText(d.tx.Description)
 	header := widget.NewForm(
 		widget.NewFormItem("Nro. Comprobante:", widget.NewLabelWithStyle(d.tx.TransactionNumber, fyne.TextAlignLeading, fyne.TextStyle{Bold: true})),
 		widget.NewFormItem("Fecha:", widget.NewLabel(d.tx.TransactionDate.Format("02/01/2006"))),
-
+		widget.NewFormItem("Descripción", descriptionEntry),
 		widget.NewFormItem("Categoría:", container.NewHBox(
 			widget.NewLabel(fmt.Sprintf("%s   -", d.tx.Category.Name)),
 			canvas.NewText(string(d.tx.Category.Type), catTypeColor),
@@ -116,18 +130,34 @@ func (d *DetailsDialog) buildContent() fyne.CanvasObject {
 
 	actions := container.NewHBox()
 
-	// Determine SRI Action Button (ONLY for INCOMES)
-	if d.tx.Category.Type == domain.Income {
+	// Determine SRI Action Button
+	// Show if:
+	// 1. It already has an electronic receipt (Invoice or Credit Note).
+	// 2. OR it is a pure Income (Sale) that is NOT a reversal/void of another transaction.
+	if (d.tx.Category.Type == domain.Income && d.tx.VoidsTransactionID == nil) || d.tx.ElectronicReceipt != nil {
 		isAuthorized := d.tx.ElectronicReceipt != nil && d.tx.ElectronicReceipt.SRIStatus == "AUTORIZADO"
 		hasReceipt := d.tx.ElectronicReceipt != nil
 
 		if isAuthorized {
-			statusLabel := widget.NewLabelWithStyle("✅ Factura Autorizada", fyne.TextAlignCenter, fyne.TextStyle{Bold: true})
+			statusLabel := widget.NewLabelWithStyle("✅ Comprobante Autorizado", fyne.TextAlignCenter, fyne.TextStyle{Bold: true})
 			rideBtn := widget.NewButtonWithIcon("Ver RIDE (PDF)", theme.DocumentIcon(), func() {
 				d.generateAndShowRide()
 			})
 			actions.Add(statusLabel)
 			actions.Add(rideBtn)
+
+			// Email Status logic
+			if d.tx.ElectronicReceipt.EmailSent {
+				emailLabel := widget.NewLabelWithStyle("✉️ Email Enviado", fyne.TextAlignCenter, fyne.TextStyle{Italic: true})
+				actions.Add(emailLabel)
+			} else {
+				resendBtn := widget.NewButtonWithIcon("Reenviar Email", theme.MailSendIcon(), func() {
+					d.resendEmail()
+				})
+				resendBtn.Importance = widget.WarningImportance
+				actions.Add(resendBtn)
+			}
+
 		} else if hasReceipt {
 			status := d.tx.ElectronicReceipt.SRIStatus
 			statusText := fmt.Sprintf("Estado SRI: %s", status)
@@ -158,12 +188,14 @@ func (d *DetailsDialog) buildContent() fyne.CanvasObject {
 				actions.Add(reEmitBtn)
 			}
 		} else {
-			// New emission
-			emitBtn := widget.NewButtonWithIcon("Emitir Factura Electrónica", theme.ConfirmIcon(), func() {
-				d.promptPasswordAndEmit()
-			})
-			emitBtn.Importance = widget.HighImportance
-			actions.Add(emitBtn)
+			// New emission (Only for Income, don't allow creating receipt for arbitrary outcomes unless via void process)
+			if d.tx.Category.Type == domain.Income {
+				emitBtn := widget.NewButtonWithIcon("Emitir Factura Electrónica", theme.ConfirmIcon(), func() {
+					d.promptPasswordAndEmit()
+				})
+				emitBtn.Importance = widget.HighImportance
+				actions.Add(emitBtn)
+			}
 		}
 	}
 
@@ -194,33 +226,68 @@ func (d *DetailsDialog) buildContent() fyne.CanvasObject {
 
 func (d *DetailsDialog) promptPasswordAndEmit() {
 	passEntry := widget.NewPasswordEntry()
+	motivoEntry := widget.NewEntry()
+	motivoEntry.SetPlaceHolder("Razón de la corrección")
+
 	items := []*widget.FormItem{
 		widget.NewFormItem("Contraseña Firma:", passEntry),
+	}
+
+	// Si es Nota de Crédito (Tipo 04), pedir motivo
+	// Es NC si el recibo dice "04" O si la transacción anula a otra (VoidsTransactionID != nil)
+	isNC := (d.tx.ElectronicReceipt != nil && d.tx.ElectronicReceipt.ReceiptType == "04") || d.tx.VoidsTransactionID != nil
+	if isNC {
+		items = append(items, widget.NewFormItem("Motivo (NC):", motivoEntry))
 	}
 
 	formDlg := dialog.NewForm("Seguridad", "Emitir", "Cancelar", items, func(confirm bool) {
 		if !confirm {
 			return
 		}
-		d.emitFactura(passEntry.Text)
+
+		motivo := "Corrección"
+		if isNC && motivoEntry.Text != "" {
+			motivo = motivoEntry.Text
+		}
+		d.emitDocument(passEntry.Text, motivo)
 	}, d.parent)
 
 	formDlg.Resize(fyne.NewSize(450, 200))
 	formDlg.Show()
 }
 
-func (d *DetailsDialog) emitFactura(password string) {
-	componets.HandleLongRunningOperation(d.parent, "Emitiendo Factura al SRI...", func(ctx context.Context) error {
-		err := d.sriService.EmitirFactura(ctx, d.tx.ID, password)
+func (d *DetailsDialog) emitDocument(password string, motivo string) {
+	msg := "Emitiendo Factura al SRI..."
+	// Es NC si el recibo dice "04" O si la transacción anula a otra
+	isNC := (d.tx.ElectronicReceipt != nil && d.tx.ElectronicReceipt.ReceiptType == "04") || d.tx.VoidsTransactionID != nil
+
+	if isNC {
+		msg = "Emitiendo Nota de Crédito al SRI..."
+	}
+
+	componets.HandleLongRunningOperation(d.parent, msg, func(ctx context.Context) error {
+		var err error
+
+		// Decidir qué emitir
+		if isNC {
+			// Es Nota de Crédito
+			if d.tx.VoidsTransactionID == nil {
+				return errors.New("error de datos: esta transacción de anulación no está vinculada a una factura original")
+			}
+			_, err = d.sriService.EmitirNotaCredito(ctx, d.tx.ID, *d.tx.VoidsTransactionID, motivo, password)
+		} else {
+			// Es Factura (Por defecto o Tipo 01)
+			err = d.sriService.EmitirFactura(ctx, d.tx.ID, password)
+		}
 		if err != nil {
-			return err // El diálogo de error lo maneja HandleLongRunningOperation
+			return err
 		}
 
 		// Éxito técnico (se envió). Ahora verificamos el estado de negocio.
 		// Recargamos la transacción para ver cómo quedó.
 		updatedTx, errFetch := d.txService.GetTransactionByID(ctx, d.tx.ID)
 		if errFetch != nil {
-			return fmt.Errorf("factura enviada, pero error al recargar estado: %w", errFetch)
+			return fmt.Errorf("documento enviado, pero error al recargar estado: %w", errFetch)
 		}
 
 		fyne.Do(func() {
@@ -235,7 +302,7 @@ func (d *DetailsDialog) emitFactura(password string) {
 			}
 		})
 		return nil
-	})
+	}, nil)
 }
 
 func (d *DetailsDialog) showSRIFeedback(tx *domain.Transaction) {
@@ -284,7 +351,7 @@ func (d *DetailsDialog) generateAndShowRide() {
 
 		// 1. Generar en TEMP
 		tempPath, err := d.sriService.GenerateRide(ctx, d.tx.ID)
-		
+
 		fyne.Do(func() {
 			progress.Hide()
 			if err != nil {
@@ -327,6 +394,24 @@ func (d *DetailsDialog) generateAndShowRide() {
 	}()
 }
 
+func (d *DetailsDialog) resendEmail() {
+	componets.HandleLongRunningOperation(d.parent, "Reenviando Email...", func(ctx context.Context) error {
+		return d.sriService.ResendEmail(ctx, d.tx.ID)
+	}, func() {
+		dialog.ShowInformation("Éxito", "El correo ha sido enviado exitosamente.", d.parent)
+
+		// Forzar cierre del diálogo para evitar re-envíos y refrescar estado al reabrir
+		if d.dialog != nil {
+			d.dialog.Hide()
+		}
+
+		// Recargar estado para actualizar lista padre
+		if d.onChanged != nil {
+			d.onChanged()
+		}
+	})
+}
+
 func (d *DetailsDialog) retryEmission() {
 	componets.HandleLongRunningOperation(d.parent, "Sincronizando con SRI...", func(ctx context.Context) error {
 		_, err := d.sriService.SyncReceipt(ctx, d.tx.ElectronicReceipt)
@@ -352,5 +437,5 @@ func (d *DetailsDialog) retryEmission() {
 			}
 		})
 		return nil
-	})
+	}, nil)
 }

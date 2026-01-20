@@ -20,13 +20,22 @@ func NewEmissionPointRepository(db *pgxpool.Pool) *EmissionPointRepositoryImpl {
 
 func (r *EmissionPointRepositoryImpl) GetByPoint(ctx context.Context, issuerID int, estCode, pointCode, receiptType string) (*domain.EmissionPoint, error) {
 	query := `
-		SELECT id, issuer_id, establishment_code, emission_point_code, receipt_type, current_sequence, is_active, created_at, updated_at
+		SELECT id, issuer_id, establishment_code, emission_point_code, receipt_type, current_sequence, initial_sequence, is_active, created_at, updated_at
 		FROM emission_points
 		WHERE issuer_id = $1 AND establishment_code = $2 AND emission_point_code = $3 AND receipt_type = $4
 	`
 	var ep domain.EmissionPoint
 	err := r.db.QueryRow(ctx, query, issuerID, estCode, pointCode, receiptType).Scan(
-		&ep.ID, &ep.IssuerID, &ep.EstablishmentCode, &ep.EmissionPointCode, &ep.ReceiptType, &ep.CurrentSequence, &ep.IsActive, &ep.CreatedAt, &ep.UpdatedAt,
+		&ep.ID,
+		&ep.IssuerID,
+		&ep.EstablishmentCode,
+		&ep.EmissionPointCode,
+		&ep.ReceiptType,
+		&ep.CurrentSequence,
+		&ep.InitialSequence,
+		&ep.IsActive,
+		&ep.CreatedAt,
+		&ep.UpdatedAt,
 	)
 	if err != nil {
 		if err == pgx.ErrNoRows {
@@ -38,18 +47,72 @@ func (r *EmissionPointRepositoryImpl) GetByPoint(ctx context.Context, issuerID i
 }
 
 func (r *EmissionPointRepositoryImpl) Create(ctx context.Context, ep *domain.EmissionPoint) error {
+	// Si es la primera vez y hay un secuencial inicial, el CurrentSequence empieza ahi menos 1
+	// para que el primer IncrementSequence lo deje en el valor exacto.
+	if ep.CurrentSequence == 0 && ep.InitialSequence > 0 {
+		ep.CurrentSequence = ep.InitialSequence - 1
+	}
+
 	query := `
-		INSERT INTO emission_points (issuer_id, establishment_code, emission_point_code, receipt_type, current_sequence, is_active, created_at, updated_at)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+		INSERT INTO emission_points (issuer_id, establishment_code, emission_point_code, receipt_type, current_sequence, initial_sequence, is_active, created_at, updated_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
 		RETURNING id, created_at, updated_at
 	`
 	now := time.Now()
 	err := r.db.QueryRow(ctx, query,
-		ep.IssuerID, ep.EstablishmentCode, ep.EmissionPointCode, ep.ReceiptType, ep.CurrentSequence, ep.IsActive, now, now,
+		ep.IssuerID,
+		ep.EstablishmentCode,
+		ep.EmissionPointCode,
+		ep.ReceiptType,
+		ep.CurrentSequence,
+		ep.InitialSequence,
+		ep.IsActive,
+		now,
+		now,
 	).Scan(&ep.ID, &ep.CreatedAt, &ep.UpdatedAt)
-
 	if err != nil {
 		return fmt.Errorf("failed to create emission point: %w", err)
+	}
+	return nil
+}
+
+func (r *EmissionPointRepositoryImpl) GetAllByIssuer(ctx context.Context, issuerID int) ([]domain.EmissionPoint, error) {
+	query := `
+		SELECT id, issuer_id, establishment_code, emission_point_code, receipt_type, current_sequence, initial_sequence, is_active, created_at, updated_at
+		FROM emission_points
+		WHERE issuer_id = $1
+		ORDER BY receipt_type ASC, emission_point_code ASC
+	`
+	rows, err := r.db.Query(ctx, query, issuerID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query emission points: %w", err)
+	}
+	defer rows.Close()
+
+	var results []domain.EmissionPoint
+	for rows.Next() {
+		var ep domain.EmissionPoint
+		err := rows.Scan(
+			&ep.ID, &ep.IssuerID, &ep.EstablishmentCode, &ep.EmissionPointCode, &ep.ReceiptType,
+			&ep.CurrentSequence, &ep.InitialSequence, &ep.IsActive, &ep.CreatedAt, &ep.UpdatedAt,
+		)
+		if err != nil {
+			return nil, err
+		}
+		results = append(results, ep)
+	}
+	return results, nil
+}
+
+func (r *EmissionPointRepositoryImpl) Update(ctx context.Context, ep *domain.EmissionPoint) error {
+	query := `
+		UPDATE emission_points
+		SET current_sequence = $1, initial_sequence = $2, is_active = $3, updated_at = $4
+		WHERE id = $5
+	`
+	_, err := r.db.Exec(ctx, query, ep.CurrentSequence, ep.InitialSequence, ep.IsActive, time.Now(), ep.ID)
+	if err != nil {
+		return fmt.Errorf("failed to update emission point: %w", err)
 	}
 	return nil
 }

@@ -16,7 +16,8 @@ func TestSaveIssuerConfig_Integration(t *testing.T) {
 	keyring.MockInit()
 
 	mockRepo := new(mocks.MockIssuerRepository)
-	service := NewIssuerService(mockRepo)
+	mockEpRepo := new(mocks.MockEmissionPointRepository)
+	service := NewIssuerService(mockRepo, mockEpRepo)
 	ctx := context.Background()
 
 	t.Run("Create New Issuer Config", func(t *testing.T) {

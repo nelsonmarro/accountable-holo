@@ -10,6 +10,13 @@ import (
 
 type RecurringTransactionService interface {
 	Create(ctx context.Context, rt *domain.RecurringTransaction) error
+	GetAll(ctx context.Context) ([]domain.RecurringTransaction, error)
+	Update(ctx context.Context, rt *domain.RecurringTransaction) error
+	Delete(ctx context.Context, id int) error
+}
+
+type AccountService interface {
+	GetAllAccounts(ctx context.Context) ([]domain.Account, error)
 }
 
 // TransactionService defines the interface for transaction-related business logic.
@@ -18,7 +25,8 @@ type TransactionService interface {
 	GetItemsByTransactionID(ctx context.Context, transactionID int) ([]domain.TransactionItem, error)
 	CreateTransaction(ctx context.Context, transaction *domain.Transaction, currentUser domain.User) error
 	UpdateTransaction(ctx context.Context, tx *domain.Transaction, currentUser domain.User) error
-	VoidTransaction(ctx context.Context, id int, currentUser domain.User) error
+	VoidTransaction(ctx context.Context, transactionID int, currentUser domain.User) (int, error)
+	RevertVoidTransaction(ctx context.Context, voidTransactionID int) error
 	ReconcileAccount(
 		ctx context.Context,
 		accountID int,
@@ -58,9 +66,12 @@ type ReportService interface {
 
 type SriService interface {
 	EmitirFactura(ctx context.Context, transactionID int, signaturePassword string) error
+	EmitirNotaCredito(ctx context.Context, voidTxID int, originalTxID int, motivo string, signaturePassword string) (string, error)
 	GenerateRide(ctx context.Context, transactionID int) (string, error)
 	SyncReceipt(ctx context.Context, receipt *domain.ElectronicReceipt) (string, error)
 	ProcessBackgroundSync(ctx context.Context) (int, error)
+	ResendEmail(ctx context.Context, transactionID int) error
+	GetPendingQueue(ctx context.Context) ([]domain.ElectronicReceipt, error)
 }
 
 type TaxPayerService interface {

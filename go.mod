@@ -9,6 +9,7 @@ require (
 	github.com/johnfercher/maroto/v2 v2.3.1
 	github.com/nelsonmarro/go_ec_sri_invoice_signer v1.0.0
 	github.com/ory/dockertest/v3 v3.12.0
+	github.com/resend/resend-go/v3 v3.0.0
 	github.com/shopspring/decimal v1.2.0
 	github.com/spf13/viper v1.20.1
 	github.com/stretchr/testify v1.10.0

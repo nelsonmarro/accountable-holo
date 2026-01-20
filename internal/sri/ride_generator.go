@@ -2,6 +2,7 @@ package sri
 
 import (
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/johnfercher/maroto/v2"
@@ -147,11 +148,15 @@ func (g *RideGenerator) buildDetailsRows(f *Factura) []core.Row {
 	))
 
 	for _, det := range f.Detalles.Detalle {
+		// Formatear cantidad y precio a 2 decimales para visualización limpia
+		cant, _ := strconv.ParseFloat(det.Cantidad, 64)
+		pUnit, _ := strconv.ParseFloat(det.PrecioUnitario, 64)
+
 		rows = append(rows, row.New(6).WithStyle(&props.Cell{BorderType: border.Full, BorderThickness: 0.1}).Add(
 			col.New(2).Add(text.New(det.CodigoPrincipal, props.Text{Size: 7, Align: align.Left, Top: 1, Left: 2})),
-			col.New(1).Add(text.New(det.Cantidad, props.Text{Size: 7, Align: align.Center, Top: 1})),
+			col.New(1).Add(text.New(fmt.Sprintf("%.2f", cant), props.Text{Size: 7, Align: align.Center, Top: 1})),
 			col.New(5).Add(text.New(det.Descripcion, props.Text{Size: 7, Align: align.Left, Top: 1, Left: 2})),
-			col.New(2).Add(text.New(det.PrecioUnitario, props.Text{Size: 7, Align: align.Right, Top: 1, Right: 2})),
+			col.New(2).Add(text.New(fmt.Sprintf("%.2f", pUnit), props.Text{Size: 7, Align: align.Right, Top: 1, Right: 2})),
 			col.New(1).Add(text.New(det.Descuento, props.Text{Size: 7, Align: align.Right, Top: 1, Right: 2})),
 			col.New(1).Add(text.New(det.PrecioTotalSinImpuesto, props.Text{Size: 7, Align: align.Right, Top: 1, Right: 2})),
 		))
@@ -247,6 +252,165 @@ func (g *RideGenerator) buildFooter(f *Factura) []core.Row {
 
 				// Fila 13: Nota Subsidio
 				text.New("(Incluye IVA cuando corresponda)", props.Text{Size: 6, Top: 65, Left: 2}),
+			),
+		),
+	}
+}
+
+func (g *RideGenerator) GenerateNotaCreditoRide(nc *NotaCredito, ridePath string, logoPath string, authDate time.Time, authNumber string) error {
+	cfg := config.NewBuilder().
+		WithPageSize(pagesize.A4).
+		WithOrientation(orientation.Vertical).
+		WithLeftMargin(10).
+		WithRightMargin(10).
+		WithTopMargin(10).
+		Build()
+
+	m := maroto.New(cfg)
+
+	m.AddRows(g.buildHeaderNC(nc, logoPath, authDate, authNumber)...)
+	m.AddRow(2)
+	m.AddRows(g.buildClientInfoNC(nc)...)
+	m.AddRow(2)
+	m.AddRows(g.buildDetailsRowsNC(nc)...)
+	m.AddRow(2)
+	m.AddRows(g.buildFooterNC(nc)...)
+
+	document, err := m.Generate()
+	if err != nil {
+		return fmt.Errorf("error generando RIDE NC: %w", err)
+	}
+
+	return document.Save(ridePath)
+}
+
+func (g *RideGenerator) buildHeaderNC(nc *NotaCredito, logoPath string, authDate time.Time, authNumber string) []core.Row {
+	ambiente := "PRUEBAS"
+	if nc.InfoTributaria.Ambiente == "2" {
+		ambiente = "PRODUCCIÓN"
+	}
+
+	var logo core.Component
+	if logoPath != "" {
+		logo = image.NewFromFile(logoPath)
+	} else {
+		logo = text.New("NO TIENE LOGO", props.Text{
+			Style: fontstyle.Bold, Size: 16, Align: align.Center, Top: 10, Color: &props.Color{Red: 200},
+		})
+	}
+
+	return []core.Row{
+		row.New(90).Add(
+			col.New(6).Add(
+				logo,
+				text.New(" ", props.Text{Top: 35}), // Spacer
+				text.New(nc.InfoTributaria.RazonSocial, props.Text{Style: fontstyle.Bold, Size: 8, Top: 40}),
+				text.New(nc.InfoTributaria.NombreComercial, props.Text{Size: 8, Top: 45}),
+				text.New("Dirección Matriz:", props.Text{Style: fontstyle.Bold, Size: 8, Top: 55}),
+				text.New(nc.InfoTributaria.DirMatriz, props.Text{Size: 8, Top: 60}),
+				text.New("Dirección Sucursal:", props.Text{Style: fontstyle.Bold, Size: 8, Top: 68}),
+				text.New(nc.InfoNotaCredito.DirEstablecimiento, props.Text{Size: 8, Top: 73}),
+				text.New("OBLIGADO A LLEVAR CONTABILIDAD: "+nc.InfoNotaCredito.ObligadoContabilidad, props.Text{Size: 8, Top: 82}),
+			),
+			col.New(6).WithStyle(&props.Cell{BorderType: border.Full, BorderThickness: 0.1}).Add(
+				text.New("R.U.C.: "+nc.InfoTributaria.Ruc, props.Text{Style: fontstyle.Bold, Size: 10, Top: 3, Left: 2}),
+				text.New("NOTA DE CRÉDITO", props.Text{Style: fontstyle.Bold, Size: 12, Top: 9, Left: 2}),
+				text.New("No. "+fmt.Sprintf("%s-%s-%s", nc.InfoTributaria.Estab, nc.InfoTributaria.PtoEmi, nc.InfoTributaria.Secuencial), props.Text{Size: 10, Top: 15, Left: 2}),
+				text.New("NÚMERO DE AUTORIZACIÓN", props.Text{Style: fontstyle.Bold, Size: 8, Top: 22, Left: 2}),
+				text.New(authNumber, props.Text{Size: 8, Top: 26, Left: 2}),
+				text.New("FECHA Y HORA DE AUTORIZACIÓN", props.Text{Style: fontstyle.Bold, Size: 8, Top: 32, Left: 2}),
+				text.New(authDate.Format("02/01/2006 15:04:05"), props.Text{Size: 8, Top: 36, Left: 2}),
+				text.New("AMBIENTE: "+ambiente, props.Text{Size: 8, Top: 42, Left: 2}),
+				text.New("EMISIÓN: NORMAL", props.Text{Size: 8, Top: 48, Left: 2}),
+				text.New("CLAVE DE ACCESO", props.Text{Style: fontstyle.Bold, Size: 8, Top: 60, Left: 2}),
+				code.NewBar(nc.InfoTributaria.ClaveAcceso, props.Barcode{Percent: 67, Top: 68, Left: 16}),
+				text.New(nc.InfoTributaria.ClaveAcceso, props.Text{Size: 7, Align: align.Center, Top: 82}),
+			),
+		),
+	}
+}
+
+func (g *RideGenerator) buildClientInfoNC(nc *NotaCredito) []core.Row {
+	return []core.Row{
+		row.New(35).WithStyle(&props.Cell{BorderType: border.Full, BorderThickness: 0.1}).Add(
+			col.New(7).Add(
+				text.New("Razón Social / Nombres y Apellidos: "+nc.InfoNotaCredito.RazonSocialComprador, props.Text{Style: fontstyle.Bold, Size: 7, Top: 2, Left: 2}),
+				text.New("Identificación: "+nc.InfoNotaCredito.IdentificacionComprador, props.Text{Size: 7, Top: 8, Left: 2}),
+				text.New("Fecha Emisión: "+nc.InfoNotaCredito.FechaEmision, props.Text{Size: 7, Top: 14, Left: 2}),
+				text.New("------------------------------------------------------------------------------------------------------", props.Text{Size: 5, Top: 19}),
+				text.New("Comprobante que se modifica:", props.Text{Style: fontstyle.Bold, Size: 7, Top: 22, Left: 2}),
+				text.New("FACTURA "+nc.InfoNotaCredito.NumDocModificado, props.Text{Size: 7, Top: 22, Left: 45}),
+				text.New("Fecha Emisión (Comprobante a modificar):", props.Text{Style: fontstyle.Bold, Size: 7, Top: 27, Left: 2}),
+				text.New(nc.InfoNotaCredito.FechaEmisionDocSustento, props.Text{Size: 7, Top: 27, Left: 60}),
+				text.New("Razón de Modificación:", props.Text{Style: fontstyle.Bold, Size: 7, Top: 32, Left: 2}),
+				text.New(nc.InfoNotaCredito.Motivo, props.Text{Size: 7, Top: 32, Left: 35}),
+			),
+			col.New(5).Add(
+				text.New("R.U.C. / C.I.: "+nc.InfoNotaCredito.IdentificacionComprador, props.Text{Size: 7, Top: 8, Align: align.Right, Right: 5}),
+			),
+		),
+	}
+}
+
+func (g *RideGenerator) buildDetailsRowsNC(nc *NotaCredito) []core.Row {
+	var rows []core.Row
+	headerStyle := &props.Cell{BackgroundColor: &props.Color{Red: 240, Green: 240, Blue: 240}, BorderType: border.Full, BorderThickness: 0.1}
+
+	rows = append(rows, row.New(8).WithStyle(headerStyle).Add(
+		col.New(2).Add(text.New("Cod. Interno", props.Text{Style: fontstyle.Bold, Size: 7, Align: align.Center, Top: 1.5})),
+		col.New(1).Add(text.New("Cant.", props.Text{Style: fontstyle.Bold, Size: 7, Align: align.Center, Top: 1.5})),
+		col.New(5).Add(text.New("Descripción", props.Text{Style: fontstyle.Bold, Size: 7, Top: 1.5, Left: 2})),
+		col.New(2).Add(text.New("Precio Unitario", props.Text{Style: fontstyle.Bold, Size: 7, Align: align.Right, Top: 1.5, Right: 2})),
+		col.New(1).Add(text.New("Desc.", props.Text{Style: fontstyle.Bold, Size: 7, Align: align.Right, Top: 1.5, Right: 2})),
+		col.New(1).Add(text.New("Precio Total", props.Text{Style: fontstyle.Bold, Size: 7, Align: align.Right, Top: 1.5, Right: 2})),
+	))
+
+	for _, det := range nc.Detalles.Detalle {
+		cant, _ := strconv.ParseFloat(det.Cantidad, 64)
+		pUnit, _ := strconv.ParseFloat(det.PrecioUnitario, 64)
+
+		rows = append(rows, row.New(6).WithStyle(&props.Cell{BorderType: border.Full, BorderThickness: 0.1}).Add(
+			col.New(2).Add(text.New(det.CodigoInterno, props.Text{Size: 7, Align: align.Left, Top: 1, Left: 2})),
+			col.New(1).Add(text.New(fmt.Sprintf("%.2f", cant), props.Text{Size: 7, Align: align.Center, Top: 1})),
+			col.New(5).Add(text.New(det.Descripcion, props.Text{Size: 7, Align: align.Left, Top: 1, Left: 2})),
+			col.New(2).Add(text.New(fmt.Sprintf("%.2f", pUnit), props.Text{Size: 7, Align: align.Right, Top: 1, Right: 2})),
+			col.New(1).Add(text.New(det.Descuento, props.Text{Size: 7, Align: align.Right, Top: 1, Right: 2})),
+			col.New(1).Add(text.New(det.PrecioTotalSinImpuesto, props.Text{Size: 7, Align: align.Right, Top: 1, Right: 2})),
+		))
+	}
+	return rows
+}
+
+func (g *RideGenerator) buildFooterNC(nc *NotaCredito) []core.Row {
+	sub15, sub0, totalIVA := "0.00", "0.00", "0.00"
+	for _, tax := range nc.InfoNotaCredito.TotalConImpuestos.TotalImpuesto {
+		switch tax.CodigoPorcentaje {
+		case "4":
+			sub15 = tax.BaseImponible
+			totalIVA = tax.Valor
+		case "0":
+			sub0 = tax.BaseImponible
+		}
+	}
+
+	totalHeight := 60.0
+	return []core.Row{
+		row.New(totalHeight).Add(
+			col.New(7).WithStyle(&props.Cell{BorderType: border.Full, BorderThickness: 0.1}).Add(
+				text.New("Información Adicional", props.Text{Style: fontstyle.Bold, Size: 8, Top: 2, Left: 2}),
+				text.New("Nota de Crédito generada automáticamente.", props.Text{Size: 7, Top: 8, Left: 2}),
+			),
+			col.New(5).WithStyle(&props.Cell{BorderType: border.Full, BorderThickness: 0.1}).Add(
+				text.New("SUBTOTAL 12%", props.Text{Size: 7, Top: 2, Left: 2}),
+				text.New(sub15, props.Text{Size: 7, Align: align.Right, Top: 2, Right: 2}),
+				text.New("SUBTOTAL 0%", props.Text{Size: 7, Top: 7, Left: 2}),
+				text.New(sub0, props.Text{Size: 7, Align: align.Right, Top: 7, Right: 2}),
+				text.New("SUBTOTAL SIN IMPUESTOS", props.Text{Size: 7, Top: 12, Left: 2}),
+				text.New(nc.InfoNotaCredito.TotalSinImpuestos, props.Text{Size: 7, Align: align.Right, Top: 12, Right: 2}),
+				text.New("IVA 12%", props.Text{Size: 7, Top: 17, Left: 2}),
+				text.New(totalIVA, props.Text{Size: 7, Align: align.Right, Top: 17, Right: 2}),
+				text.New("VALOR TOTAL", props.Text{Style: fontstyle.Bold, Size: 8, Top: 22, Left: 2}),
+				text.New(nc.InfoNotaCredito.ValorModificacion, props.Text{Style: fontstyle.Bold, Size: 8, Align: align.Right, Top: 22, Right: 2}),
 			),
 		),
 	}

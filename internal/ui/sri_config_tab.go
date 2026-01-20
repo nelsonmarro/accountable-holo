@@ -16,52 +16,61 @@ import (
 )
 
 func (ui *UI) makeSriConfigTab() fyne.CanvasObject {
-	// --- Componentes Fiscales ---
+	// --- SECCIÓN 1: DATOS LEGALES ---
 	rucEntry := widget.NewEntry()
-	rucEntry.SetPlaceHolder("1790012345001")
-
+	rucEntry.SetPlaceHolder("Ej: 1790012345001")
 	nameEntry := widget.NewEntry()
-	nameEntry.SetPlaceHolder("Razón Social")
-
 	tradeNameEntry := widget.NewEntry()
-	tradeNameEntry.SetPlaceHolder("Nombre Comercial (Opcional)")
-
 	addressEntry := widget.NewEntry()
-	addressEntry.SetPlaceHolder("Dirección Matriz")
-
 	estabAddrEntry := widget.NewEntry()
-	estabAddrEntry.SetPlaceHolder("Dirección Establecimiento")
 
+	legalForm := widget.NewForm(
+		widget.NewFormItem("RUC", rucEntry),
+		widget.NewFormItem("Razón Social", nameEntry),
+		widget.NewFormItem("Nombre Comercial", tradeNameEntry),
+		widget.NewFormItem("Dir. Matriz", addressEntry),
+		widget.NewFormItem("Dir. Establecimiento", estabAddrEntry),
+	)
+
+	legalCard := widget.NewCard("Información Legal y Matriz", "Datos tal como constan en su RUC", legalForm)
+
+	// --- SECCIÓN 2: CONFIGURACIÓN DE EMISIÓN ---
 	estabCodeEntry := widget.NewEntry()
 	estabCodeEntry.SetText("001")
-
 	ptoEmiEntry := widget.NewEntry()
-	ptoEmiEntry.SetText("002")
-
-	contribEntry := widget.NewEntry()
-	contribEntry.SetPlaceHolder("Nro. Resolución (Si aplica)")
+	ptoEmiEntry.SetText("001")
 
 	rimpeSelect := widget.NewSelect([]string{"Ninguno", "Negocio Popular", "Emprendedor"}, nil)
-	rimpeSelect.SetSelected("Ninguno")
-
 	envSelect := widget.NewSelect([]string{"Pruebas", "Producción"}, nil)
-	envSelect.SetSelected("Pruebas") // Default seguro para empezar
-
 	keepAccCheck := widget.NewCheck("Obligado a Llevar Contabilidad", nil)
+	contribEntry := widget.NewEntry()
 
-	// --- Seguridad: Solo Admin cambia ambiente ---
 	if ui.currentUser.Role != domain.AdminRole {
-		envSelect.Disable() 
+		envSelect.Disable()
 	}
 
-	// --- Componentes SMTP (Correo) ---
-	// ELIMINADO: La configuración SMTP ahora se maneja centralmente vía config.yaml/.env
-	// El usuario final no debe modificar esto.
+	emissionInfo := container.NewVBox(
+		widget.NewLabelWithStyle("Importante para Migraciones:", fyne.TextAlignLeading, fyne.TextStyle{Italic: true}),
+		widget.NewLabel("Si viene de otro sistema, puede usar un Punto de Emisión nuevo (ej: 002)\no configurar el secuencial inicial en el botón de abajo."),
+		widget.NewForm(
+			widget.NewFormItem("Cod. Establecimiento", estabCodeEntry),
+			widget.NewFormItem("Punto de Emisión", ptoEmiEntry),
+			widget.NewFormItem("Régimen RIMPE", rimpeSelect),
+			widget.NewFormItem("Ambiente SRI", envSelect),
+			widget.NewFormItem("Nro. Resolución", contribEntry),
+			widget.NewFormItem("", keepAccCheck),
+		),
+		widget.NewButtonWithIcon("Gestionar Secuenciales / Migración", theme.ListIcon(), func() {
+			dialogHandler := componets.NewEmissionPointDialog(ui.mainWindow, ui.Services.IssuerService)
+			dialogHandler.Show()
+		}),
+	)
 
-	// --- Firma Electrónica ---
+	emissionCard := widget.NewCard("Configuración de Facturación", "Defina cómo se generarán sus comprobantes", emissionInfo)
+
+	// --- SECCIÓN 3: FIRMA Y SEGURIDAD ---
 	p12Label := widget.NewLabel("No seleccionado")
 	var p12Path string
-
 	p12Btn := widget.NewButtonWithIcon("Buscar .p12", theme.FileIcon(), func() {
 		fd := dialog.NewFileOpen(func(reader fyne.URIReadCloser, err error) {
 			if err == nil && reader != nil {
@@ -74,12 +83,17 @@ func (ui *UI) makeSriConfigTab() fyne.CanvasObject {
 	})
 
 	passwordEntry := widget.NewPasswordEntry()
-	passwordEntry.SetPlaceHolder("Contraseña del Certificado")
+	passwordEntry.SetPlaceHolder("Contraseña del certificado")
 
-	// --- Logo ---
+	securityForm := widget.NewForm(
+		widget.NewFormItem("Archivo Firma", container.NewBorder(nil, nil, nil, p12Btn, p12Label)),
+		widget.NewFormItem("Contraseña", passwordEntry),
+	)
+	securityCard := widget.NewCard("Firma Electrónica", "Certificado digital requerido para validez legal", securityForm)
+
+	// --- SECCIÓN 4: IDENTIDAD VISUAL ---
 	logoLabel := widget.NewLabel("No seleccionado")
 	var logoPath string
-
 	logoBtn := widget.NewButtonWithIcon("Buscar Logo", theme.FolderOpenIcon(), func() {
 		fd := dialog.NewFileOpen(func(reader fyne.URIReadCloser, err error) {
 			if err == nil && reader != nil {
@@ -91,11 +105,16 @@ func (ui *UI) makeSriConfigTab() fyne.CanvasObject {
 		fd.Show()
 	})
 
-	// --- Cargar Datos Existentes ---
+	logoContainer := container.NewVBox(
+		widget.NewLabel("El logo aparecerá en el PDF (RIDE) enviado a sus clientes."),
+		container.NewBorder(nil, nil, nil, logoBtn, logoLabel),
+	)
+	logoCard := widget.NewCard("Identidad Visual", "Personalización de comprobantes", logoContainer)
+
+	// --- CARGAR DATOS EXISTENTES ---
 	go func() {
 		ctx := context.Background()
 		currentIssuer, _ := ui.Services.IssuerService.GetIssuerConfig(ctx)
-		
 		if currentIssuer != nil {
 			fyne.Do(func() {
 				rucEntry.SetText(currentIssuer.RUC)
@@ -105,28 +124,19 @@ func (ui *UI) makeSriConfigTab() fyne.CanvasObject {
 				estabAddrEntry.SetText(currentIssuer.EstablishmentAddress)
 				estabCodeEntry.SetText(currentIssuer.EstablishmentCode)
 				ptoEmiEntry.SetText(currentIssuer.EmissionPointCode)
-				
-				if currentIssuer.ContributionClass != "" {
-					contribEntry.SetText(currentIssuer.ContributionClass)
-				}
-				if currentIssuer.RimpeType != "" {
-					rimpeSelect.SetSelected(currentIssuer.RimpeType)
-				}
-				
+				contribEntry.SetText(currentIssuer.ContributionClass)
+				rimpeSelect.SetSelected(currentIssuer.RimpeType)
 				if currentIssuer.Environment == 1 {
 					envSelect.SetSelected("Pruebas")
 				} else {
 					envSelect.SetSelected("Producción")
 				}
-
 				keepAccCheck.SetChecked(currentIssuer.KeepAccounting)
-
 				if currentIssuer.SignaturePath != "" {
 					p12Path = currentIssuer.SignaturePath
 					p12Label.SetText(filepath.Base(p12Path))
 					passwordEntry.SetPlaceHolder("******** (Guardada)")
 				}
-				
 				if currentIssuer.LogoPath != "" {
 					logoPath = currentIssuer.LogoPath
 					logoLabel.SetText(filepath.Base(logoPath))
@@ -135,17 +145,15 @@ func (ui *UI) makeSriConfigTab() fyne.CanvasObject {
 		}
 	}()
 
-	// --- Botón Guardar ---
-	saveBtn := widget.NewButtonWithIcon("Guardar Configuración", theme.DocumentSaveIcon(), func() {
-		// Validaciones básicas
+	// --- BOTÓN GUARDAR ---
+	saveBtn := widget.NewButtonWithIcon("Guardar Cambios", theme.DocumentSaveIcon(), func() {
 		if rucEntry.Text == "" || nameEntry.Text == "" {
 			dialog.ShowError(fmt.Errorf("RUC y Razón Social son obligatorios"), ui.mainWindow)
 			return
 		}
-		// Validar firma solo si es nueva config
 		if p12Path == "" && p12Label.Text == "No seleccionado" {
-			 dialog.ShowError(fmt.Errorf("debe seleccionar un archivo de firma electrónica"), ui.mainWindow)
-			 return
+			dialog.ShowError(fmt.Errorf("debe seleccionar un archivo de firma electrónica"), ui.mainWindow)
+			return
 		}
 
 		envCode := 2
@@ -170,67 +178,22 @@ func (ui *UI) makeSriConfigTab() fyne.CanvasObject {
 			IsActive:             true,
 		}
 
-		// Guardar (Password firma solo si se escribió algo nuevo)
-		passToSave := passwordEntry.Text
-		
 		componets.HandleLongRunningOperation(ui.mainWindow, "Guardando Configuración...", func(ctx context.Context) error {
-			return ui.Services.IssuerService.SaveIssuerConfig(ctx, issuer, passToSave)
+			return ui.Services.IssuerService.SaveIssuerConfig(ctx, issuer, passwordEntry.Text)
+		}, func() {
+			dialog.ShowInformation("Éxito", "Configuración actualizada correctamente.", ui.mainWindow)
 		})
-		
-		dialog.ShowInformation("Éxito", "Configuración SRI guardada correctamente.", ui.mainWindow)
 	})
 	saveBtn.Importance = widget.HighImportance
 
-		// --- Layout ---
+	// --- LAYOUT FINAL ---
+	content := container.NewVBox(
+		legalCard,
+		emissionCard,
+		securityCard,
+		logoCard,
+		container.NewPadded(saveBtn),
+	)
 
-		form := widget.NewForm(
-
-			widget.NewFormItem("RUC", rucEntry),
-
-			widget.NewFormItem("Razón Social", nameEntry),
-
-			widget.NewFormItem("Nombre Comercial", tradeNameEntry),
-
-			widget.NewFormItem("Dirección Matriz", addressEntry),
-
-			widget.NewFormItem("Dirección Establecimiento", estabAddrEntry),
-
-			widget.NewFormItem("Cod. Establecimiento", estabCodeEntry),
-
-			widget.NewFormItem("Punto de Emisión", ptoEmiEntry),
-
-			widget.NewFormItem("Contribuyente Especial", contribEntry),
-
-			widget.NewFormItem("Obligado Contabilidad", keepAccCheck),
-
-			widget.NewFormItem("Régimen RIMPE", rimpeSelect),
-
-			widget.NewFormItem("Ambiente", envSelect),
-
-			widget.NewFormItem("Firma Electrónica (.p12)", container.NewBorder(nil, nil, nil, p12Btn, p12Label)),
-
-			widget.NewFormItem("Contraseña Firma", passwordEntry),
-
-			widget.NewFormItem("Logo Empresa", container.NewBorder(nil, nil, nil, logoBtn, logoLabel)),
-
-		)
-
-	
-
-		return container.NewVScroll(container.NewPadded(container.NewVBox(
-
-			widget.NewLabelWithStyle("Configuración de Emisor SRI", fyne.TextAlignCenter, fyne.TextStyle{Bold: true}),
-
-			widget.NewSeparator(),
-
-			form,
-
-			widget.NewSeparator(),
-
-			saveBtn,
-
-		)))
-
-	}
-
-	
+	return container.NewVScroll(container.NewPadded(content))
+}

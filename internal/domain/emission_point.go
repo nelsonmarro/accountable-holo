@@ -7,5 +7,6 @@ type EmissionPoint struct {
 	EmissionPointCode string `db:"emission_point_code"`
 	ReceiptType       string `db:"receipt_type"`
 	CurrentSequence   int    `db:"current_sequence"`
+	InitialSequence   int    `db:"initial_sequence"`
 	IsActive          bool   `db:"is_active"`
 }

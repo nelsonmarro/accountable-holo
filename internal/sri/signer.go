@@ -46,3 +46,23 @@ func (s *DocumentSigner) Sign(xmlBytes []byte, algo signer.HashAlgorithm) ([]byt
 
 	return []byte(signedXML), nil
 }
+
+// SignCreditNote firma un XML de Nota de Crédito.
+func (s *DocumentSigner) SignCreditNote(xmlBytes []byte, algo signer.HashAlgorithm) ([]byte, error) {
+	// 1. Leer el archivo de firma (.p12)
+	p12Bytes, err := os.ReadFile(s.p12Path)
+	if err != nil {
+		return nil, fmt.Errorf("error al leer el certificado .p12: %w", err)
+	}
+
+	// 2. Firmar usando la librería propia (Método específico para NC)
+	signedXML, err := signer.SignCreditNote(string(xmlBytes), p12Bytes, &signer.SignOptions{
+		Password:  s.password,
+		Algorithm: algo,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("error al firmar la Nota de Crédito: %w", err)
+	}
+
+	return []byte(signedXML), nil
+}

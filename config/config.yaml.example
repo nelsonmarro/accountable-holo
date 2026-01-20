@@ -10,7 +10,7 @@ database:
   password: "password"
   name: "accountableholodb"
   sslmode: "disable"
-  timezone: "UTC"
+  timezone: "America/Guayaquil"
 
 storage:
   attachment_path: "attachments"

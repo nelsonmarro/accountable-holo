@@ -32,6 +32,22 @@ func (s *RecurringTransactionService) Create(ctx context.Context, rt *domain.Rec
 	return s.repo.Create(ctx, rt)
 }
 
+func (s *RecurringTransactionService) GetAll(ctx context.Context) ([]domain.RecurringTransaction, error) {
+	return s.repo.GetAll(ctx)
+}
+
+func (s *RecurringTransactionService) Update(ctx context.Context, rt *domain.RecurringTransaction) error {
+	if rt.NextRunDate.IsZero() {
+		// Calculate next run date if missing, though typically this comes from UI
+		rt.NextRunDate = rt.StartDate
+	}
+	return s.repo.Update(ctx, rt)
+}
+
+func (s *RecurringTransactionService) Delete(ctx context.Context, id int) error {
+	return s.repo.Delete(ctx, id)
+}
+
 // ProcessPendingRecurrences checks for due transactions and creates them.
 // This should be called on app startup.
 func (s *RecurringTransactionService) ProcessPendingRecurrences(ctx context.Context, systemUser domain.User) error {

@@ -156,6 +156,12 @@ func (ui *UI) makeTransactionUI() fyne.CanvasObject {
 	})
 	reconciliationBtn.Importance = widget.WarningImportance
 
+	// SRI Queue Button
+	sriQueueBtn := widget.NewButtonWithIcon("Cola SRI", theme.ListIcon(), func() {
+		dialog := transaction.NewSriQueueDialog(ui.mainWindow, ui.Services.SriService, ui.Services.TxService)
+		dialog.Show()
+	})
+
 	// Reload Data Button
 	reloadDataBtn := widget.NewButtonWithIcon("Recargar Datos", theme.ViewRefreshIcon(), func() {
 		ui.currentTransactionFilters = domain.TransactionFilters{} // Reset filters
@@ -165,10 +171,21 @@ func (ui *UI) makeTransactionUI() fyne.CanvasObject {
 	})
 	reloadDataBtn.Importance = widget.SuccessImportance
 
+	// Recurring Transactions Button
+	recurBtn := widget.NewButtonWithIcon("Recurrentes", theme.HistoryIcon(), func() {
+		dialog := transaction.NewRecurringManagerDialog(
+			ui.mainWindow,
+			ui.Services.RecurService,
+			ui.Services.AccService,
+			ui.Services.CatService,
+		)
+		dialog.Show()
+	})
+
 	// Containers
 	topBar := container.NewBorder(nil, nil,
-		container.NewHBox(txAddBtn, reloadDataBtn),
-		container.NewHBox(advancedFiltersBtn, generateReportBtn, reconciliationBtn),
+		container.NewHBox(txAddBtn, recurBtn, reloadDataBtn),
+		container.NewHBox(advancedFiltersBtn, generateReportBtn, reconciliationBtn, sriQueueBtn), // Added sriQueueBtn
 		searchBar,
 	)
 	filters := container.NewBorder(
@@ -386,6 +403,8 @@ func (ui *UI) updateTransactionItem(i widget.ListItemID, o fyne.CanvasObject) {
 			ui.mainWindow,
 			ui.errorLogger,
 			ui.Services.TxService,
+			ui.Services.SriService,
+			ui.Services.TaxService, // Injected Tax Service
 			func() {
 				ui.loadTransactions(1, ui.transactionPaginator.GetPageSize())
 			},
@@ -396,13 +415,23 @@ func (ui *UI) updateTransactionItem(i widget.ListItemID, o fyne.CanvasObject) {
 		dialogHandler.Show()
 	}
 
+	isAuthorized := tx.ElectronicReceipt != nil && tx.ElectronicReceipt.SRIStatus == "AUTORIZADO"
+
+	// Logic for Edit Button: Hide if voided, adjustment, OR AUTHORIZED (cannot edit legal doc)
+	if tx.IsVoided || tx.VoidsTransactionID != nil ||
+		strings.Contains(tx.Category.Name, "Ajuste") || isAuthorized {
+		editBtn.Hide()
+	} else {
+		editBtn.Show()
+	}
+
+	// Logic for Void Button: Hide ONLY if already voided or adjustment. 
+	// SHOW if authorized (to allow Credit Note flow)
 	if tx.IsVoided || tx.VoidsTransactionID != nil ||
 		strings.Contains(tx.Category.Name, "Ajuste") {
 		voidBtn.Hide()
-		editBtn.Hide()
 	} else {
 		voidBtn.Show()
-		editBtn.Show()
 	}
 }
 
@@ -479,7 +508,7 @@ func (ui *UI) generateReportFile(format string, outputPath string) {
 			return err
 		}
 		return ui.Services.ReportService.GenerateReportFile(ctx, format, transactions, outputPath, ui.currentUser)
-	})
+	}, nil)
 }
 
 func (ui *UI) generateDailyReportFile(format string, outputPath string) {
@@ -489,5 +518,5 @@ func (ui *UI) generateDailyReportFile(format string, outputPath string) {
 			return err
 		}
 		return ui.Services.ReportService.GenerateDailyReportFile(ctx, report, outputPath, format, ui.currentUser)
-	})
+	}, nil)
 }

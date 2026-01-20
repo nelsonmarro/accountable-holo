@@ -17,9 +17,13 @@ import (
 	"github.com/nelsonmarro/accountable-holo/internal/infrastructure/storage"
 	"github.com/nelsonmarro/accountable-holo/internal/licensing"
 	"github.com/nelsonmarro/accountable-holo/internal/logging"
+	"github.com/nelsonmarro/accountable-holo/internal/security"
 	"github.com/nelsonmarro/accountable-holo/internal/sri"
 	"github.com/nelsonmarro/accountable-holo/internal/ui"
 )
+
+// Esta variable la llenará el compilador (linker)
+var ResendAPIKeyEncrypted string
 
 func main() {
 	// ---- Logging ----
@@ -96,9 +100,18 @@ func main() {
 	userService := service.NewUserService(userRepo)
 	reportService := service.NewReportService(reportRepo, txRepo, catRepo, csvGen, pdfGen)
 	recurService := service.NewRecurringTransactionService(recurRepo, txRepo, infoLogger)
-	issuerService := service.NewIssuerService(issuerRepo)
+	issuerService := service.NewIssuerService(issuerRepo, emissionRepo)
 	taxService := service.NewTaxPayerService(clientRepo)
-	mailService := service.NewMailService(conf)
+
+	// Decodificar API Key de Resend (inyectada al compilar)
+	resendAPIKey, err := security.DecodeSMTPPassword(ResendAPIKeyEncrypted)
+	if err != nil {
+		errorLogger.Printf("Advertencia: no se pudo decodificar la API Key de Resend: %v", err)
+		// No hacemos panic, dejamos que intente usar la del config file si existe
+	}
+
+	// Mail Service (Resend)
+	mailService := service.NewMailService(conf, resendAPIKey)
 	sriService := service.NewSriService(txRepo, issuerRepo, receiptRepo, clientRepo, emissionRepo, sriClient, mailService, infoLogger)
 
 	// ---- UI Initialization ----

@@ -9,11 +9,26 @@ import (
 )
 
 type IssuerService struct {
-	repo IssuerRepository
+	repo   IssuerRepository
+	epRepo EmissionPointRepository
 }
 
-func NewIssuerService(repo IssuerRepository) *IssuerService {
-	return &IssuerService{repo: repo}
+func NewIssuerService(repo IssuerRepository, epRepo EmissionPointRepository) *IssuerService {
+	return &IssuerService{repo: repo, epRepo: epRepo}
+}
+
+// ... existing methods ...
+
+func (s *IssuerService) GetEmissionPoints(ctx context.Context) ([]domain.EmissionPoint, error) {
+	issuer, err := s.repo.GetActive(ctx)
+	if err != nil || issuer == nil {
+		return nil, fmt.Errorf("no hay emisor activo")
+	}
+	return s.epRepo.GetAllByIssuer(ctx, issuer.ID)
+}
+
+func (s *IssuerService) UpdateEmissionPoint(ctx context.Context, ep *domain.EmissionPoint) error {
+	return s.epRepo.Update(ctx, ep)
 }
 
 // SaveIssuerConfig guarda la configuración del emisor en la DB y la contraseña en el Keyring.

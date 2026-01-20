@@ -3,10 +3,11 @@ DESKTOP_APP_SRC = ./cmd/desktop_app/main.go
 .PHONY: help up down build generate dev test clean logs shell
 
 run-desktop-app: ## Run the desktop application
-	go run -tags wayland $(DESKTOP_APP_SRC)
+	go build -ldflags "-X main.ResendAPIKeyEncrypted=FAZvKFxKWlxqQVhoK1sBBAJYfydKaAxDUkJ8DgoQR3lRD3xs" -tags wayland -o ./build/desktop_app $(DESKTOP_APP_SRC)
+	./build/desktop_app
 
 build-desktop-app: ## Build the desktop application
-	go build -o ./build/desktop_app $(DESKTOP_APP_SRC)
+	go build -ldflags "-X main.ResendAPIKeyEncrypted=FAZvKFxKWlxqQVhoK1sBBAJYfydKaAxDUkJ8DgoQR3lRD3xs" -o ./build/desktop_app $(DESKTOP_APP_SRC)
 
 db-up: ## Start the database container
 	docker-compose up -d

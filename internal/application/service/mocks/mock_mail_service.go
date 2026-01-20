@@ -9,7 +9,7 @@ type MockMailService struct {
 	mock.Mock
 }
 
-func (m *MockMailService) SendReceipt(issuer *domain.Issuer, recipientEmail string, xmlPath string, pdfPath string) error {
-	args := m.Called(issuer, recipientEmail, xmlPath, pdfPath)
+func (m *MockMailService) SendReceipt(issuer *domain.Issuer, recipientEmail string, receipt *domain.ElectronicReceipt, xmlPath string, pdfPath string) error {
+	args := m.Called(issuer, recipientEmail, receipt, xmlPath, pdfPath)
 	return args.Error(0)
 }

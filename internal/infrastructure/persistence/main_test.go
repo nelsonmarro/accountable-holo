@@ -20,12 +20,13 @@ import (
 )
 
 var (
-	testRepo       *AccountRepositoryImpl
-	testCatRepo    *CategoryRepositoryImpl
-	testReportRepo *ReportRepositoryImpl
-	testUserRepo   *UserRepositoryImpl
-	dbPool         *pgxpool.Pool // Make the pool accessible to helpers
-	testUser       *domain.User  // Global test user
+	testRepo          *AccountRepositoryImpl
+	testCatRepo       *CategoryRepositoryImpl
+	testReportRepo    *ReportRepositoryImpl
+	testUserRepo      *UserRepositoryImpl
+	testRecurringRepo *RecurringTransactionRepositoryImpl
+	dbPool            *pgxpool.Pool // Make the pool accessible to helpers
+	testUser          *domain.User  // Global test user
 )
 
 // TestMain is the entry point for all tests in this package.
@@ -95,6 +96,7 @@ func TestMain(m *testing.M) {
 	testCatRepo = NewCategoryRepository(dbPool)
 	testReportRepo = NewReportRepository(dbPool)
 	testUserRepo = NewUserRepository(dbPool)
+	testRecurringRepo = NewRecurringTransactionRepository(dbPool)
 
 	// --- Run the tests ---
 	code := m.Run()
@@ -109,7 +111,7 @@ func TestMain(m *testing.M) {
 
 // truncateTables cleans the database tables between test runs for isolation.
 func truncateTables(t *testing.T) {
-	_, err := dbPool.Exec(context.Background(), "TRUNCATE TABLE accounts, categories, transactions, users, tax_payers, issuers, emission_points, electronic_receipts, transaction_items RESTART IDENTITY CASCADE")
+	_, err := dbPool.Exec(context.Background(), "TRUNCATE TABLE accounts, categories, transactions, users, tax_payers, issuers, emission_points, electronic_receipts, transaction_items, recurring_transactions RESTART IDENTITY CASCADE")
 	if err != nil {
 		t.Fatalf("Failed to truncate tables: %v", err)
 	}
@@ -128,3 +130,4 @@ func createTestUser(t *testing.T, repo *UserRepositoryImpl, username string, rol
 	require.NoError(t, err, "Failed to create test user")
 	return user
 }
+

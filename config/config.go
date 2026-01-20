@@ -28,18 +28,21 @@ type Storage struct {
 	AttachmentPath string `mapstructure:"attachment_path"`
 }
 
-type SMTP struct {
-	Host     string `mapstructure:"host"`
-	Port     int    `mapstructure:"port"`
-	User     string `mapstructure:"user"`
-	Password string `mapstructure:"password"`
+type Email struct {
+	Provider string `mapstructure:"provider"` // "resend" or "smtp" (legacy)
+	APIKey   string `mapstructure:"api_key"`
+	From     string `mapstructure:"from"`
+	// Legacy SMTP fields (optional)
+	Host string `mapstructure:"host"`
+	Port int    `mapstructure:"port"`
+	User string `mapstructure:"user"`
 }
 
 type Config struct {
 	Database Database `mapstructure:"database"`
 	App      App      `mapstructure:"app"`
 	Storage  Storage  `mapstructure:"storage"`
-	SMTP     SMTP     `mapstructure:"smtp"`
+	Email    Email    `mapstructure:"email"`
 }
 
 var (

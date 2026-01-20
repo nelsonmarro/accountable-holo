@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Nota de Crédito Electrónica</title>
+    <style>
+      /* Reset & Base */
+      body,
+      html {
+        margin: 0;
+        padding: 0;
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        background-color: #030712; /* gray-950 equivalent */
+        color: #e5e7eb; /* gray-200 equivalent */
+        line-height: 1.6;
+      }
+
+      .container {
+        max-width: 600px;
+        margin: 0 auto;
+        padding: 20px;
+      }
+
+      /* Card Style */
+      .card {
+        background-color: #111827; /* gray-900 equivalent */
+        border-radius: 12px;
+        border: 1px solid #1f2937; /* gray-800 border */
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5);
+        padding: 40px;
+        text-align: center;
+      }
+
+      /* Header / Logo */
+      .logo-container {
+        margin-bottom: 30px;
+      }
+      .logo {
+        max-width: 150px;
+        height: auto;
+        border-radius: 8px;
+      }
+      .business-name {
+        color: #ef4444; /* red-500 for Credit Note distinction */
+        font-size: 24px;
+        font-weight: bold;
+        margin-top: 10px;
+        letter-spacing: 0.5px;
+        text-shadow: 0 0 10px rgba(239, 68, 68, 0.3); /* Neon glow effect */
+      }
+
+      /* Content */
+      h1 {
+        color: #f87171; /* red-400 */
+        font-size: 22px;
+        margin-bottom: 20px;
+      }
+
+      p {
+        color: #d1d5db; /* gray-300 equivalent */
+        font-size: 16px;
+        margin-bottom: 25px;
+      }
+
+      .highlight {
+        color: #fbbf24; /* amber-400 */
+        font-weight: 600;
+      }
+
+      .info-box {
+        background-color: #1f2937;
+        border: 1px solid #374151;
+        border-radius: 8px;
+        padding: 15px;
+        margin: 20px 0;
+        text-align: left;
+        font-size: 14px;
+      }
+
+      .info-label {
+        color: #9ca3af;
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+
+      .info-value {
+        color: #e5e7eb;
+        font-weight: bold;
+        margin-bottom: 10px;
+      }
+
+      /* Footer */
+      .footer {
+        margin-top: 30px;
+        font-size: 12px;
+        color: #6b7280; /* gray-500 */
+        text-align: center;
+      }
+      .footer a {
+        color: #fbbf24; /* amber link */
+        text-decoration: none;
+      }
+
+      /* Responsive */
+      @media only screen and (max-width: 600px) {
+        .container {
+          padding: 10px;
+        }
+        .card {
+          padding: 20px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="card">
+        <!-- Logo Section -->
+        <div class="logo-container">
+          <!-- If logo exists, it will be injected here via CID -->
+          {{if .HasLogo}}
+          <img src="cid:logo" alt="Logo Empresa" class="logo" />
+          {{end}}
+          <div class="business-name">{{.TradeName}}</div>
+        </div>
+
+        <!-- Main Content -->
+        <h1>Nota de Crédito Electrónica</h1>
+
+        <p>Estimado/a <span class="highlight">{{.ClientName}}</span>,</p>
+
+        <p>
+          Le informamos que se ha emitido una Nota de Crédito a su favor para
+          anular o corregir un comprobante anterior.
+        </p>
+
+        <div class="info-box">
+          <div class="info-label">Motivo de Anulación</div>
+          <div class="info-value">{{.Motivo}}</div>
+          
+          <div class="info-label">Documento Modificado</div>
+          <div class="info-value">Factura No. {{.DocModificado}}</div>
+        </div>
+
+        <p>
+          Adjunto encontrará el XML y RIDE (PDF) autorizados por el SRI.
+        </p>
+
+        <!-- Optional Call to Action or Info -->
+        <div
+          style="
+            margin-top: 30px;
+            border-top: 1px solid #374151;
+            padding-top: 20px;
+          "
+        >
+          <p style="font-size: 14px; color: #9ca3af">
+            Este documento tiene validez tributaria autorizada por el SRI.
+          </p>
+        </div>
+      </div>
+
+      <div class="footer">
+        <p>
+          &copy; {{.Year}} {{.TradeName}}. Todos los derechos reservados.<br />
+          Generado por <strong>Accountable Holo</strong>
+        </p>
+      </div>
+    </div>
+  </body>
+</html>

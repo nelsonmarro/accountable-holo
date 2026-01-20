@@ -144,21 +144,25 @@ func (s *TransactionServiceImpl) CreateTransaction(ctx context.Context, tx *doma
 	return nil
 }
 
-func (s *TransactionServiceImpl) VoidTransaction(ctx context.Context, transactionID int, currentUser domain.User) error {
+func (s *TransactionServiceImpl) VoidTransaction(ctx context.Context, transactionID int, currentUser domain.User) (int, error) {
 	if transactionID <= 0 {
-		return fmt.Errorf("ID de transacción inválido: %d", transactionID)
+		return 0, fmt.Errorf("ID de transacción inválido: %d", transactionID)
 	}
 
 	tx, err := s.repo.GetTransactionByID(ctx, transactionID)
 	if err != nil {
-		return fmt.Errorf("error al obtener la transacción: %w", err)
+		return 0, fmt.Errorf("error al obtener la transacción: %w", err)
 	}
 
 	if tx.IsVoided {
-		return fmt.Errorf("la transacción ya ha sido anulada")
+		return 0, fmt.Errorf("la transacción ya ha sido anulada")
 	}
 
 	return s.repo.VoidTransaction(ctx, transactionID, currentUser)
+}
+
+func (s *TransactionServiceImpl) RevertVoidTransaction(ctx context.Context, voidTransactionID int) error {
+	return s.repo.RevertVoidTransaction(ctx, voidTransactionID)
 }
 
 func (s *TransactionServiceImpl) UpdateTransaction(ctx context.Context, tx *domain.Transaction, currentUser domain.User) error {
