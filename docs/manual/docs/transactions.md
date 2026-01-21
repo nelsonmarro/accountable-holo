@@ -1,54 +1,37 @@
 # 📝 Transacciones Diarias
 
-El módulo de transacciones es el corazón operativo de Verith. Aquí se registran todos los movimientos de dinero, tanto de ingresos como de egresos.
+El registro de transacciones es la actividad principal en Verith. Aquí documentas cada evento financiero de tu negocio.
 
 ---
 
-## 📊 La Tabla de Transacciones
+## ➕ Registrar una Transacción
+1.  Haz clic en el botón **"Agregar Transacción"** en la barra superior.
+2.  Completa el formulario:
+    *   **Monto:** El valor total de la operación.
+    *   **Fecha:** Por defecto es hoy, pero puedes seleccionar fechas pasadas.
+    *   **Descripción:** Detalle claro del movimiento.
+    *   **Cuenta:** De qué cuenta sale o a cuál entra el dinero.
+    *   **Categoría:** Clasifica el movimiento.
+    *   **Cliente (Opcional):** Si es un ingreso, selecciona un cliente para generar la factura electrónica.
+3.  Pulsa **"Guardar"**.
 
-Nuestra tabla está diseñada para darte información clave de un vistazo:
+## 📝 Editar una Transacción
+1.  Busca la transacción en la tabla principal.
+2.  Haz clic en el icono de **Editar** (lápiz ✏️).
+3.  Modifica los datos necesarios y guarda.
+    *   **⚠️ Restricción:** Las transacciones que ya han sido **Autorizadas por el SRI** no pueden editarse por motivos legales. Si hubo un error, deberás anularla.
 
-| Columna | Descripción |
-| :--- | :--- |
-| **#** | Número secuencial interno de la transacción. |
-| **Fecha** | Fecha del movimiento (admite fechas pasadas). |
-| **Descripción** | Concepto del gasto o venta. |
-| **Categoría** | Clasificación para tus reportes. |
-| **Monto** | Valor total (Verde para ingresos, Rojo para egresos). |
-| **Saldo** | Saldo proyectado de la cuenta (Oculto para cajeros). |
-| **SRI** | Estado de la factura electrónica (Ver iconos abajo). |
-| **Adjunto** | Enlace para ver el PDF o imagen respaldada. |
+## 🚫 Anular (Eliminar) una Transacción
+En Verith, para mantener un historial contable íntegro (pista de auditoría), **no se borran** las transacciones permanentemente. En su lugar, se **anulan**.
+
+1.  Haz clic en el botón **Anular** (icono ❌ rojo) en la fila de la transacción.
+2.  El sistema realizará lo siguiente:
+    *   Creará una transacción de contrapartida (opuesta) para revertir el saldo.
+    *   Marcará la original como "Anulada" (fila en color rojo suave).
+    *   Si era una factura autorizada, emitirá automáticamente una **Nota de Crédito** al SRI.
 
 ---
 
-## ☁️ Estados del SRI
-
-A través de iconos intuitivos, Verith te informa el estado de tus documentos legales:
-
-*   ✅ **Confirmado:** Documento **AUTORIZADO** legalmente por el SRI.
-*   🕒 **Reloj:** Documento en cola o **EN PROCESO** de envío.
-*   ⚠️ **Advertencia:** Documento **DEVUELTO** o **RECHAZADO**. Revisa el mensaje de error pasando el mouse.
-*   ❌ **Error:** Documento **NO AUTORIZADO** o error crítico de conexión.
-
----
-
-## 🖇️ Gestión de Adjuntos
-
-:::tip Digitaliza tus respaldos
-Al crear o editar una transacción, puedes adjuntar una foto del recibo o un PDF de la transferencia. Verith guardará una copia local y podrás visualizarla haciendo clic en el nombre del archivo en la tabla.
+:::info Adjuntos
+No olvides adjuntar fotos de tus recibos o PDFs de transferencias en el campo de **Adjunto** al crear o editar para tener un respaldo digital.
 :::
-
----
-
-## 🔄 Flujo de Trabajo SOLID
-
-```mermaid
-graph LR
-    A[Nueva Venta] --> B{¿Es Factura?}
-    B -- Sí --> C[Seleccionar Cliente]
-    C --> D[Enviar al SRI]
-    D --> E{Resultado}
-    E -- Éxito --> F[✅ Enviar Email]
-    E -- Error --> G[⚠️ Corregir y Reenviar]
-    B -- No --> H[Guardar Internamente]
-```

@@ -1,16 +1,31 @@
-# Categorías
+# 🗂️ Categorías
 
-Las categorías te permiten clasificar tus movimientos financieros para obtener reportes precisos.
+Las categorías son esenciales para clasificar tus movimientos financieros y obtener reportes precisos sobre el origen de tus ingresos y el destino de tus gastos.
 
-## Tipos de Categorías
+---
 
-*   **Ingreso:** Clasifica entradas de dinero (ej: Ventas, Servicios, Intereses).
-*   **Egreso:** Clasifica salidas de dinero (ej: Arriendo, Nómina, Suministros).
+## ➕ Crear una Categoría
+1.  Dirígete a la pestaña **Transacciones** y pulsa en **Configuración de Finanzas** (o similar según tu rol).
+2.  Haz clic en el botón **"Nueva Categoría"**.
+3.  Ingresa un **Nombre** único (ej: "Ventas de Software", "Suministros de Oficina").
+4.  Selecciona el **Tipo**:
+    *   **Ingreso:** Para entradas de dinero.
+    *   **Egreso:** Para gastos o salidas.
+5.  Haz clic en **"Guardar"**.
 
-## Crear Categorías
+## 📝 Editar una Categoría
+1.  En el listado de categorías, busca la que deseas modificar.
+2.  Haz clic en el icono de **Editar** (lápiz ✏️).
+3.  Modifica el nombre o el tipo y guarda los cambios.
+    *   *Nota:* Cambiar el tipo de una categoría afectará cómo se calculan los reportes históricos asociados a ella.
 
-1.  Dirígete a la sección de **Configuración de Finanzas**.
-2.  Usa el botón **"Nueva Categoría"**.
-3.  Asigna un nombre único y el tipo correspondiente.
+## 🗑️ Eliminar una Categoría
+1.  Busca la categoría en el listado.
+2.  Haz clic en el icono de **Eliminar** (basurero 🗑️).
+3.  **Restricción de Seguridad:** Por integridad contable, Verith **no permite eliminar** categorías que tengan transacciones asociadas. Primero deberás reasignar o anular dichas transacciones.
 
-![Placeholder: Captura de pantalla del listado de categorías]
+---
+
+:::tip Presupuesto Mensual
+Al crear o editar una categoría, puedes definir un **Presupuesto Mensual**. Verith te alertará en el Dashboard si tus gastos reales superan el límite establecido para esa categoría.
+:::
