@@ -4,7 +4,7 @@ const sidebars = {
     {
       type: 'category',
       label: 'Comenzando',
-      items: ['intro', 'installation', 'dashboard'],
+      items: ['intro', 'installation', 'dashboard', 'licensing'],
       collapsed: false,
     },
     {
