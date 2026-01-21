@@ -109,7 +109,7 @@ const config = {
             ],
           },
         ],
-        copyright: `Copyright © 2026 Verith. Construido con Docusaurus.`,
+        copyright: `Copyright © ${new Date().getFullYear()} Verith. Construido con Docusaurus.`,
       },
       prism: {
         theme: lightCodeTheme,
