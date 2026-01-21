@@ -45,7 +45,7 @@ func (ui *UI) makeSriConfigTab() fyne.CanvasObject {
 	keepAccCheck := widget.NewCheck("Obligado a Llevar Contabilidad", nil)
 	contribEntry := widget.NewEntry()
 
-	if ui.currentUser.Role != domain.AdminRole {
+	if ui.currentUser.Role != domain.RoleAdmin {
 		envSelect.Disable()
 	}
 

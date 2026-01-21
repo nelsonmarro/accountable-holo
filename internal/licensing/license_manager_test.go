@@ -1,7 +1,6 @@
 package licensing
 
 import (
-	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -13,102 +12,79 @@ import (
 )
 
 func TestLicenseManager_CheckStatus(t *testing.T) {
-	// Create a temporary directory for testing
-	tmpDir, err := os.MkdirTemp("", "license_test")
+	tmpDir, err := os.MkdirTemp("", "verith-test-*")
 	require.NoError(t, err)
-	defer func() { _ = os.RemoveAll(tmpDir) }()
+	defer os.RemoveAll(tmpDir)
 
-	manager := NewLicenseManager(tmpDir)
-
-	t.Run("New Install Starts Trial", func(t *testing.T) {
-		status, err := manager.CheckStatus()
-		require.NoError(t, err)
-		require.NotNil(t, status)
+	t.Run("New Installation - Trial Status", func(t *testing.T) {
+		mgr := NewLicenseManager(tmpDir)
+		data, err := mgr.CheckStatus()
 		
-		assert.Equal(t, StatusTrial, status.Status)
-		// Should be today
-		assert.WithinDuration(t, time.Now(), status.InstallDate, 1*time.Minute)
+		assert.NoError(t, err)
+		assert.Equal(t, StatusTrial, data.Status)
+		assert.NotEmpty(t, data.InstallDate)
 	})
 
-	t.Run("Active License Remains Active", func(t *testing.T) {
-		// Manually create an active license file
-		activeData := &LicenseData{
-			InstallDate: time.Now().AddDate(0, -1, 0), // Installed a month ago
-			Status:      StatusActive,
-			LicenseKey:  "TEST-KEY",
-		}
-		require.NoError(t, manager.store.Save(activeData))
+	t.Run("Trial Expired after 15 days", func(t *testing.T) {
+		mgr := NewLicenseManager(tmpDir)
+		
+		// Manipular el archivo para que parezca antiguo
+		data, _ := mgr.store.Load()
+		data.InstallDate = time.Now().AddDate(0, 0, -16)
+		data.Status = StatusTrial
+		_ = mgr.store.Save(data)
 
-		status, err := manager.CheckStatus()
-		require.NoError(t, err)
-		assert.Equal(t, StatusActive, status.Status)
-	})
-
-	t.Run("Trial Expires After 15 Days", func(t *testing.T) {
-		// Manually create an old trial file (16 days ago)
-		expiredData := &LicenseData{
-			InstallDate: time.Now().AddDate(0, 0, -16),
-			Status:      StatusTrial,
-		}
-		require.NoError(t, manager.store.Save(expiredData))
-
-		status, err := manager.CheckStatus()
-		require.NoError(t, err)
+		status, err := mgr.CheckStatus()
+		assert.NoError(t, err)
 		assert.Equal(t, StatusExpired, status.Status)
+	})
+
+	t.Run("Active License - No Online Check if < 24h", func(t *testing.T) {
+		mgr := NewLicenseManager(tmpDir)
+		
+		data, _ := mgr.store.Load()
+		data.Status = StatusActive
+		data.LastCheck = time.Now().Add(-1 * time.Hour)
+		_ = mgr.store.Save(data)
+
+		status, err := mgr.CheckStatus()
+		assert.NoError(t, err)
+		assert.Equal(t, StatusActive, status.Status)
 	})
 }
 
-func TestActivateLicense_Integration(t *testing.T) {
-	// Setup Mock Server simulating Lemon Squeezy API
-	mockServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Verify Request
-		assert.Equal(t, "POST", r.Method)
-		assert.Equal(t, "/v1/licenses/activate", r.URL.Path)
+func TestLicenseManager_OnlineValidation(t *testing.T) {
+	tmpDir, err := os.MkdirTemp("", "verith-online-*")
+	require.NoError(t, err)
+	defer os.RemoveAll(tmpDir)
 
-		// Decode payload
-		var payload map[string]string
-		_ = json.NewDecoder(r.Body).Decode(&payload)
-
+	// Mock Server para Lemon Squeezy
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-
-		// Simulate Success for a specific key
-		if payload["license_key"] == "VALID-KEY" {
-			_ = json.NewEncoder(w).Encode(LemonSqueezyResponse{
-				Activated: true,
-				License: struct {
-					Status string `json:"status"`
-				}{Status: "active"},
-			})
-		} else {
-			// Simulate Failure
-			_ = json.NewEncoder(w).Encode(LemonSqueezyResponse{
-				Activated: false,
-				Error:     "License key not found",
-			})
-		}
+		// Respuesta simulada de validación exitosa
+		w.Write([]byte(`{
+			"valid": true,
+			"license_key": {
+				"status": "active"
+			}
+		}`))
 	}))
-	defer mockServer.Close()
+	defer ts.Close()
 
-	// Setup Manager
-	tmpDir, _ := os.MkdirTemp("", "license_api_test")
-	defer func() { _ = os.RemoveAll(tmpDir) }()
-	manager := NewLicenseManager(tmpDir)
-	manager.apiURL = mockServer.URL + "/v1/licenses/activate" // Inject Mock URL
+	t.Run("CheckStatus triggers Online Validation after 24h", func(t *testing.T) {
+		mgr := NewLicenseManager(tmpDir)
+		mgr.apiURL = ts.URL // Inyectar URL del mock
 
-	t.Run("Valid Key Activates", func(t *testing.T) {
-		success, err := manager.ActivateLicense("VALID-KEY")
+		data, _ := mgr.store.Load()
+		data.Status = StatusActive
+		data.LicenseKey = "TEST-KEY"
+		data.LastCheck = time.Now().Add(-25 * time.Hour) // Forzar chequeo
+		_ = mgr.store.Save(data)
+
+		status, err := mgr.CheckStatus()
 		assert.NoError(t, err)
-		assert.True(t, success)
-
-		// Verify it saved
-		status, _ := manager.CheckStatus()
 		assert.Equal(t, StatusActive, status.Status)
-	})
-
-	t.Run("Invalid Key Fails", func(t *testing.T) {
-		success, err := manager.ActivateLicense("INVALID-KEY")
-		assert.Error(t, err)
-		assert.False(t, success)
-		assert.Contains(t, err.Error(), "License key not found")
+		// Verificar que LastCheck se actualizó a "ahora" (aprox)
+		assert.True(t, time.Since(status.LastCheck).Seconds() < 5)
 	})
 }

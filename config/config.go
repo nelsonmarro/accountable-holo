@@ -53,7 +53,16 @@ var (
 
 func LoadConfig(path string) (*Config, error) {
 	one.Do(func() {
-		viper.AddConfigPath(path)
+		// 1. Ruta explícita pasada como argumento (prioridad)
+		if path != "" {
+			viper.AddConfigPath(path)
+		}
+		// 2. Directorio actual (para desarrollo)
+		viper.AddConfigPath(".")
+		viper.AddConfigPath("./config")
+		// 3. Ruta estándar de Windows (Producción)
+		viper.AddConfigPath("C:\\ProgramData\\Verith\\config")
+
 		viper.SetConfigName("config")
 		viper.SetConfigType("yaml")
 		viper.AutomaticEnv()

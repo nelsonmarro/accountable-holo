@@ -4,8 +4,9 @@ package domain
 type UserRole string
 
 const (
-	AdminRole    UserRole = "Admin"
-	CustomerRole UserRole = "Customer"
+	RoleAdmin      UserRole = "Admin"
+	RoleSupervisor UserRole = "Supervisor" // Contador / Auditor
+	RoleCashier    UserRole = "Cajero"     // Vendedor (Legacy: Customer)
 )
 
 // User represents a user of the application.
@@ -16,4 +17,26 @@ type User struct {
 	FirstName    string   `db:"first_name"`
 	LastName     string   `db:"last_name"`
 	Role         UserRole `db:"role"`
+}
+
+// --- Permission Helpers (Encapsulación) ---
+
+func (u *User) CanViewReports() bool {
+	return u.Role == RoleAdmin || u.Role == RoleSupervisor
+}
+
+func (u *User) CanConfigureSystem() bool {
+	return u.Role == RoleAdmin
+}
+
+func (u *User) CanManageUsers() bool {
+	return u.Role == RoleAdmin
+}
+
+func (u *User) CanVoidTransactions() bool {
+	return u.Role == RoleAdmin || u.Role == RoleSupervisor
+}
+
+func (u *User) CanReconcile() bool {
+	return u.Role == RoleAdmin || u.Role == RoleSupervisor
 }

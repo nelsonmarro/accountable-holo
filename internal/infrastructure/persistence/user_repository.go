@@ -101,3 +101,31 @@ func (r *UserRepositoryImpl) GetAllUsers(ctx context.Context) ([]domain.User, er
 
 	return users, rows.Err()
 }
+
+func (r *UserRepositoryImpl) HasUsers(ctx context.Context) (bool, error) {
+	var exists bool
+	err := r.db.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM users)").Scan(&exists)
+	if err != nil {
+		return false, fmt.Errorf("failed to check for users: %w", err)
+	}
+	return exists, nil
+}
+
+func (r *UserRepositoryImpl) GetUsersByRole(ctx context.Context, role domain.UserRole) ([]domain.User, error) {
+	query := `SELECT id, username, role, created_at, updated_at FROM users WHERE role = $1`
+	rows, err := r.db.Query(ctx, query, role)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get users by role: %w", err)
+	}
+	defer rows.Close()
+
+	var users []domain.User
+	for rows.Next() {
+		var user domain.User
+		if err := rows.Scan(&user.ID, &user.Username, &user.Role, &user.CreatedAt, &user.UpdatedAt); err != nil {
+			return nil, fmt.Errorf("failed to scan user row: %w", err)
+		}
+		users = append(users, user)
+	}
+	return users, nil
+}

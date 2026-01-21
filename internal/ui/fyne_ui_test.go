@@ -7,6 +7,7 @@ import (
 	"fyne.io/fyne/v2/test"
 	"github.com/nelsonmarro/verith/internal/ui/mocks"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 )
 
 // TestNewUI now tests the simple constructor.
@@ -53,9 +54,15 @@ func TestUI_Init(t *testing.T) {
 func TestUI_openLoginWindow(t *testing.T) {
 	// Arrange
 	testApp := test.NewApp()
-	mockService := new(mocks.MockAccountService)
+	mockAccService := new(mocks.MockAccountService)
+	mockUserService := new(mocks.MockUserService)
+	
+	// Expect HasUsers to be called and return true (users exist)
+	mockUserService.On("HasUsers", mock.Anything).Return(true, nil).Once()
+
 	services := &Services{
-		AccService: mockService,
+		AccService:  mockAccService,
+		UserService: mockUserService,
 	}
 	ui := NewUI(services, log.Default(), log.Default())
 	ui.Init(testApp)
@@ -66,6 +73,7 @@ func TestUI_openLoginWindow(t *testing.T) {
 	// Assert
 	assert.NotNil(t, ui.mainWindow, "Login window should be initialized")
 	assert.Equal(t, "Login - Verith", ui.mainWindow.Title())
+	mockUserService.AssertExpectations(t)
 }
 
 // TODO: Refator TestBuildMainUI

@@ -16,6 +16,8 @@ type UserRepository interface {
 	UpdateUser(ctx context.Context, user *domain.User) error
 	DeleteUser(ctx context.Context, id int) error
 	GetAllUsers(ctx context.Context) ([]domain.User, error)
+	HasUsers(ctx context.Context) (bool, error)
+	GetUsersByRole(ctx context.Context, role domain.UserRole) ([]domain.User, error)
 }
 
 // UserServiceImpl implements the UserService interface.
@@ -45,8 +47,8 @@ func (s *UserServiceImpl) Login(ctx context.Context, username, password string) 
 
 // CreateUser creates a new user.
 func (s *UserServiceImpl) CreateUser(ctx context.Context, username, password, firstName, lastName string, role domain.UserRole, currentUser *domain.User) error {
-	if currentUser.Role != domain.AdminRole {
-		return fmt.Errorf("unauthorized: only admins can create users")
+	if !currentUser.CanManageUsers() {
+		return fmt.Errorf("unauthorized: insufficient permissions")
 	}
 
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
@@ -67,8 +69,8 @@ func (s *UserServiceImpl) CreateUser(ctx context.Context, username, password, fi
 
 // UpdateUser updates an existing user.
 func (s *UserServiceImpl) UpdateUser(ctx context.Context, id int, username, password, firstName, lastName string, role domain.UserRole, currentUser *domain.User) error {
-	if currentUser.Role != domain.AdminRole {
-		return fmt.Errorf("unauthorized: only admins can update users")
+	if !currentUser.CanManageUsers() {
+		return fmt.Errorf("unauthorized: insufficient permissions")
 	}
 
 	user, err := s.repo.GetUserByID(ctx, id)
@@ -98,8 +100,8 @@ func (s *UserServiceImpl) UpdateUser(ctx context.Context, id int, username, pass
 
 // DeleteUser deletes a user.
 func (s *UserServiceImpl) DeleteUser(ctx context.Context, id int, currentUser *domain.User) error {
-	if currentUser.Role != domain.AdminRole {
-		return fmt.Errorf("unauthorized: only admins can delete users")
+	if !currentUser.CanManageUsers() {
+		return fmt.Errorf("unauthorized: insufficient permissions")
 	}
 
 	if currentUser.ID == id {
@@ -120,9 +122,33 @@ func (s *UserServiceImpl) DeleteUser(ctx context.Context, id int, currentUser *d
 
 // GetAllUsers retrieves all users.
 func (s *UserServiceImpl) GetAllUsers(ctx context.Context, currentUser *domain.User) ([]domain.User, error) {
-	if currentUser.Role != domain.AdminRole {
-		return nil, fmt.Errorf("unauthorized: only admins can view all users")
+	if !currentUser.CanManageUsers() {
+		return nil, fmt.Errorf("unauthorized: insufficient permissions")
 	}
 
 	return s.repo.GetAllUsers(ctx)
+}
+
+func (s *UserServiceImpl) HasUsers(ctx context.Context) (bool, error) {
+	return s.repo.HasUsers(ctx)
+}
+
+func (s *UserServiceImpl) GetAdminUsers(ctx context.Context) ([]domain.User, error) {
+	return s.repo.GetUsersByRole(ctx, domain.RoleAdmin)
+}
+
+// ResetPassword allows changing password without currentUser check (protected by UI flow via license)
+func (s *UserServiceImpl) ResetPassword(ctx context.Context, username, newPassword string) error {
+	user, err := s.repo.GetUserByUsername(ctx, username)
+	if err != nil {
+		return err
+	}
+
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(newPassword), bcrypt.DefaultCost)
+	if err != nil {
+		return fmt.Errorf("failed to hash password: %w", err)
+	}
+	user.PasswordHash = string(hashedPassword)
+
+	return s.repo.UpdateUser(ctx, user)
 }

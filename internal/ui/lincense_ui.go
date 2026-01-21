@@ -40,10 +40,9 @@ func (ui *UI) ShowLincenseWindow(mgr *licensing.LicenseManager, onProceed func()
 
 	if data.Status == licensing.StatusExpired {
 		message.SetText("Tu periodo de prueba de 15 días ha expirado.\nPor favor, adquiere una licencia para continuar usando la aplicación.")
-		// Opcional: Cambiar color del mensaje a rojo si fuera canvas.Text
-		proceedBtn.Disable()
+		proceedBtn.Hide() // Ocultar botón si expiró
 	} else {
-		daysLeft := 15 - int(time.Since(data.InstallDate).Hours()/24)
+		daysLeft := max(15-int(time.Since(data.InstallDate).Hours()/24), 0)
 		message.SetText(fmt.Sprintf("Estás en modo de prueba. Te quedan %d días para evaluar todas las funcionalidades.", daysLeft))
 	}
 
@@ -81,8 +80,9 @@ func (ui *UI) ShowLincenseWindow(mgr *licensing.LicenseManager, onProceed func()
 	})
 	activateBtn.Importance = widget.HighImportance // Botón primario (destacado)
 
-	buyLink, _ := url.Parse("https://tu-tienda.lemonsqueezy.com") // Pon aquí tu link real luego
-	buyBtn := widget.NewHyperlink("Comprar Licencia", buyLink)
+	// Enlace a la página de producto en Naphsoft
+	buyLink, _ := url.Parse("https://naphsoft.com/products/verith")
+	buyBtn := widget.NewHyperlink("Ver Planes y Comprar", buyLink)
 	buyBtn.Alignment = fyne.TextAlignCenter
 
 	// Contenedor principal con más aire y ancho expandido
@@ -102,7 +102,7 @@ func (ui *UI) ShowLincenseWindow(mgr *licensing.LicenseManager, onProceed func()
 	// Usamos NewPadded para que el contenido se estire a los bordes con margen
 
 	window.SetContent(container.NewPadded(content))
-	window.Resize(fyne.NewSize(500, 450)) // Más ancho y alto
+	window.Resize(fyne.NewSize(600, 500)) // Más ancho y alto
 	window.CenterOnScreen()
 	window.Show()
 }

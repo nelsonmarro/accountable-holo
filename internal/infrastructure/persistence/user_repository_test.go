@@ -22,7 +22,7 @@ func TestCreateUser(t *testing.T) {
 		PasswordHash: "password_hash",
 		FirstName:    "Test",
 		LastName:     "User",
-		Role:         domain.CustomerRole,
+		Role:         domain.RoleCashier,
 	}
 
 	// Act
@@ -40,7 +40,7 @@ func TestGetUserByUsername(t *testing.T) {
 	ctx := context.Background()
 
 	// Arrange: Create a user first so we can fetch it
-	createdUser := createTestUser(t, testUserRepo, "testuser", domain.CustomerRole)
+	createdUser := createTestUser(t, testUserRepo, "testuser", domain.RoleCashier)
 
 	t.Run("should get an existing user", func(t *testing.T) {
 		// Act
@@ -68,7 +68,7 @@ func TestGetUserByID(t *testing.T) {
 	ctx := context.Background()
 
 	// Arrange: Create a user first so we can fetch it
-	createdUser := createTestUser(t, testUserRepo, "testuser", domain.CustomerRole)
+	createdUser := createTestUser(t, testUserRepo, "testuser", domain.RoleCashier)
 
 	t.Run("should get an existing user", func(t *testing.T) {
 		// Act
@@ -93,13 +93,13 @@ func TestGetUserByID(t *testing.T) {
 func TestUpdateUser(t *testing.T) {
 	truncateTables(t)
 	ctx := context.Background()
-	createdUser := createTestUser(t, testUserRepo, "testuser", domain.CustomerRole)
+	createdUser := createTestUser(t, testUserRepo, "testuser", domain.RoleCashier)
 
 	// Arrange: Modify the user details
 	createdUser.Username = "updateduser"
 	createdUser.FirstName = "Updated"
 	createdUser.LastName = "User"
-	createdUser.Role = domain.AdminRole
+	createdUser.Role = domain.RoleAdmin
 	originalUpdateTS := createdUser.UpdatedAt
 
 	// Act
@@ -113,14 +113,14 @@ func TestUpdateUser(t *testing.T) {
 	assert.Equal(t, "updateduser", updatedUser.Username)
 	assert.Equal(t, "Updated", updatedUser.FirstName)
 	assert.Equal(t, "User", updatedUser.LastName)
-	assert.Equal(t, domain.AdminRole, updatedUser.Role)
+	assert.Equal(t, domain.RoleAdmin, updatedUser.Role)
 	assert.True(t, updatedUser.UpdatedAt.After(originalUpdateTS))
 }
 
 func TestDeleteUser(t *testing.T) {
 	truncateTables(t)
 	ctx := context.Background()
-	createdUser := createTestUser(t, testUserRepo, "testuser", domain.CustomerRole)
+	createdUser := createTestUser(t, testUserRepo, "testuser", domain.RoleCashier)
 
 	// Act: Delete the user
 	err := testUserRepo.DeleteUser(ctx, createdUser.ID)
@@ -136,8 +136,8 @@ func TestGetAllUsers(t *testing.T) {
 	ctx := context.Background()
 
 	// Arrange: Create a couple of users
-	createTestUser(t, testUserRepo, "user1", domain.CustomerRole)
-	createTestUser(t, testUserRepo, "user2", domain.AdminRole)
+	createTestUser(t, testUserRepo, "user1", domain.RoleCashier)
+	createTestUser(t, testUserRepo, "user2", domain.RoleAdmin)
 
 	t.Run("should get all users", func(t *testing.T) {
 		// Act

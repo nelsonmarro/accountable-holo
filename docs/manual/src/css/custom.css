@@ -1,0 +1,107 @@
+/**
+ * Vapulabs Theme for Verith Documentation
+ */
+
+:root {
+  /* -- Vapulabs Palette -- */
+  /* Emerald-500 equivalent for Primary */
+  --ifm-color-primary: #10b981; 
+  --ifm-color-primary-dark: #0eadd1;
+  --ifm-color-primary-darker: #0d96a3;
+  --ifm-color-primary-darkest: #0a7c86;
+  --ifm-color-primary-light: #34d399;
+  --ifm-color-primary-lighter: #6ee7b7;
+  --ifm-color-primary-lightest: #a7f3d0;
+
+  /* Backgrounds (Dark Mode forced) */
+  --ifm-background-color: #030712; /* Gray-950 */
+  --ifm-background-surface-color: #111827; /* Gray-900 */
+  
+  /* Text */
+  --ifm-font-color-base: #d1d5db; /* Gray-300 */
+  --ifm-heading-color: #f9fafb; /* Gray-50 */
+
+  /* Accents (Copper/Amber) */
+  --vapulabs-copper: #d97706; 
+  
+  /* Links */
+  --ifm-link-color: var(--ifm-color-primary);
+  --ifm-link-hover-color: var(--vapulabs-copper); /* Hover copper effect */
+
+  /* Navigation */
+  --ifm-navbar-background-color: #111827; /* Gray-900 */
+  --ifm-navbar-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5);
+
+  /* Sidebar */
+  --ifm-menu-color: #9ca3af; /* Gray-400 */
+  --ifm-menu-color-active: var(--ifm-color-primary);
+  --ifm-menu-color-background-active: rgba(16, 185, 129, 0.1);
+
+  /* Footer */
+  --ifm-footer-background-color: #020617; /* Darker than bg */
+}
+
+/* Force Dark Mode visuals even if Docusaurus logic tries light */
+[data-theme='light'] {
+  --ifm-background-color: #030712;
+  --ifm-font-color-base: #d1d5db; 
+  /* ... re-map light vars to dark ones to ensure consistency ... */
+}
+
+/* Cards & Containers */
+.card, .card-container {
+  background-color: var(--ifm-background-surface-color);
+  border: 1px solid #1f2937; /* Gray-800 border */
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+}
+
+/* Code Blocks */
+.docusaurus-highlight-code-line {
+  background-color: rgba(0, 0, 0, 0.3);
+  display: block;
+  margin: 0 calc(-1 * var(--ifm-pre-padding));
+  padding: 0 var(--ifm-pre-padding);
+}
+
+/* Hero Section (Home) */
+.hero {
+  background-color: var(--ifm-background-surface-color);
+  color: var(--ifm-font-color-base);
+}
+
+.hero__title {
+  color: var(--ifm-color-primary);
+  text-shadow: 0 0 10px rgba(16, 185, 129, 0.4); /* Neon glow effect */
+}
+
+.button--primary {
+  background-color: var(--ifm-color-primary);
+  border-color: var(--ifm-color-primary);
+  color: #000; /* Contrast on bright emerald */
+  font-weight: bold;
+}
+
+.button--primary:hover {
+  background-color: var(--vapulabs-copper) !important;
+  border-color: var(--vapulabs-copper) !important;
+  color: #fff;
+}
+
+/* Scrollbars */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #111827; 
+}
+::-webkit-scrollbar-thumb {
+  background: #374151; 
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #4b5563; 
+}
+
+.container {
+  max-width: 1400px; 
+}

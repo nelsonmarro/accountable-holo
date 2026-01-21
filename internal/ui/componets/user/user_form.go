@@ -1,6 +1,8 @@
 package user
 
 import (
+	"fyne.io/fyne/v2"
+	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/widget"
 	"github.com/nelsonmarro/verith/internal/application/uivalidators"
 )
@@ -11,6 +13,7 @@ func UserForm(
 	firstName *widget.Entry,
 	lastName *widget.Entry,
 	role *widget.SelectEntry,
+	roleDescription fyne.CanvasObject, // Nuevo parámetro
 ) []*widget.FormItem {
 	addFormValidation(username, password, firstName, lastName, role)
 
@@ -19,7 +22,8 @@ func UserForm(
 		{Text: "Password", Widget: password},
 		{Text: "First Name", Widget: firstName},
 		{Text: "Last Name", Widget: lastName},
-		{Text: "Role", Widget: role},
+		// Agrupar el selector y la descripción en un contenedor vertical
+		{Text: "Role", Widget: container.NewVBox(role, roleDescription)},
 	}
 }
 

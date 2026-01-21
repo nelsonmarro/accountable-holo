@@ -46,14 +46,36 @@ func NewAddUserDialog(
 		passwordEntry:  &widget.Entry{Password: true},
 		firstNameEntry: widget.NewEntry(),
 		lastNameEntry:  widget.NewEntry(),
-		roleSelect:     widget.NewSelectEntry([]string{string(domain.AdminRole), string(domain.CustomerRole)}),
+		roleSelect:     widget.NewSelectEntry([]string{string(domain.RoleAdmin), string(domain.RoleSupervisor), string(domain.RoleCashier)}),
 	}
-	d.roleSelect.SetText(string(domain.CustomerRole)) // Default to Customer
+	d.roleSelect.SetText(string(domain.RoleCashier)) // Default to Cashier
 	return d
 }
 
 // Show creates and displays the Fyne form dialog.
 func (d *AddUserDialog) Show() {
+	roleDesc := widget.NewLabel("")
+	roleDesc.Wrapping = fyne.TextWrapWord
+	
+	updateDesc := func(role string) {
+		switch domain.UserRole(role) {
+		case domain.RoleAdmin:
+			roleDesc.SetText("Control total: Configuración SRI, Usuarios, Reportes y Finanzas.")
+		case domain.RoleSupervisor:
+			roleDesc.SetText("Gestión Táctica: Reportes, Reconciliación y Anulaciones. Sin acceso a configuración.")
+		case domain.RoleCashier:
+			roleDesc.SetText("Operativo: Ventas y Clientes. Sin acceso a reportes financieros.")
+		default:
+			roleDesc.SetText("Seleccione un rol para ver sus permisos.")
+		}
+	}
+
+	d.roleSelect.OnChanged = func(s string) {
+		updateDesc(s)
+	}
+	// Initial state
+	updateDesc(d.roleSelect.Text)
+
 	formDialog := dialog.NewForm("Create User", "Save", "Cancel",
 		UserForm(
 			d.usernameEntry,
@@ -61,12 +83,13 @@ func (d *AddUserDialog) Show() {
 			d.firstNameEntry,
 			d.lastNameEntry,
 			d.roleSelect,
+			roleDesc,
 		),
 		d.handleSubmit,
 		d.mainWin,
 	)
 
-	formDialog.Resize(fyne.NewSize(400, 300))
+	formDialog.Resize(fyne.NewSize(450, 400)) // Un poco más alto para la descripción
 	formDialog.Show()
 }
 

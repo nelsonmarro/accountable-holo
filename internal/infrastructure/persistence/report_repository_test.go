@@ -23,7 +23,7 @@ func TestGetFinancialSummary(t *testing.T) {
 
 	// --- Test Data Setup ---
 	truncateTables(t) // Clear database before test
-	user := createTestUser(t, testUserRepo, "testuser_report_sum", domain.AdminRole)
+	user := createTestUser(t, testUserRepo, "testuser_report_sum", domain.RoleAdmin)
 	acc1 := createTestAccount(t, accountRepo)
 	acc2 := createTestAccount(t, accountRepo)
 	catIncome := createTestCategory(t, categoryRepo, "Salary", domain.Income)
@@ -78,7 +78,7 @@ func TestGetReconciliation(t *testing.T) {
 
 	// --- Test Data Setup ---
 	truncateTables(t) // Clear database before test
-	user := createTestUser(t, testUserRepo, "testuser_report_rec", domain.AdminRole)
+	user := createTestUser(t, testUserRepo, "testuser_report_rec", domain.RoleAdmin)
 	acc := createTestAccount(t, accountRepo)
 	catIncome := createTestCategory(t, categoryRepo, "Salary", domain.Income)
 	catOutcome := createTestCategory(t, categoryRepo, "Groceries", domain.Outcome)

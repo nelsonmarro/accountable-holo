@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"os"
 	"time"
 )
 
@@ -24,11 +25,16 @@ func (m *LicenseManager) ActivateLicense(key string) (bool, error) {
 		url = m.apiURL
 	}
 
+	hostname, _ := os.Hostname()
+	if hostname == "" {
+		hostname = "Verith-PC"
+	}
+
 	// Datos a enviar
-	// Lemon squeezy espera el lincense_key y opcionalmente un instance_name
+	// Usamos el hostname para identificar cada puesto de trabajo único
 	payload := map[string]string{
 		"license_key":   key,
-		"instance_name": "Verith",
+		"instance_name": hostname,
 	}
 
 	jsonPayload, err := json.Marshal(payload)
@@ -50,6 +56,7 @@ func (m *LicenseManager) ActivateLicense(key string) (bool, error) {
 	if err != nil {
 		return false, err
 	}
+	defer resp.Body.Close()
 
 	var lsResp LemonSqueezyResponse
 	if err := json.NewDecoder(resp.Body).Decode(&lsResp); err != nil {
@@ -74,4 +81,54 @@ func (m *LicenseManager) ActivateLicense(key string) (bool, error) {
 	}
 
 	return false, fmt.Errorf("la licencia no pudo ser activada")
+}
+
+// ValidateLicense verifica el estado actual de la suscripción sin consumir activaciones
+func (m *LicenseManager) ValidateLicense(key string) (string, error) {
+	url := "https://api.lemonsqueezy.com/v1/licenses/validate"
+	if m.apiURL != "" {
+		url = m.apiURL
+	}
+	// Use instance_id if available, but validate mainly needs license_key
+	payload := map[string]string{
+		"license_key": key,
+	}
+
+	jsonPayload, err := json.Marshal(payload)
+	if err != nil {
+		return "", err
+	}
+
+	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonPayload))
+	if err != nil {
+		return "", err
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Accept", "application/json")
+
+	client := &http.Client{Timeout: 10 * time.Second}
+	resp, err := client.Do(req)
+	if err != nil {
+		return "", fmt.Errorf("error de conexión: %w", err)
+	}
+	defer resp.Body.Close()
+
+	var lsResp struct {
+		Valid   bool   `json:"valid"`
+		Error   string `json:"error"`
+		LicenseKey struct {
+			Status string `json:"status"` // "active", "expired", "inactive"
+		} `json:"license_key"`
+	}
+
+	if err := json.NewDecoder(resp.Body).Decode(&lsResp); err != nil {
+		return "", fmt.Errorf("error decodificando respuesta: %w", err)
+	}
+
+	if lsResp.Error != "" {
+		return "", fmt.Errorf("api error: %s", lsResp.Error)
+	}
+
+	// Retorna el estado real de la suscripción (active, expired, etc.)
+	return lsResp.LicenseKey.Status, nil
 }

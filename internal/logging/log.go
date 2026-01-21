@@ -10,13 +10,14 @@ import (
 )
 
 func Init() (*log.Logger, *log.Logger, error) {
-	executablePath, err := os.Executable()
+	// Usar AppData (Windows) o .config (Linux) para escribir logs sin requerir Admin
+	configDir, err := os.UserConfigDir()
 	if err != nil {
 		return nil, nil, err
 	}
 
-	dirs := filepath.Dir(executablePath)
-	logsDirPath := filepath.Join(dirs, "logs")
+	// Logs en: %AppData%/Verith/logs
+	logsDirPath := filepath.Join(configDir, "Verith", "logs")
 
 	err = os.MkdirAll(logsDirPath, 0o755)
 	if err != nil {

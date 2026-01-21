@@ -137,6 +137,9 @@ func (ui *UI) makeTransactionUI() fyne.CanvasObject {
 		reportDialog.Show()
 	})
 	generateReportBtn.Importance = widget.SuccessImportance
+	if !ui.currentUser.CanViewReports() {
+		generateReportBtn.Hide()
+	}
 
 	reconciliationBtn := widget.NewButtonWithIcon("Reconciliar", theme.ContentPasteIcon(), func() {
 		dialogHandler := transaction.NewReconciliationDialog(
@@ -155,12 +158,19 @@ func (ui *UI) makeTransactionUI() fyne.CanvasObject {
 		dialogHandler.Show()
 	})
 	reconciliationBtn.Importance = widget.WarningImportance
+	if !ui.currentUser.CanReconcile() {
+		reconciliationBtn.Hide()
+	}
 
 	// SRI Queue Button
 	sriQueueBtn := widget.NewButtonWithIcon("Cola SRI", theme.ListIcon(), func() {
 		dialog := transaction.NewSriQueueDialog(ui.mainWindow, ui.Services.SriService, ui.Services.TxService)
 		dialog.Show()
 	})
+	if !ui.currentUser.CanConfigureSystem() {
+		sriQueueBtn.Hide()
+	}
+
 
 	// Reload Data Button
 	reloadDataBtn := widget.NewButtonWithIcon("Recargar Datos", theme.ViewRefreshIcon(), func() {
@@ -171,7 +181,6 @@ func (ui *UI) makeTransactionUI() fyne.CanvasObject {
 	})
 	reloadDataBtn.Importance = widget.SuccessImportance
 
-	// Recurring Transactions Button
 	recurBtn := widget.NewButtonWithIcon("Recurrentes", theme.HistoryIcon(), func() {
 		dialog := transaction.NewRecurringManagerDialog(
 			ui.mainWindow,
@@ -181,6 +190,9 @@ func (ui *UI) makeTransactionUI() fyne.CanvasObject {
 		)
 		dialog.Show()
 	})
+	if !ui.currentUser.CanReconcile() {
+		recurBtn.Hide()
+	}
 
 	// Containers
 	topBar := container.NewBorder(nil, nil,
@@ -330,7 +342,12 @@ func (ui *UI) updateTransactionItem(i widget.ListItemID, o fyne.CanvasObject) {
 	}
 	amountText.Refresh()
 
-	rowContainer.Objects[6].(*widget.Label).SetText(fmt.Sprintf("$%.2f", tx.RunningBalance))
+	// Ocultar saldo a cajeros
+	if ui.currentUser.CanViewReports() {
+		rowContainer.Objects[6].(*widget.Label).SetText(fmt.Sprintf("$%.2f", tx.RunningBalance))
+	} else {
+		rowContainer.Objects[6].(*widget.Label).SetText("***")
+	}
 
 	// SRI Status Logic
 	sriContainer := rowContainer.Objects[7].(*fyne.Container)
@@ -425,17 +442,16 @@ func (ui *UI) updateTransactionItem(i widget.ListItemID, o fyne.CanvasObject) {
 		editBtn.Show()
 	}
 
-	// Logic for Void Button: Hide ONLY if already voided or adjustment. 
-	// SHOW if authorized (to allow Credit Note flow)
-	if tx.IsVoided || tx.VoidsTransactionID != nil ||
-		strings.Contains(tx.Category.Name, "Ajuste") {
-		voidBtn.Hide()
-	} else {
-		voidBtn.Show()
+		// Logic for Void Button: Hide if already voided, adjustment, OR NO PERMISSION.
+		// SHOW if authorized (to allow Credit Note flow) AND user has permission.
+		if tx.IsVoided || tx.VoidsTransactionID != nil ||
+			strings.Contains(tx.Category.Name, "Ajuste") || !ui.currentUser.CanVoidTransactions() {
+			voidBtn.Hide()
+		} else {
+			voidBtn.Show()
+		}
 	}
-}
-
-func (ui *UI) loadTransactions(page int, pageSize int) {
+	func (ui *UI) loadTransactions(page int, pageSize int) {
 	if ui.selectedAccountID == 0 {
 		return
 	}

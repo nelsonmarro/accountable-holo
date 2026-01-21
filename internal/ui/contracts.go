@@ -118,6 +118,9 @@ type UserService interface {
 	UpdateUser(ctx context.Context, id int, username, password, firstName, lastName string, role domain.UserRole, currentUser *domain.User) error
 	DeleteUser(ctx context.Context, id int, currentUser *domain.User) error
 	GetAllUsers(ctx context.Context, currentUser *domain.User) ([]domain.User, error)
+	HasUsers(ctx context.Context) (bool, error)
+	GetAdminUsers(ctx context.Context) ([]domain.User, error)
+	ResetPassword(ctx context.Context, username, newPassword string) error
 }
 
 type TaxPayerService interface {

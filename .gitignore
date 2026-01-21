@@ -28,3 +28,4 @@ dist/
 
 tool/
 build/logs/
+build/windows/

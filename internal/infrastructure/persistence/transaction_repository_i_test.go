@@ -38,7 +38,7 @@ func TestUpdateTransaction(t *testing.T) {
 	t.Run("should update description without changing transaction number", func(t *testing.T) {
 		// Arrange
 		truncateTables(t)
-		user := createTestUser(t, testUserRepo, "testuser_update1", domain.AdminRole)
+		user := createTestUser(t, testUserRepo, "testuser_update1", domain.RoleAdmin)
 		acc := createTestAccount(t, accountRepo)
 		cat := createTestCategory(t, categoryRepo, "Salary", domain.Income)
 		tx := createTestTransaction(t, txRepo, acc.ID, cat.ID, 100.0, time.Now(), user.ID)
@@ -59,7 +59,7 @@ func TestUpdateTransaction(t *testing.T) {
 	t.Run("should regenerate transaction number when date changes to a different month", func(t *testing.T) {
 		// Arrange
 		truncateTables(t)
-		user := createTestUser(t, testUserRepo, "testuser_update2", domain.AdminRole)
+		user := createTestUser(t, testUserRepo, "testuser_update2", domain.RoleAdmin)
 		acc := createTestAccount(t, accountRepo)
 		cat := createTestCategory(t, categoryRepo, "Salary", domain.Income)
 
@@ -84,7 +84,7 @@ func TestUpdateTransaction(t *testing.T) {
 	t.Run("should regenerate transaction number when category type changes", func(t *testing.T) {
 		// Arrange
 		truncateTables(t)
-		user := createTestUser(t, testUserRepo, "testuser_update3", domain.AdminRole)
+		user := createTestUser(t, testUserRepo, "testuser_update3", domain.RoleAdmin)
 		acc := createTestAccount(t, accountRepo)
 		incomeCat := createTestCategory(t, categoryRepo, "Salary", domain.Income)
 		outcomeCat := createTestCategory(t, categoryRepo, "Rent", domain.Outcome)
@@ -107,7 +107,7 @@ func TestUpdateTransaction(t *testing.T) {
 	t.Run("should fail to update a voided transaction", func(t *testing.T) {
 		// Arrange
 		truncateTables(t)
-		user := createTestUser(t, testUserRepo, "testuser_update4", domain.AdminRole)
+		user := createTestUser(t, testUserRepo, "testuser_update4", domain.RoleAdmin)
 		acc := createTestAccount(t, accountRepo)
 		cat := createTestCategory(t, categoryRepo, "Salary", domain.Income)
 		_ = createTestCategory(t, categoryRepo, "Anular Transacción Ingreso", domain.Outcome)
@@ -136,7 +136,7 @@ func TestFindTransactionsByAccount(t *testing.T) {
 
 	// --- Test Data Setup ---
 	truncateTables(t) // Clear database before test
-	user := createTestUser(t, testUserRepo, "testuser_find", domain.AdminRole)
+	user := createTestUser(t, testUserRepo, "testuser_find", domain.RoleAdmin)
 	acc := createTestAccount(t, accountRepo)
 	catIncome := createTestCategory(t, categoryRepo, "Salary", domain.Income)
 	catOutcome := createTestCategory(t, categoryRepo, "Groceries", domain.Outcome)
@@ -336,7 +336,7 @@ func TestFindAllTransactionsByAccount(t *testing.T) {
 
 	// --- Test Data Setup ---
 	truncateTables(t) // Clear database before test
-	user := createTestUser(t, testUserRepo, "testuser_findall_acc", domain.AdminRole)
+	user := createTestUser(t, testUserRepo, "testuser_findall_acc", domain.RoleAdmin)
 	acc := createTestAccount(t, accountRepo)
 	catIncome := createTestCategory(t, categoryRepo, "Salary", domain.Income)
 	catOutcome := createTestCategory(t, categoryRepo, "Groceries", domain.Outcome)
@@ -449,7 +449,7 @@ func TestFindAllTransactions(t *testing.T) {
 
 	// --- Test Data Setup ---
 	truncateTables(t)                         // Clear database before test
-	user := createTestUser(t, testUserRepo, "testuser_findall", domain.AdminRole)
+	user := createTestUser(t, testUserRepo, "testuser_findall", domain.RoleAdmin)
 	acc1 := createTestAccount(t, accountRepo) // acc1
 	acc2 := createTestAccount(t, accountRepo) // acc2
 	catIncome := createTestCategory(t, categoryRepo, "Salary", domain.Income)
@@ -556,7 +556,7 @@ func TestGetBalanceAsOf(t *testing.T) {
 	ctx := context.Background()
 
 	truncateTables(t)
-	user := createTestUser(t, testUserRepo, "testuser_balance", domain.AdminRole)
+	user := createTestUser(t, testUserRepo, "testuser_balance", domain.RoleAdmin)
 	
 	// Account with 1000 initial balance
 	acc := &domain.Account{
@@ -609,7 +609,7 @@ func TestFindTransactionsWithMultipleReceipts(t *testing.T) {
 
 	// --- Test Data Setup ---
 	truncateTables(t)
-	user := createTestUser(t, testUserRepo, "testuser_receipts", domain.AdminRole)
+	user := createTestUser(t, testUserRepo, "testuser_receipts", domain.RoleAdmin)
 	acc := createTestAccount(t, accountRepo)
 	cat := createTestCategory(t, categoryRepo, "Sales", domain.Income)
 
