@@ -1,6 +1,10 @@
 # Configuración SRI
 
-Antes de comenzar a facturar electrónicamente, es obligatorio configurar los datos de su empresa o perfil profesional. Estos datos son los que el SRI utiliza para validar sus comprobantes.
+Antes de comenzar a facturar electrónicamente, es obligatorio configurar los datos de su empresa o perfil profesional. Estos datos son los que el SRI utiliza para validar sus comprobantes. 
+
+:::info Asistente Inicial
+Si es la primera vez que usa Verith, el sistema le mostrará automáticamente un **Asistente de Configuración Inicial** tras su primer inicio de sesión para facilitarle este proceso.
+:::
 
 ---
 
