@@ -2,30 +2,51 @@
 const sidebars = {
   tutorialSidebar: [
     {
+      type: 'doc',
+      id: 'intro',
+      label: '🚀 Introducción',
+    },
+    {
       type: 'category',
-      label: 'Comenzando',
-      items: ['intro', 'installation', 'dashboard', 'licensing'],
+      label: '🏁 Primeros Pasos',
       collapsed: false,
+      items: [
+        'installation',
+        'licensing',
+      ],
     },
     {
       type: 'category',
-      label: 'Gestión Financiera',
-      items: ['accounts', 'categories', 'transactions', 'recurring', 'reconciliation'],
+      label: '💵 Gestión Financiera',
+      collapsed: false,
+      items: [
+        'dashboard',
+        'accounts',
+        'categories',
+        'transactions',
+        'recurring',
+        'reconciliation',
+      ],
     },
     {
       type: 'category',
-      label: 'Facturación Electrónica (SRI)',
-      items: ['taxpayers', 'sri-setup', 'issuing-invoices', 'credit-notes'],
+      label: '🏛️ Facturación Electrónica',
+      collapsed: false,
+      items: [
+        'taxpayers',
+        'sri-setup',
+        'issuing-invoices',
+        'credit-notes',
+      ],
     },
     {
       type: 'category',
-      label: 'Reportes y Análisis',
-      items: ['reports-overview'],
-    },
-    {
-      type: 'category',
-      label: 'Administración',
-      items: ['users'],
+      label: '🛠️ Administración y Control',
+      collapsed: true,
+      items: [
+        'reports-overview',
+        'users',
+      ],
     },
   ],
 };

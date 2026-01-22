@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"net/url"
 	"os"
 	"path/filepath"
 	"time"
@@ -199,7 +200,13 @@ func (ui *UI) openMainWindow() {
 		ui.ShowLincenseWindow(licMgr, func() {}) // Callback empty as we are already inside
 	})
 
-	fileMenu := fyne.NewMenu("Sesión", licenseItem, fyne.NewMenuItemSeparator(), logoutItem)
+	// Add Documentation Item
+	docURL, _ := url.Parse("https://docs.verith.naphsoft.dev")
+	docItem := fyne.NewMenuItem("Manual de Usuario", func() {
+		_ = ui.app.OpenURL(docURL)
+	})
+
+	fileMenu := fyne.NewMenu("Sesión", licenseItem, docItem, fyne.NewMenuItemSeparator(), logoutItem)
 	mainWindow.SetMainMenu(fyne.NewMainMenu(fileMenu))
 
 	// Build tabs

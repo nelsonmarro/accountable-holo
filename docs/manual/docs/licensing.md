@@ -1,3 +1,7 @@
+---
+sidebar_label: '🔑 Licencias y Suscripción'
+---
+
 # Licenciamiento y Suscripción
 
 Verith utiliza un modelo de suscripción para garantizar actualizaciones constantes, soporte técnico y cumplimiento con las normativas vigentes del SRI.

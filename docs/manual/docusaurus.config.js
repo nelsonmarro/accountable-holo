@@ -119,6 +119,10 @@ const config = {
       mermaid: {
         theme: {light: 'neutral', dark: 'dark'},
       },
+      tableOfContents: {
+        minHeadingLevel: 2,
+        maxHeadingLevel: 4,
+      },
     }),
 };
 
