@@ -197,7 +197,10 @@ func (ui *UI) openMainWindow() {
 
 	// Add License Management Item
 	licenseItem := fyne.NewMenuItem("Gestionar Licencia", func() {
-		ui.ShowLincenseWindow(licMgr, func() {}) // Callback empty as we are already inside
+		ui.ShowLincenseWindow(licMgr, func() {
+			// Reload main window to reflect license status change (hide trial banner)
+			ui.openMainWindow()
+		})
 	})
 
 	// Add Documentation Item
@@ -257,7 +260,9 @@ func (ui *UI) openMainWindow() {
 		bannerLabel.TextStyle = fyne.TextStyle{Bold: true}
 
 		activateBtn := widget.NewButton("Activar Ahora", func() {
-			ui.ShowLincenseWindow(licMgr, func() {})
+			ui.ShowLincenseWindow(licMgr, func() {
+				ui.openMainWindow()
+			})
 		})
 		activateBtn.Importance = widget.HighImportance
 
