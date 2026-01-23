@@ -6,6 +6,10 @@ Antes de comenzar a facturar electrónicamente, es obligatorio configurar los da
 Si es la primera vez que usa Verith, el sistema le mostrará automáticamente un **Asistente de Configuración Inicial** tras su primer inicio de sesión para facilitarle este proceso.
 :::
 
+:::caution Acceso Exclusivo
+Solo los usuarios con rol de **Administrador** tienen permiso para ver y modificar esta configuración. Si usted es Cajero o Supervisor y necesita realizar cambios, contacte al administrador del sistema.
+:::
+
 ---
 
 ## 1. Información Legal y Matriz
