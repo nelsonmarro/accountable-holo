@@ -89,11 +89,17 @@ func (ui *UI) showRecoveryDialog(parent fyne.Window) {
 		progress := dialog.NewCustomWithoutButtons("Verificando licencia...", widget.NewProgressBarInfinite(), parent)
 		progress.Show()
 
-		go func() {
-			defer progress.Hide()
-			status, err := licMgr.ValidateLicense(licenseEntry.Text)
+				go func() {
 
-			// Si la validación falla o no está activa
+					defer progress.Hide()
+
+					status, err := licMgr.ValidateLicense(licenseEntry.Text, "")
+
+					
+
+					// Si la validación falla o no está activa
+
+		
 			if err != nil || status != "active" {
 				fyne.Do(func() {
 					dialog.ShowError(fmt.Errorf("Licencia inválida o expirada. No se puede autorizar la recuperación."), parent)

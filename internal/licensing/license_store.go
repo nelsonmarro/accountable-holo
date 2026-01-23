@@ -20,6 +20,7 @@ const (
 type LicenseData struct {
 	InstallDate time.Time     `json:"install_date"`
 	LicenseKey  string        `json:"license_key"`
+	InstanceID  string        `json:"instance_id,omitempty"` // ID de activación único
 	Status      LicenseStatus `json:"status"`
 	LastCheck   time.Time     `json:"last_check"`
 }

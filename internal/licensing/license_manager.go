@@ -54,7 +54,7 @@ func (m *LicenseManager) CheckStatus() (*LicenseData, error) {
 	if data.Status == StatusActive {
 		// Validar online cada 24 horas para asegurar que la suscripción sigue pagada
 		if time.Since(data.LastCheck).Hours() > 24 {
-			status, err := m.ValidateLicense(data.LicenseKey)
+			status, err := m.ValidateLicense(data.LicenseKey, data.InstanceID)
 			if err == nil {
 				// Conexión exitosa, actualizamos estado real
 				if status == "active" {

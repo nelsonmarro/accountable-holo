@@ -9,29 +9,53 @@ import (
 	"time"
 )
 
-type LemonSqueezyResponse struct {
-	Activated bool   `json:"activated"`
-	Error     string `json:"error,omitempty"`
-	License   struct {
-		Status string `json:"status"`
-	} `json:"license"`
+// Estructuras oficiales de respuesta de la API de Licencias de Lemon Squeezy
+// Docs: https://docs.lemonsqueezy.com/help/licensing/license-api
+
+type LemonSqueezyLicenseKey struct {
+	ID              int       `json:"id"`
+	Status          string    `json:"status"` // "active", "inactive", "expired", "disabled"
+	Key             string    `json:"key"`
+	ActivationLimit int       `json:"activation_limit"`
+	ActivationUsage int       `json:"activation_usage"`
+	CreatedAt       time.Time `json:"created_at"`
+	ExpiresAt       *string   `json:"expires_at"` // Null si es de por vida o suscripción activa
 }
 
-// ActivateLicense llama a la API de Lemon Squeezy
+type LemonSqueezyInstance struct {
+	ID   string `json:"id"`
+	Name string `json:"name"`
+}
+
+type LemonSqueezyActivateResponse struct {
+	Activated  bool                   `json:"activated"`
+	Error      string                 `json:"error,omitempty"`
+	LicenseKey LemonSqueezyLicenseKey `json:"license_key"`
+	Instance   LemonSqueezyInstance   `json:"instance"`
+	Meta       map[string]interface{} `json:"meta"`
+}
+
+type LemonSqueezyValidateResponse struct {
+	Valid      bool                   `json:"valid"`
+	Error      string                 `json:"error,omitempty"`
+	LicenseKey LemonSqueezyLicenseKey `json:"license_key"`
+	Instance   *LemonSqueezyInstance  `json:"instance,omitempty"` // Puede ser null si no se valida una instancia específica
+	Meta       map[string]interface{} `json:"meta"`
+}
+
+// ActivateLicense llama a POST v1/licenses/activate
 func (m *LicenseManager) ActivateLicense(key string) (bool, error) {
-	// Endpoint oficial de activación de Lemon Squeezy
 	url := "https://api.lemonsqueezy.com/v1/licenses/activate"
+	// Permitir override para tests
 	if m.apiURL != "" {
 		url = m.apiURL
 	}
 
 	hostname, _ := os.Hostname()
 	if hostname == "" {
-		hostname = "Verith-PC"
+		hostname = "Verith-Workstation"
 	}
 
-	// Datos a enviar
-	// Usamos el hostname para identificar cada puesto de trabajo único
 	payload := map[string]string{
 		"license_key":   key,
 		"instance_name": hostname,
@@ -39,96 +63,97 @@ func (m *LicenseManager) ActivateLicense(key string) (bool, error) {
 
 	jsonPayload, err := json.Marshal(payload)
 	if err != nil {
-		return false, err
+		return false, fmt.Errorf("error construyendo petición: %w", err)
 	}
 
-	// Crear la solicitud http
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonPayload))
 	if err != nil {
 		return false, err
 	}
-
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Accept", "application/json")
 
 	client := &http.Client{Timeout: 15 * time.Second}
 	resp, err := client.Do(req)
 	if err != nil {
-		return false, err
+		return false, fmt.Errorf("error de conexión con servidor de licencias: %w", err)
 	}
 	defer resp.Body.Close()
 
-	var lsResp LemonSqueezyResponse
+	// Decodificar respuesta
+	var lsResp LemonSqueezyActivateResponse
 	if err := json.NewDecoder(resp.Body).Decode(&lsResp); err != nil {
-		return false, fmt.Errorf("error al leer respuesta del servidor")
+		return false, fmt.Errorf("error interpretando respuesta del servidor")
 	}
 
-	// Error devuelto por la API
+	// 1. Revisar si hubo error lógico en la API (ej: límite alcanzado, clave no existe)
 	if lsResp.Error != "" {
-		return false, fmt.Errorf("%s", lsResp.Error)
+		return false, fmt.Errorf("error de activación: %s", lsResp.Error)
 	}
 
-	// Si se activo correctamente
-	if lsResp.Activated {
-		// Actualizamos en el estado la licencia
-		data, _ := m.store.Load()
-		data.Status = StatusActive
-		data.LicenseKey = key
-		data.LastCheck = time.Now()
-		_ = m.store.Save(data)
-
-		return true, nil
+	// 2. Revisar flag de éxito
+	if !lsResp.Activated {
+		return false, fmt.Errorf("la licencia es válida pero no se pudo activar (posible límite de activaciones)")
 	}
 
-	return false, fmt.Errorf("la licencia no pudo ser activada")
+	// 3. Guardar estado
+	data, _ := m.store.Load()
+	data.Status = StatusActive
+	data.LicenseKey = lsResp.LicenseKey.Key
+	data.InstanceID = lsResp.Instance.ID // Guardamos el ID de instancia
+	data.LastCheck = time.Now()
+
+	// Si la API devuelve fecha de expiración, podríamos usarla,
+	// pero en suscripciones confiamos en la validación recurrente.
+
+	if err := m.store.Save(data); err != nil {
+		return true, fmt.Errorf("licencia activada pero falló al guardar localmente: %w", err)
+	}
+
+	return true, nil
 }
 
-// ValidateLicense verifica el estado actual de la suscripción sin consumir activaciones
-func (m *LicenseManager) ValidateLicense(key string) (string, error) {
+// ValidateLicense llama a POST v1/licenses/validate
+// Verifica si la licencia sigue activa y pagada (si es suscripción)
+func (m *LicenseManager) ValidateLicense(key, instanceID string) (string, error) {
 	url := "https://api.lemonsqueezy.com/v1/licenses/validate"
 	if m.apiURL != "" {
 		url = m.apiURL
 	}
-	// Use instance_id if available, but validate mainly needs license_key
+
 	payload := map[string]string{
 		"license_key": key,
 	}
-
-	jsonPayload, err := json.Marshal(payload)
-	if err != nil {
-		return "", err
+	if instanceID != "" {
+		payload["instance_id"] = instanceID
 	}
 
-	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonPayload))
-	if err != nil {
-		return "", err
-	}
+	jsonPayload, _ := json.Marshal(payload)
+	req, _ := http.NewRequest("POST", url, bytes.NewBuffer(jsonPayload))
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Accept", "application/json")
 
 	client := &http.Client{Timeout: 10 * time.Second}
 	resp, err := client.Do(req)
 	if err != nil {
-		return "", fmt.Errorf("error de conexión: %w", err)
+		return "", fmt.Errorf("offline") // Error de red
 	}
 	defer resp.Body.Close()
 
-	var lsResp struct {
-		Valid   bool   `json:"valid"`
-		Error   string `json:"error"`
-		LicenseKey struct {
-			Status string `json:"status"` // "active", "expired", "inactive"
-		} `json:"license_key"`
-	}
-
+	var lsResp LemonSqueezyValidateResponse
 	if err := json.NewDecoder(resp.Body).Decode(&lsResp); err != nil {
-		return "", fmt.Errorf("error decodificando respuesta: %w", err)
+		return "", fmt.Errorf("error de formato")
 	}
 
 	if lsResp.Error != "" {
-		return "", fmt.Errorf("api error: %s", lsResp.Error)
+		return "error", fmt.Errorf("%s", lsResp.Error)
 	}
 
-	// Retorna el estado real de la suscripción (active, expired, etc.)
-	return lsResp.LicenseKey.Status, nil
+	// Retornamos el estado real (active, expired, etc.)
+	// Si valid=true, confiamos en el status del objeto license_key
+	if lsResp.Valid {
+		return lsResp.LicenseKey.Status, nil
+	}
+
+	return "inactive", nil
 }
