@@ -48,4 +48,63 @@ Configuración estética para la representación impresa (PDF).
 ---
 
 ### Guardar Cambios
+
 Una vez completados los datos, pulse el botón **"Guardar Cambios"**. Verith verificará la integridad de los datos y guardará su configuración de forma segura.
+
+
+
+---
+
+
+
+## 🚀 Migración desde otro Sistema
+
+
+
+Si usted ya emitía facturas electrónicas con otro software y desea empezar a usar **Verith** manteniendo su numeración actual, debe seguir este proceso de migración para evitar rechazos del SRI por secuenciales duplicados.
+
+
+
+### 1. Preparación
+
+Antes de configurar Verith, emita su última factura en su sistema anterior y anote el número (ejemplo: `001-001-000001500`).
+
+
+
+### 2. Configurar el Emisor
+
+En esta pestaña de **Configuración SRI**, asegúrese de haber guardado sus **Datos Legales** y **Códigos de Emisión** (Establecimiento y Punto de Emisión) antes de proceder al ajuste de secuenciales.
+
+
+
+### 3. Ajuste de Secuenciales
+
+Haga clic en el botón **"MIGRAR / AJUSTAR SECUENCIALES"**. Se abrirá un diálogo con los registros de sus puntos de emisión.
+
+
+
+Para cada tipo de documento (Factura o Nota de Crédito), haga clic en el icono de editar y configure los siguientes campos:
+
+
+
+*   **Secuencial Actual:** Ingrese el número del **último documento emitido con éxito** en su sistema anterior.
+
+    *   *Ejemplo:* Si su última factura fue la **1500**, ingrese `1500`. Verith generará la siguiente como la `1501`.
+
+*   **Secuencial Inicial:** Ingrese el número con el que **desea que Verith empiece su historial**.
+
+    *   *Ejemplo:* Ingrese `1501`. Este campo es solo para referencia de auditoría interna.
+
+
+
+:::danger Advertencia de Seguridad
+
+Al guardar un cambio en el secuencial, Verith le solicitará una confirmación. **Reducir el número secuencial** es altamente peligroso, ya que el SRI rechazará cualquier factura con un número que ya haya sido autorizado previamente.
+
+:::
+
+
+
+### 4. Verificación
+
+Una vez guardado, cierre el diálogo y proceda a realizar su primera venta. Verith tomará automáticamente el "Secuencial Actual" que usted ingresó, le sumará 1, y emitirá el comprobante con la numeración correcta.
