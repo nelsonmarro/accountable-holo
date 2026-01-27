@@ -75,8 +75,8 @@ type UI struct {
 
 	// ---- Summary Tab State ----
 	summaryDateRangeSelect *widget.Select
-	summaryStartDateEntry  *widget.DateEntry
-	summaryEndDateEntry    *widget.DateEntry
+	summaryStartDateEntry  *componets.LatinDateEntry
+	summaryEndDateEntry    *componets.LatinDateEntry
 	summaryAccountSelect   *widget.Select
 	summaryTotalIncome     *canvas.Text
 	summaryTotalExpenses   *canvas.Text
@@ -198,8 +198,9 @@ func (ui *UI) openMainWindow() {
 	// Add License Management Item
 	licenseItem := fyne.NewMenuItem("Gestionar Licencia", func() {
 		ui.ShowLincenseWindow(licMgr, func() {
-			// Reload main window to reflect license status change (hide trial banner)
+			oldWin := ui.mainWindow
 			ui.openMainWindow()
+			oldWin.Close()
 		})
 	})
 
@@ -261,7 +262,9 @@ func (ui *UI) openMainWindow() {
 
 		activateBtn := widget.NewButton("Activar Ahora", func() {
 			ui.ShowLincenseWindow(licMgr, func() {
+				oldWin := ui.mainWindow
 				ui.openMainWindow()
+				oldWin.Close()
 			})
 		})
 		activateBtn.Importance = widget.HighImportance

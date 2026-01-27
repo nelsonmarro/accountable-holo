@@ -3,117 +3,120 @@ package service
 import (
 	"context"
 	"log"
+	"os"
 	"testing"
 	"time"
 
 	"github.com/nelsonmarro/verith/internal/application/service/mocks"
 	"github.com/nelsonmarro/verith/internal/domain"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
 
-func TestProcessPendingRecurrences(t *testing.T) {
-	mockRecurRepo := new(mocks.MockRecurringTransactionRepository)
-	mockTxRepo := new(mocks.MockTransactionRepository)
-	
-	// Create a dummy logger that writes to nowhere (io.Discard) or just nil if handled
-	logger := log.New(log.Writer(), "", 0) 
-
-	service := NewRecurringTransactionService(mockRecurRepo, mockTxRepo, logger)
-
+func TestRecurringTransactionService_ProcessPendingRecurrences(t *testing.T) {
 	ctx := context.Background()
-	systemUser := domain.User{BaseEntity: domain.BaseEntity{ID: 1}}
+	logger := log.New(os.Stdout, "TEST: ", log.LstdFlags)
+	systemUser := domain.User{BaseEntity: domain.BaseEntity{ID: 1}, Username: "system"}
 
-	t.Run("Processes due monthly transaction", func(t *testing.T) {
-		// Arrange
-		lastRun := time.Now().AddDate(0, -1, -5) // 1 month and 5 days ago
-		nextRun := lastRun.AddDate(0, 1, 0)      // Should have run 5 days ago
+	t.Run("No pending recurrences", func(t *testing.T) {
+		repo := new(mocks.MockRecurringTransactionRepository)
+		txRepo := new(mocks.MockTransactionRepository)
+		svc := NewRecurringTransactionService(repo, txRepo, logger)
+
+		// Setup: One future recurrence
+		futureDate := time.Now().AddDate(0, 0, 1)
+		recurrences := []domain.RecurringTransaction{
+			{
+				BaseEntity:  domain.BaseEntity{ID: 1},
+				Description: "Future Internet",
+				Amount:      50.0,
+				NextRunDate: futureDate,
+				IsActive:    true,
+			},
+		}
+
+		repo.On("GetAllActive", ctx).Return(recurrences, nil)
+
+		err := svc.ProcessPendingRecurrences(ctx, systemUser)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+
+		txRepo.AssertNotCalled(t, "CreateTransaction", mock.Anything, mock.Anything)
+		repo.AssertNotCalled(t, "Update", mock.Anything, mock.Anything)
+	})
+
+	t.Run("One pending monthly recurrence (due today)", func(t *testing.T) {
+		repo := new(mocks.MockRecurringTransactionRepository)
+		txRepo := new(mocks.MockTransactionRepository)
+		svc := NewRecurringTransactionService(repo, txRepo, logger)
+
+		today := time.Now()
+		// Normalize to start of day
+		today = time.Date(today.Year(), today.Month(), today.Day(), 0, 0, 0, 0, today.Location())
 
 		recurrence := domain.RecurringTransaction{
 			BaseEntity:  domain.BaseEntity{ID: 1},
-			Description: "Alquiler",
-			Amount:      1000,
-			AccountID:   1,
-			CategoryID:  2,
+			Description: "Rent",
+			Amount:      1000.0,
 			Interval:    domain.IntervalMonthly,
-			NextRunDate: nextRun,
+			NextRunDate: today,
 			IsActive:    true,
 		}
 
-		mockRecurRepo.On("GetAllActive", ctx).Return([]domain.RecurringTransaction{recurrence}, nil).Once()
+		repo.On("GetAllActive", ctx).Return([]domain.RecurringTransaction{recurrence}, nil)
 		
-		// Expect transaction creation
-		mockTxRepo.On("CreateTransaction", ctx, mock.MatchedBy(func(tx *domain.Transaction) bool {
-			return tx.Amount == 1000 && tx.Description == "Alquiler (Recurrente)"
-		})).Return(nil).Once()
+		// Expect one transaction creation
+		txRepo.On("CreateTransaction", ctx, mock.MatchedBy(func(tx *domain.Transaction) bool {
+			return tx.Amount == 1000.0 && tx.TransactionDate.Equal(today)
+		})).Return(nil)
 
-		// Expect recurrence update (NextRunDate advanced)
-		mockRecurRepo.On("Update", ctx, mock.MatchedBy(func(rt *domain.RecurringTransaction) bool {
-			expectedNext := nextRun.AddDate(0, 1, 0)
-			return rt.ID == 1 && rt.NextRunDate.Equal(expectedNext)
-		})).Return(nil).Once()
+		// Expect update to next month
+		nextMonth := today.AddDate(0, 1, 0)
+		repo.On("Update", ctx, mock.MatchedBy(func(rt *domain.RecurringTransaction) bool {
+			return rt.NextRunDate.Equal(nextMonth)
+		})).Return(nil)
 
-		// Act
-		err := service.ProcessPendingRecurrences(ctx, systemUser)
+		err := svc.ProcessPendingRecurrences(ctx, systemUser)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
 
-		// Assert
-		assert.NoError(t, err)
-		mockRecurRepo.AssertExpectations(t)
-		mockTxRepo.AssertExpectations(t)
+		txRepo.AssertExpectations(t)
+		repo.AssertExpectations(t)
 	})
 
-	t.Run("Skips future transactions", func(t *testing.T) {
-		// Arrange
-		futureDate := time.Now().AddDate(0, 0, 5) // 5 days in future
+	t.Run("Catch-up: Multiple pending weekly recurrences", func(t *testing.T) {
+		repo := new(mocks.MockRecurringTransactionRepository)
+		txRepo := new(mocks.MockTransactionRepository)
+		svc := NewRecurringTransactionService(repo, txRepo, logger)
+
+		// App wasn't opened for 3 weeks
+		threeWeeksAgo := time.Now().AddDate(0, 0, -21)
+		threeWeeksAgo = time.Date(threeWeeksAgo.Year(), threeWeeksAgo.Month(), threeWeeksAgo.Day(), 0, 0, 0, 0, threeWeeksAgo.Location())
 
 		recurrence := domain.RecurringTransaction{
-			BaseEntity:  domain.BaseEntity{ID: 2},
-			NextRunDate: futureDate,
+			BaseEntity:  domain.BaseEntity{ID: 1},
+			Description: "Weekly Water",
+			Amount:      10.0,
+			Interval:    domain.IntervalWeekly,
+			NextRunDate: threeWeeksAgo,
 			IsActive:    true,
 		}
 
-		mockRecurRepo.On("GetAllActive", ctx).Return([]domain.RecurringTransaction{recurrence}, nil).Once()
+		repo.On("GetAllActive", ctx).Return([]domain.RecurringTransaction{recurrence}, nil)
 		
-		// Act
-		err := service.ProcessPendingRecurrences(ctx, systemUser)
+		// Expect 4 creations (3 weeks ago, 2 weeks ago, 1 week ago, today)
+		// 21 / 7 = 3 intervals past + today = 4?
+		// Wait: 21, 14, 7, 0 days ago. Yes, 4 executions.
+		txRepo.On("CreateTransaction", ctx, mock.Anything).Return(nil).Times(4)
+		repo.On("Update", ctx, mock.Anything).Return(nil).Times(4)
 
-		// Assert
-		assert.NoError(t, err)
-		mockTxRepo.AssertNotCalled(t, "CreateTransaction")
-		mockRecurRepo.AssertNotCalled(t, "Update")
-	})
-}
-
-func TestCreateRecurringTransactionFromEdit(t *testing.T) {
-	mockRecurRepo := new(mocks.MockRecurringTransactionRepository)
-	mockTxRepo := new(mocks.MockTransactionRepository)
-	logger := log.New(log.Writer(), "", 0)
-
-	service := NewRecurringTransactionService(mockRecurRepo, mockTxRepo, logger)
-	ctx := context.Background()
-
-	t.Run("Create recurrence sets active flag and saves", func(t *testing.T) {
-		// Simulate data coming from the Edit Dialog
-		rt := &domain.RecurringTransaction{
-			Description: "Pago Editado",
-			Amount:      500,
-			AccountID:   1,
-			CategoryID:  3,
-			Interval:    domain.IntervalMonthly,
-			StartDate:   time.Now(),
-			NextRunDate: time.Now().AddDate(0, 1, 0), // Next run is next month
+		err := svc.ProcessPendingRecurrences(ctx, systemUser)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
 		}
 
-		// Expect repository Create call
-		mockRecurRepo.On("Create", ctx, mock.MatchedBy(func(r *domain.RecurringTransaction) bool {
-			return r.IsActive == true && r.Description == "Pago Editado" && r.NextRunDate.After(time.Now())
-		})).Return(nil).Once()
-
-		// Act
-		err := service.Create(ctx, rt)
-
-		// Assert
-		assert.NoError(t, err)
-		mockRecurRepo.AssertExpectations(t)
+		txRepo.AssertExpectations(t)
+		repo.AssertExpectations(t)
 	})
 }

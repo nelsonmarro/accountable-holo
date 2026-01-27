@@ -137,3 +137,33 @@ func TestSearchTaxPayer(t *testing.T) {
 		assert.Nil(t, result)
 	})
 }
+
+func TestGetPaginatedTaxPayer(t *testing.T) {
+	mockRepo := new(mocks.MockTaxPayerRepository)
+	svc := service.NewTaxPayerService(mockRepo)
+	ctx := context.Background()
+
+	t.Run("Success", func(t *testing.T) {
+		expected := &domain.PaginatedResult[domain.TaxPayer]{
+			Data:       []domain.TaxPayer{{Name: "A"}, {Name: "B"}},
+			TotalCount: 2,
+			Page:       1,
+			PageSize:   10,
+		}
+
+		mockRepo.On("GetPaginated", ctx, 1, 10, "search").Return(expected, nil).Once()
+
+		result, err := svc.GetPaginated(ctx, 1, 10, "search")
+		assert.NoError(t, err)
+		assert.Equal(t, expected, result)
+		mockRepo.AssertExpectations(t)
+	})
+
+	t.Run("Repo Error", func(t *testing.T) {
+		mockRepo.On("GetPaginated", ctx, 1, 10, "").Return(nil, errors.New("repo error")).Once()
+
+		result, err := svc.GetPaginated(ctx, 1, 10, "")
+		assert.Error(t, err)
+		assert.Nil(t, result)
+	})
+}

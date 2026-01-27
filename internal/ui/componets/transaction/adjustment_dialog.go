@@ -10,6 +10,7 @@ import (
 	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/widget"
 	"github.com/nelsonmarro/verith/internal/domain"
+	"github.com/nelsonmarro/verith/internal/ui/componets"
 	"github.com/shopspring/decimal"
 )
 
@@ -80,10 +81,10 @@ func (h *AdjustmentDialogHandler) prefillForm(data *domain.Reconciliation) {
 	h.amount = data.Difference.Abs()
 	h.amountLabel.SetText(fmt.Sprintf("$%s", h.amount.StringFixed(2)))
 
-	description := fmt.Sprintf("Ajuste por reconciliación de cuenta al %s.", data.EndDate.Format("2006-01-02"))
+	description := fmt.Sprintf("Ajuste por reconciliación de cuenta al %s.", data.EndDate.Format(componets.AppDateFormat))
 	h.descriptionEntry.SetText(description)
 
-	h.dateLabel.SetText(h.transactionDate.Format("01/02/2006"))
+	h.dateLabel.SetText(h.transactionDate.Format(componets.AppDateFormat))
 
 	var catType domain.CategoryType
 	if data.Difference.IsPositive() {

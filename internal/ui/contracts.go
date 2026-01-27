@@ -95,6 +95,7 @@ type RecurringTransactionService interface {
 }
 
 type IssuerService interface {
+	GetActive(ctx context.Context) (*domain.Issuer, error)
 	SaveIssuerConfig(ctx context.Context, issuer *domain.Issuer, password string) error
 	GetIssuerConfig(ctx context.Context) (*domain.Issuer, error)
 	GetSignaturePassword(ruc string) (string, error)

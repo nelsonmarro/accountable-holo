@@ -15,6 +15,7 @@ import (
 	"fyne.io/fyne/v2/widget"
 	"github.com/nelsonmarro/verith/internal/application/uivalidators"
 	"github.com/nelsonmarro/verith/internal/domain"
+	"github.com/nelsonmarro/verith/internal/ui/componets"
 	"github.com/shopspring/decimal"
 )
 
@@ -44,8 +45,8 @@ type ReconciliationDialog struct {
 
 	// Form widgets
 	accountsSelector   *widget.SelectEntry
-	startDateEntry     *widget.DateEntry
-	endingDateEntry    *widget.DateEntry
+	startDateEntry     *componets.LatinDateEntry
+	endingDateEntry    *componets.LatinDateEntry
 	actualBalanceEntry *widget.Entry
 }
 
@@ -86,8 +87,10 @@ func (d *ReconciliationDialog) Show() {
 
 func (d *ReconciliationDialog) makeFormCard() fyne.CanvasObject {
 	d.accountsSelector = widget.NewSelectEntry([]string{}) // we'll populate this later
-	d.endingDateEntry = widget.NewDateEntry()
-	d.startDateEntry = widget.NewDateEntry()
+	d.endingDateEntry = componets.NewLatinDateEntry(d.mainWindow)
+
+	d.startDateEntry = componets.NewLatinDateEntry(d.mainWindow)
+
 	d.actualBalanceEntry = widget.NewEntry()
 
 	// Validations for the balance entry
@@ -216,7 +219,7 @@ func (d *ReconciliationDialog) makeStatementCard() fyne.CanvasObject {
 		// Clear the form fields
 		d.accountsSelector.SetText("")
 		now := time.Now()
-		d.endingDateEntry.SetDate(&now)
+		d.endingDateEntry.SetDate(now)
 		d.actualBalanceEntry.SetText("")
 	})
 	finishButton.Importance = widget.SuccessImportance
@@ -251,7 +254,7 @@ func (d *ReconciliationDialog) makeStatementCard() fyne.CanvasObject {
 			}()
 		}, d.mainWindow)
 
-		fileSaveDialog.SetFileName(fmt.Sprintf("reconciliacion-%s.pdf", d.data.EndDate.Format("2006-01-02")))
+		fileSaveDialog.SetFileName(fmt.Sprintf("reconciliacion-%s.pdf", d.data.EndDate.Format(componets.AppDateFormat)))
 		fileSaveDialog.Show()
 	})
 	generateReportBtn.Importance = widget.SuccessImportance
@@ -279,7 +282,7 @@ func (d *ReconciliationDialog) makeStatementCard() fyne.CanvasObject {
 // updateStatementCard updates the reconciliation statement card with the latest data.
 func (d *ReconciliationDialog) updateStatementCard() {
 	d.widgets.endingDateLabel.SetText(fmt.Sprintf("Fecha de Cierre: %s",
-		d.data.EndDate.Format("2006-01-02")))
+		d.data.EndDate.Format(componets.AppDateFormat)))
 
 	d.widgets.calculatedBalanceLabel.SetText(fmt.Sprintf("Saldo Calculado: $%s",
 		d.data.CalculatedEndingBalance.StringFixed(2)))
@@ -317,7 +320,7 @@ func (d *ReconciliationDialog) updateStatementCard() {
 	d.widgets.transactionList.UpdateItem = func(id widget.ListItemID, item fyne.CanvasObject) {
 		tx := d.data.Transactions[id]
 		grid := item.(*fyne.Container)
-		grid.Objects[0].(*widget.Label).SetText(tx.TransactionDate.Format("2006-01-02"))
+		grid.Objects[0].(*widget.Label).SetText(tx.TransactionDate.Format(componets.AppDateFormat))
 		grid.Objects[1].(*widget.Label).SetText(string(tx.Category.Name))
 		grid.Objects[2].(*widget.Label).SetText(string(tx.Category.Type))
 		grid.Objects[3].(*widget.Label).SetText(fmt.Sprintf("$%.2f", tx.Amount))
@@ -341,7 +344,7 @@ func (d *ReconciliationDialog) loadAccountsForReconciliation(selector *widget.Se
 
 func formValidation(
 	accountsSelector *widget.SelectEntry,
-	endingDateEntry *widget.DateEntry,
+	endingDateEntry *componets.LatinDateEntry,
 	actualBalanceEntry *widget.Entry,
 ) {
 	selectorValidatior := uivalidators.NewValidator()
@@ -350,7 +353,7 @@ func formValidation(
 
 	dateValidator := uivalidators.NewValidator()
 	dateValidator.IsDate()
-	endingDateEntry.Validator = dateValidator.Validate
+	endingDateEntry.Entry.Validator = dateValidator.Validate
 
 	balanceValidator := uivalidators.NewValidator()
 	balanceValidator.IsFloat()

@@ -32,6 +32,12 @@ func TestSaveIssuerConfig_Integration(t *testing.T) {
 		// Expects
 		mockRepo.On("GetActive", ctx).Return(nil, nil).Once() // No existe
 		mockRepo.On("Create", ctx, newIssuer).Return(nil).Once()
+		
+		// New logic calls GetByPoint and Create for default points (01, 04)
+		mockEpRepo.On("GetByPoint", ctx, mock.Anything, mock.Anything, mock.Anything, "01").Return(nil, nil).Once()
+		mockEpRepo.On("Create", ctx, mock.Anything).Return(nil).Once()
+		mockEpRepo.On("GetByPoint", ctx, mock.Anything, mock.Anything, mock.Anything, "04").Return(nil, nil).Once()
+		mockEpRepo.On("Create", ctx, mock.Anything).Return(nil).Once()
 
 		// Act
 		err := service.SaveIssuerConfig(ctx, newIssuer, password)
@@ -65,6 +71,12 @@ func TestSaveIssuerConfig_Integration(t *testing.T) {
 		mockRepo.On("Update", ctx, mock.MatchedBy(func(i *domain.Issuer) bool {
 			return i.ID == 1 && i.BusinessName == "Empresa Renombrada"
 		})).Return(nil).Once()
+
+		// New logic expectations
+		mockEpRepo.On("GetByPoint", ctx, mock.Anything, mock.Anything, mock.Anything, "01").Return(nil, nil).Once()
+		mockEpRepo.On("Create", ctx, mock.Anything).Return(nil).Once()
+		mockEpRepo.On("GetByPoint", ctx, mock.Anything, mock.Anything, mock.Anything, "04").Return(nil, nil).Once()
+		mockEpRepo.On("Create", ctx, mock.Anything).Return(nil).Once()
 
 		// Act
 		err := service.SaveIssuerConfig(ctx, updatedIssuer, newPassword)

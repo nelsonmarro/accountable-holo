@@ -35,6 +35,10 @@ func (ui *UI) makeSriConfigTab() fyne.CanvasObject {
 	legalCard := widget.NewCard("Información Legal y Matriz", "Datos tal como constan en su RUC", legalForm)
 
 	// --- SECCIÓN 2: CONFIGURACIÓN DE EMISIÓN ---
+	taxOptions := []string{"Ninguno (Manual)", "IVA 15%", "IVA 13%", "IVA 8%", "IVA 5%", "IVA 0%", "No Objeto (6)", "Exento (7)"}
+	defaultTaxSelect := widget.NewSelect(taxOptions, nil)
+	defaultTaxSelect.SetSelected("Ninguno (Manual)")
+
 	estabCodeEntry := widget.NewEntry()
 	estabCodeEntry.SetText("001")
 	ptoEmiEntry := widget.NewEntry()
@@ -49,21 +53,29 @@ func (ui *UI) makeSriConfigTab() fyne.CanvasObject {
 		envSelect.Disable()
 	}
 
+	migrationBtn := widget.NewButtonWithIcon("MIGRAR / AJUSTAR SECUENCIALES", theme.WarningIcon(), func() {
+		dialogHandler := componets.NewEmissionPointDialog(ui.mainWindow, ui.Services.IssuerService)
+		dialogHandler.Show()
+	})
+	migrationBtn.Importance = widget.WarningImportance
+
 	emissionInfo := container.NewVBox(
-		widget.NewLabelWithStyle("Importante para Migraciones:", fyne.TextAlignLeading, fyne.TextStyle{Italic: true}),
-		widget.NewLabel("Si viene de otro sistema, puede usar un Punto de Emisión nuevo (ej: 002)\no configurar el secuencial inicial en el botón de abajo."),
+		widget.NewRichText(&widget.TextSegment{
+			Text:  "⚙️ Gestión de Secuenciales y Migración",
+			Style: widget.RichTextStyle{TextStyle: fyne.TextStyle{Bold: true, Italic: true}},
+		}),
+		widget.NewLabel("IMPORTANTE: Si migra de otro software, haga clic en el botón de abajo para configurar\nel último secuencial emitido y garantizar la continuidad legal."),
+		migrationBtn,
+		widget.NewSeparator(),
 		widget.NewForm(
 			widget.NewFormItem("Cod. Establecimiento", estabCodeEntry),
 			widget.NewFormItem("Punto de Emisión", ptoEmiEntry),
 			widget.NewFormItem("Régimen RIMPE", rimpeSelect),
 			widget.NewFormItem("Ambiente SRI", envSelect),
+			widget.NewFormItem("IVA Predeterminado", defaultTaxSelect),
 			widget.NewFormItem("Nro. Resolución", contribEntry),
 			widget.NewFormItem("", keepAccCheck),
 		),
-		widget.NewButtonWithIcon("Gestionar Secuenciales / Migración", theme.ListIcon(), func() {
-			dialogHandler := componets.NewEmissionPointDialog(ui.mainWindow, ui.Services.IssuerService)
-			dialogHandler.Show()
-		}),
 	)
 
 	emissionCard := widget.NewCard("Configuración de Facturación", "Defina cómo se generarán sus comprobantes", emissionInfo)
@@ -117,6 +129,25 @@ func (ui *UI) makeSriConfigTab() fyne.CanvasObject {
 		currentIssuer, _ := ui.Services.IssuerService.GetIssuerConfig(ctx)
 		if currentIssuer != nil {
 			fyne.Do(func() {
+				switch currentIssuer.DefaultTaxRate {
+				case 4:
+					defaultTaxSelect.SetSelected("IVA 15%")
+				case 10:
+					defaultTaxSelect.SetSelected("IVA 13%")
+				case 8:
+					defaultTaxSelect.SetSelected("IVA 8%")
+				case 5:
+					defaultTaxSelect.SetSelected("IVA 5%")
+				case 0:
+					defaultTaxSelect.SetSelected("IVA 0%")
+				case 6:
+					defaultTaxSelect.SetSelected("No Objeto (6)")
+				case 7:
+					defaultTaxSelect.SetSelected("Exento (7)")
+				default:
+					defaultTaxSelect.SetSelected("Ninguno (Manual)")
+				}
+
 				rucEntry.SetText(currentIssuer.RUC)
 				nameEntry.SetText(currentIssuer.BusinessName)
 				tradeNameEntry.SetText(currentIssuer.TradeName)
@@ -161,6 +192,24 @@ func (ui *UI) makeSriConfigTab() fyne.CanvasObject {
 			envCode = 1
 		}
 
+		taxRate := -1
+		switch defaultTaxSelect.Selected {
+		case "IVA 15%":
+			taxRate = 4
+		case "IVA 13%":
+			taxRate = 10
+		case "IVA 8%":
+			taxRate = 8
+		case "IVA 5%":
+			taxRate = 5
+		case "IVA 0%":
+			taxRate = 0
+		case "No Objeto (6)":
+			taxRate = 6
+		case "Exento (7)":
+			taxRate = 7
+		}
+
 		issuer := &domain.Issuer{
 			RUC:                  rucEntry.Text,
 			BusinessName:         nameEntry.Text,
@@ -175,6 +224,7 @@ func (ui *UI) makeSriConfigTab() fyne.CanvasObject {
 			KeepAccounting:       keepAccCheck.Checked,
 			SignaturePath:        p12Path,
 			LogoPath:             logoPath,
+			DefaultTaxRate:       taxRate,
 			IsActive:             true,
 		}
 

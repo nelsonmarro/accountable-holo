@@ -67,16 +67,28 @@ func (s *RecurringTransactionService) ProcessPendingRecurrences(ctx context.Cont
 		// We loop because if the app wasn't opened for 2 months, we might need to generate 2 transactions.
 		for !rt.NextRunDate.After(today) {
 			// 1. Create the actual transaction
+			// Recurrences are treated as simplified expenses (no tax calculation)
 			tx := &domain.Transaction{
 				Description:     fmt.Sprintf("%s (Recurrente)", rt.Description),
 				Amount:          rt.Amount,
 				TransactionDate: rt.NextRunDate,
 				AccountID:       rt.AccountID,
 				CategoryID:      rt.CategoryID,
+				Subtotal0:       rt.Amount,
+				Subtotal15:      0,
+				TaxAmount:       0,
 				CreatedByUser:   &systemUser,
-				// Note: We might need CreatedByID in domain if repo uses it directly
-				CreatedByID: systemUser.ID,
-				UpdatedByID: systemUser.ID,
+				CreatedByID:     systemUser.ID,
+				UpdatedByID:     systemUser.ID,
+				Items: []domain.TransactionItem{
+					{
+						Description: rt.Description,
+						Quantity:    1,
+						UnitPrice:   rt.Amount,
+						TaxRate:     0, // 0% VAT
+						Subtotal:    rt.Amount,
+					},
+				},
 			}
 
 			if err := s.txRepo.CreateTransaction(ctx, tx); err != nil {

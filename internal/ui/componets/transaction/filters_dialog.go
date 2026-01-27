@@ -9,14 +9,15 @@ import (
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 	"github.com/nelsonmarro/verith/internal/domain"
+	"github.com/nelsonmarro/verith/internal/ui/componets"
 	"github.com/nelsonmarro/verith/internal/ui/componets/category"
 )
 
 type FiltersDialog struct {
 	catService        CategoryService
 	parentWindow      fyne.Window
-	startDateEntry    *widget.DateEntry
-	endDateEntry      *widget.DateEntry
+	startDateEntry    *componets.LatinDateEntry
+	endDateEntry      *componets.LatinDateEntry
 	categoryLabel     *widget.Label
 	searchCategoryBtn *widget.Button
 	selectedCategory  *domain.Category
@@ -42,11 +43,11 @@ func NewFiltersDialog(
 }
 
 func (rd *FiltersDialog) Show() {
-	rd.startDateEntry = widget.NewDateEntry()
-	rd.startDateEntry.SetDate(nil)
+	rd.startDateEntry = componets.NewLatinDateEntry(rd.parentWindow)
+	// rd.startDateEntry.SetDate(nil) // LatinDateEntry no soporta nil directo en SetDate por ahora, pero Date empieza nil
 
-	rd.endDateEntry = widget.NewDateEntry()
-	rd.endDateEntry.SetDate(nil)
+	rd.endDateEntry = componets.NewLatinDateEntry(rd.parentWindow)
+	// rd.endDateEntry.SetDate(nil)
 
 	rd.descriptionEntry = widget.NewEntry()
 	rd.descriptionEntry.SetPlaceHolder("Filter by description")

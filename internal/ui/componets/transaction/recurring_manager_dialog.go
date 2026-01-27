@@ -11,6 +11,7 @@ import (
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 	"github.com/nelsonmarro/verith/internal/domain"
+	"github.com/nelsonmarro/verith/internal/ui/componets"
 )
 
 type RecurringManagerDialog struct {
@@ -21,6 +22,8 @@ type RecurringManagerDialog struct {
 	data            []domain.RecurringTransaction
 	table           *widget.Table
 	selectedRow     int
+	currentUser     domain.User
+	onTransactionsUpdated func()
 }
 
 func NewRecurringManagerDialog(
@@ -28,12 +31,16 @@ func NewRecurringManagerDialog(
 	service RecurringTransactionService,
 	accountService AccountService,
 	categoryService CategoryService,
+	currentUser domain.User,
+	onTransactionsUpdated func(),
 ) *RecurringManagerDialog {
 	d := &RecurringManagerDialog{
 		window:          parent,
 		service:         service,
 		accountService:  accountService,
 		categoryService: categoryService,
+		currentUser:     currentUser,
+		onTransactionsUpdated: onTransactionsUpdated,
 		selectedRow:     -1,
 	}
 	return d
@@ -63,7 +70,7 @@ func (d *RecurringManagerDialog) Show() {
 			case 2:
 				label.SetText(string(item.Interval))
 			case 3:
-				label.SetText(item.NextRunDate.Format("02/01/2006"))
+				label.SetText(item.NextRunDate.Format(componets.AppDateFormat))
 			case 4:
 				status := "Activo"
 				if !item.IsActive {
@@ -125,9 +132,12 @@ func (d *RecurringManagerDialog) refreshData() {
 }
 
 func (d *RecurringManagerDialog) onNew() {
-	form := NewRecurringForm(d.window, nil, d.service, d.accountService, d.categoryService)
+	form := NewRecurringForm(d.window, nil, d.service, d.accountService, d.categoryService, d.currentUser)
 	form.OnSaved = func() {
 		d.refreshData()
+		if d.onTransactionsUpdated != nil {
+			d.onTransactionsUpdated()
+		}
 	}
 	form.Show()
 }
@@ -137,9 +147,12 @@ func (d *RecurringManagerDialog) onEdit() {
 		return
 	}
 	item := d.data[d.selectedRow]
-	form := NewRecurringForm(d.window, &item, d.service, d.accountService, d.categoryService)
+	form := NewRecurringForm(d.window, &item, d.service, d.accountService, d.categoryService, d.currentUser)
 	form.OnSaved = func() {
 		d.refreshData()
+		if d.onTransactionsUpdated != nil {
+			d.onTransactionsUpdated()
+		}
 	}
 	form.Show()
 }
@@ -156,6 +169,7 @@ func (d *RecurringManagerDialog) onToggle() {
 		dialog.ShowError(err, d.window)
 		return
 	}
+	dialog.ShowInformation("Éxito", "Estado actualizado correctamente", d.window)
 	d.refreshData()
 }
 
@@ -172,6 +186,7 @@ func (d *RecurringManagerDialog) onDelete() {
 				dialog.ShowError(err, d.window)
 				return
 			}
+			dialog.ShowInformation("Éxito", "Regla eliminada correctamente", d.window)
 			d.refreshData()
 		}
 	}, d.window)

@@ -8,9 +8,11 @@ import (
 	"time"
 
 	"fyne.io/fyne/v2"
+	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/widget"
 	"github.com/nelsonmarro/verith/internal/domain"
+	"github.com/nelsonmarro/verith/internal/ui/componets"
 )
 
 type RecurringForm struct {
@@ -20,11 +22,12 @@ type RecurringForm struct {
 	categoryService CategoryService
 	item            *domain.RecurringTransaction // Nil if new
 	OnSaved         func()
+	currentUser     domain.User
 
 	descEntry      *widget.Entry
 	amountEntry    *widget.Entry
 	intervalEntry  *widget.Select
-	startDate      *widget.Entry // YYYY-MM-DD
+	startDate      *componets.LatinDateEntry // YYYY-MM-DD
 	accountSelect  *widget.Select
 	categorySelect *widget.Select
 	activeCheck    *widget.Check
@@ -39,6 +42,7 @@ func NewRecurringForm(
 	service RecurringTransactionService,
 	accountService AccountService,
 	categoryService CategoryService,
+	currentUser domain.User,
 ) *RecurringForm {
 	return &RecurringForm{
 		window:          parent,
@@ -46,14 +50,14 @@ func NewRecurringForm(
 		service:         service,
 		accountService:  accountService,
 		categoryService: categoryService,
+		currentUser:     currentUser,
 	}
 }
 
 func (f *RecurringForm) Show() {
 	f.descEntry = widget.NewEntry()
 	f.amountEntry = widget.NewEntry()
-	f.startDate = widget.NewEntry()
-	f.startDate.SetPlaceHolder("YYYY-MM-DD")
+	f.startDate = componets.NewLatinDateEntry(f.window)
 	f.activeCheck = widget.NewCheck("Activo", nil)
 	f.activeCheck.SetChecked(true)
 
@@ -77,7 +81,7 @@ func (f *RecurringForm) Show() {
 			f.intervalEntry.SetSelected("MENSUAL")
 		}
 
-		f.startDate.SetText(f.item.NextRunDate.Format("2006-01-02"))
+		f.startDate.SetDate(f.item.NextRunDate)
 		f.activeCheck.SetChecked(f.item.IsActive)
 
 		// Find selected account/category names
@@ -95,9 +99,12 @@ func (f *RecurringForm) Show() {
 		}
 	} else {
 		// Defaults
-		f.startDate.SetText(time.Now().Format("2006-01-02"))
+		f.startDate.SetDate(time.Now())
 		f.intervalEntry.SetSelected("MENSUAL")
 	}
+
+	nextRunLabel := componets.NewHoverableLabel("Próxima Ejecución", f.window.Canvas())
+	nextRunLabel.SetTooltip("Indica cuándo se generará la siguiente transacción.\nSi seleccionas 'Hoy', se ejecutará inmediatamente.")
 
 	items := []*widget.FormItem{
 		{Text: "Descripción", Widget: f.descEntry},
@@ -105,7 +112,7 @@ func (f *RecurringForm) Show() {
 		{Text: "Cuenta", Widget: f.accountSelect},
 		{Text: "Categoría", Widget: f.categorySelect},
 		{Text: "Frecuencia", Widget: f.intervalEntry},
-		{Text: "Próxima Ejecución", Widget: f.startDate},
+		{Text: "", Widget: container.NewBorder(nil, nil, nextRunLabel, nil, f.startDate)},
 		{Text: "Estado", Widget: f.activeCheck},
 	}
 
@@ -157,11 +164,11 @@ func (f *RecurringForm) onSave(ok bool) {
 		return
 	}
 
-	date, err := time.Parse("2006-01-02", f.startDate.Text)
-	if err != nil {
-		dialog.ShowError(fmt.Errorf("fecha inválida (use YYYY-MM-DD)"), f.window)
+	if f.startDate.Date == nil {
+		dialog.ShowError(fmt.Errorf("fecha inválida (use DD/MM/YYYY)"), f.window)
 		return
 	}
+	date := *f.startDate.Date
 
 	var accID int
 	for _, a := range f.accounts {
@@ -221,7 +228,19 @@ func (f *RecurringForm) onSave(ok bool) {
 		return
 	}
 
-	if f.OnSaved != nil {
-		f.OnSaved()
-	}
+	// Trigger immediate processing in case the date is today
+	go func() {
+		_ = f.service.ProcessPendingRecurrences(context.Background(), f.currentUser)
+		
+		fyne.Do(func() {
+			message := "Regla guardada correctamente"
+			if isNew && date.Before(time.Now().Add(24*time.Hour)) {
+				message += ". Se ha generado una transacción para hoy."
+			}
+			dialog.ShowInformation("Éxito", message, f.window)
+			if f.OnSaved != nil {
+				f.OnSaved()
+			}
+		})
+	}()
 }

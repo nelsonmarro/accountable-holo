@@ -17,6 +17,7 @@ type Issuer struct {
 	SignaturePath        string `db:"signature_path"`
 	LogoPath             string `db:"logo_path"`
 	IsActive             bool   `db:"is_active"`
+	DefaultTaxRate       int    `db:"default_tax_rate"` // 0=None, 2=0%, 4=15%, 6=Exempt
 
 	// Configuración de Correo (SMTP)
 	SMTPServer   *string `db:"smtp_server"`

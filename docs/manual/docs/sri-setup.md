@@ -32,6 +32,7 @@ Define los parámetros operativos para la generación de archivos XML.
 - **Ambiente SRI:**
   - _Pruebas:_ Para realizar tests de conexión sin validez legal.
   - _Producción:_ Para emisión real de documentos con validez tributaria.
+- **IVA Predeterminado:** Seleccione la tarifa que usa con más frecuencia (ej: 15%). Esto automatizará la selección del impuesto al agregar ítems en el módulo de ventas, aunque podrá cambiarlo manualmente si es necesario.
 - **Nro. Resolución:** Número de resolución administrativa (requerido si es Contribuyente Especial o Agente de Retención).
 - **Obligado a llevar contabilidad:** Casilla de verificación según su obligación legal.
 

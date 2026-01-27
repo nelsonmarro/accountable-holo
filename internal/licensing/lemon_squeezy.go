@@ -145,12 +145,17 @@ func (m *LicenseManager) ValidateLicense(key, instanceID string) (string, error)
 		return "", fmt.Errorf("error de formato")
 	}
 
+	// Si hay un error lógico pero tenemos respuesta, devolvemos el estado si existe, o "inactive"
 	if lsResp.Error != "" {
-		return "error", fmt.Errorf("%s", lsResp.Error)
+		// Casos como "License key not found" o "License key expired"
+		// Lemon suele devolver el objeto license_key aun con error.
+		if lsResp.LicenseKey.Status != "" {
+			return lsResp.LicenseKey.Status, nil
+		}
+		return "inactive", nil
 	}
 
 	// Retornamos el estado real (active, expired, etc.)
-	// Si valid=true, confiamos en el status del objeto license_key
 	if lsResp.Valid {
 		return lsResp.LicenseKey.Status, nil
 	}

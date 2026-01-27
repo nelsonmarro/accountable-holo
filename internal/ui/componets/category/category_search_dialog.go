@@ -32,6 +32,7 @@ type CategorySearchDialog struct {
 	categories []domain.Category
 	totalCount int64 // Use int64 to match domain.PaginatedResult
 	searchTerm string
+	filterType *domain.CategoryType
 }
 
 // pageSizeOpts defines the available page size options for the user to select.
@@ -53,6 +54,10 @@ func NewCategorySearchDialog(
 	d.searchEntry = widget.NewEntry()
 	d.searchEntry.SetPlaceHolder("Buscar por nombre o tipo...")
 	return d
+}
+
+func (d *CategorySearchDialog) SetFilterType(t domain.CategoryType) {
+	d.filterType = &t
 }
 
 // Show creates and displays the dialog.
@@ -170,8 +175,19 @@ func (d *CategorySearchDialog) loadCategories(page int, pageSize int) {
 	}
 
 	// Update state
-	d.categories = result.Data
-	d.totalCount = result.TotalCount
+	if d.filterType != nil {
+		var filtered []domain.Category
+		for _, cat := range result.Data {
+			if cat.Type == *d.filterType {
+				filtered = append(filtered, cat)
+			}
+		}
+		d.categories = filtered
+		d.totalCount = int64(len(filtered))
+	} else {
+		d.categories = result.Data
+		d.totalCount = result.TotalCount
+	}
 
 	// Refresh UI on the main thread
 	fyne.Do(func() {

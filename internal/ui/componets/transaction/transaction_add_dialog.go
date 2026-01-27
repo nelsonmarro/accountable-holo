@@ -23,13 +23,14 @@ type AddTransactionDialog struct {
 	mainWin         fyne.Window
 	logger          *log.Logger
 	txService       TransactionService
+	issuerService   IssuerService
 	recurService    RecurringTransactionService
 	categoryService CategoryService
 	taxService      TaxPayerService // Updated to local interface
 	callbackAction  func()
 
 	// UI Components
-	dateEntry         *widget.DateEntry
+	dateEntry         *componets.LatinDateEntry
 	categoryLabel     *widget.Label
 	searchCategoryBtn *widget.Button
 	attachmentLabel   *widget.Label
@@ -46,10 +47,6 @@ type AddTransactionDialog struct {
 
 	// Maestro-Detalle
 	itemsManager *ItemsListManager
-
-	// Recurrence UI
-	isRecurringCheck *widget.Check
-	intervalSelect   *widget.Select
 
 	// Data
 	accountID        int
@@ -68,6 +65,7 @@ func NewAddTransactionDialog(
 	rs RecurringTransactionService,
 	cs CategoryService,
 	ts TaxPayerService, // Added
+	is IssuerService,
 	callback func(),
 	accountID int,
 	currentUser domain.User,
@@ -79,14 +77,13 @@ func NewAddTransactionDialog(
 		recurService:     rs,
 		categoryService:  cs,
 		taxService:       ts, // Added
+		issuerService:    is,
 		callbackAction:   callback,
-		dateEntry:        widget.NewDateEntry(),
+		dateEntry:        componets.NewLatinDateEntry(win),
 		accountID:        accountID,
 		categoryLabel:    widget.NewLabel("Ninguna seleccionada"),
 		attachmentLabel:  widget.NewLabel("Ninguno"),
 		currentUser:      currentUser,
-		isRecurringCheck: widget.NewCheck("", nil),
-		intervalSelect:   widget.NewSelect([]string{"Mensual", "Semanal"}, nil),
 		subtotalLabel:    widget.NewLabel("$0.00"),
 		taxAmountLabel:   widget.NewLabel("$0.00"),
 		totalLabel:       widget.NewLabelWithStyle("$0.00", fyne.TextAlignLeading, fyne.TextStyle{Bold: true}),
@@ -94,19 +91,9 @@ func NewAddTransactionDialog(
 		items:            make([]domain.TransactionItem, 0),
 	}
 
-	d.itemsManager = NewItemsListManager(win, d.handleItemsUpdate)
+	d.itemsManager = NewItemsListManager(-1, win, d.handleItemsUpdate)
 
-	d.dateEntry.SetText(time.Now().Format("01/02/2006"))
-	d.intervalSelect.SetSelected("Mensual")
-	d.intervalSelect.Hide()
-
-	d.isRecurringCheck.OnChanged = func(checked bool) {
-		if checked {
-			d.intervalSelect.Show()
-		} else {
-			d.intervalSelect.Hide()
-		}
-	}
+	d.dateEntry.SetText(time.Now().Format(componets.AppDateFormat))
 
 	d.searchCategoryBtn = widget.NewButtonWithIcon("", theme.SearchIcon(), func() {
 		searchDialog := category.NewCategorySearchDialog(
@@ -116,17 +103,9 @@ func NewAddTransactionDialog(
 			func(cat *domain.Category) {
 				d.selectedCategory = cat
 				d.categoryLabel.SetText(cat.Name)
-
-				// RESTRICCIÓN: Solo egresos pueden ser recurrentes
-				if cat.Type == domain.Outcome {
-					d.isRecurringCheck.Enable()
-				} else {
-					d.isRecurringCheck.SetChecked(false)
-					d.isRecurringCheck.Disable()
-					d.intervalSelect.Hide()
-				}
 			},
 		)
+		searchDialog.SetFilterType(domain.Income)
 		searchDialog.Show()
 	})
 
@@ -179,12 +158,21 @@ func (d *AddTransactionDialog) handleItemsUpdate(items []domain.TransactionItem)
 
 // Show creates and displays the Fyne form dialog.
 func (d *AddTransactionDialog) Show() {
+	ctx := context.Background()
+	activeIssuer, err := d.issuerService.GetActive(ctx)
+	
+	defaultTaxRate := 4 // Default fallback: 15%
+	if err == nil && activeIssuer != nil {
+		defaultTaxRate = activeIssuer.DefaultTaxRate
+	} else {
+		d.logger.Printf("Advertencia: No se encontró emisor activo, usando IVA 15%% por defecto. Error: %v", err)
+	}
+
+	d.itemsManager = NewItemsListManager(defaultTaxRate, d.mainWin, d.handleItemsUpdate)
+
 	categoryContainer := container.NewBorder(nil, nil, nil, d.searchCategoryBtn, d.categoryLabel)
 	taxPayerContainer := container.NewBorder(nil, nil, nil, d.searchTaxPayerBtn, d.taxPayerLabel)
 	attachmentContainer := container.NewBorder(nil, nil, nil, d.searchFileBtn, d.attachmentLabel)
-
-	recurLabel := componets.NewHoverableLabel("¿Es Recurrente?", d.mainWin.Canvas())
-	recurLabel.SetTooltip("Crea esta transacción automáticamente cada periodo (mes/semana).\nSe calculara a partir de la fecha de la transacción.")
 
 	// Header Form
 	headerForm := widget.NewForm(
@@ -192,8 +180,6 @@ func (d *AddTransactionDialog) Show() {
 		widget.NewFormItem("Fecha", d.dateEntry),
 		widget.NewFormItem("Categoría", categoryContainer),
 		widget.NewFormItem("Adjunto", attachmentContainer),
-		widget.NewFormItem("", container.NewBorder(nil, nil, recurLabel, nil, d.isRecurringCheck)),
-		widget.NewFormItem("Frecuencia", d.intervalSelect),
 	)
 
 	// Summary / Totals
@@ -231,11 +217,11 @@ func (d *AddTransactionDialog) handleSubmit(_ bool) {
 		return
 	}
 
-	transactionDate, err := time.Parse("01/02/2006", d.dateEntry.Text)
-	if err != nil {
-		dialog.ShowError(fmt.Errorf("formato de fecha inválido: %w", err), d.mainWin)
+	if d.dateEntry.Date == nil {
+		dialog.ShowError(fmt.Errorf("formato de fecha inválido"), d.mainWin)
 		return
 	}
+	transactionDate := *d.dateEntry.Date
 
 	if d.selectedCategory == nil {
 		dialog.ShowError(fmt.Errorf("por favor, seleccione una categoría"), d.mainWin)
@@ -299,34 +285,6 @@ func (d *AddTransactionDialog) handleSubmit(_ bool) {
 				dialog.ShowError(fmt.Errorf("error al crear la Transacción: %w", err), d.mainWin)
 			})
 			return
-		}
-
-		// 2. If Recurring (ONLY FOR OUTCOMES - UI already enforces this)
-		if d.isRecurringCheck.Checked && d.selectedCategory.Type == domain.Outcome {
-			intervalStr := d.intervalSelect.Selected
-			var interval domain.RecurrenceInterval
-			if intervalStr == "Semanal" {
-				interval = domain.IntervalWeekly
-			} else {
-				interval = domain.IntervalMonthly
-			}
-
-			recurTx := &domain.RecurringTransaction{
-				AccountID:   d.accountID,
-				CategoryID:  d.selectedCategory.ID,
-				Description: description,
-				Amount:      total,
-				StartDate:   transactionDate,
-				Interval:    interval,
-				IsActive:    true,
-			}
-
-			if err := d.recurService.Create(ctx, recurTx); err != nil {
-				d.logger.Printf("Failed to create recurring transaction: %v", err)
-				fyne.Do(func() {
-					dialog.ShowError(fmt.Errorf("transacción creada pero falló la recurrencia: %w", err), d.mainWin)
-				})
-			}
 		}
 
 		fyne.Do(func() {

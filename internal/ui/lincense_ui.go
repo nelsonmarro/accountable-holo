@@ -81,7 +81,7 @@ func (ui *UI) ShowLincenseWindow(mgr *licensing.LicenseManager, onProceed func()
 	activateBtn.Importance = widget.HighImportance // Botón primario (destacado)
 
 	// Enlace a la página de producto en Naphsoft
-	buyLink, _ := url.Parse("https://naphsoft.com/products/verith")
+	buyLink, _ := url.Parse("https://naphsoft.dev/products/verith")
 	buyBtn := widget.NewHyperlink("Ver Planes y Comprar", buyLink)
 	buyBtn.Alignment = fyne.TextAlignCenter
 
@@ -100,7 +100,6 @@ func (ui *UI) ShowLincenseWindow(mgr *licensing.LicenseManager, onProceed func()
 	)
 
 	// Usamos NewPadded para que el contenido se estire a los bordes con margen
-
 	window.SetContent(container.NewPadded(content))
 	window.Resize(fyne.NewSize(600, 500)) // Más ancho y alto
 	window.CenterOnScreen()

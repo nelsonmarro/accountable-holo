@@ -96,7 +96,7 @@ func (d *DetailsDialog) buildContent() fyne.CanvasObject {
 	descriptionEntry.SetText(d.tx.Description)
 	header := widget.NewForm(
 		widget.NewFormItem("Nro. Comprobante:", widget.NewLabelWithStyle(d.tx.TransactionNumber, fyne.TextAlignLeading, fyne.TextStyle{Bold: true})),
-		widget.NewFormItem("Fecha:", widget.NewLabel(d.tx.TransactionDate.Format("02/01/2006"))),
+		widget.NewFormItem("Fecha:", widget.NewLabel(d.tx.TransactionDate.Format(componets.AppDateFormat))),
 		widget.NewFormItem("Descripción", descriptionEntry),
 		widget.NewFormItem("Categoría:", container.NewHBox(
 			widget.NewLabel(fmt.Sprintf("%s   -", d.tx.Category.Name)),

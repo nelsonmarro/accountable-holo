@@ -14,12 +14,14 @@ type LocalStorageService struct {
 }
 
 func NewLocalStorageService(attachmentsDir string) (*LocalStorageService, error) {
-	userConfigDir, err := os.UserHomeDir()
+	// Usamos UserConfigDir para seguir estándares (AppData en Windows, .config en Linux)
+	userConfigDir, err := os.UserConfigDir()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get user config dir: %w", err)
 	}
 
-	storagePath := filepath.Join(userConfigDir, "verith", attachmentsDir)
+	// Capitalización consistente: Verith
+	storagePath := filepath.Join(userConfigDir, "Verith", attachmentsDir)
 	if err := os.MkdirAll(storagePath, 0o755); err != nil {
 		return nil, fmt.Errorf("failed to create storage directory: %w", err)
 	}

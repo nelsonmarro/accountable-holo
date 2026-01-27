@@ -90,6 +90,7 @@ func TestRefreshAccountList(t *testing.T) {
 func TestFillListData(t *testing.T) {
 	// Arrange
 	ui, _ := setupUITestForTabs()
+	ui.currentUser = &domain.User{Role: domain.RoleAdmin}
 
 	// Manually populate the ui.accounts slice with data for the test.
 	ui.accounts = []domain.Account{

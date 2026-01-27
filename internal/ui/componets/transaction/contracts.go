@@ -13,6 +13,7 @@ type RecurringTransactionService interface {
 	GetAll(ctx context.Context) ([]domain.RecurringTransaction, error)
 	Update(ctx context.Context, rt *domain.RecurringTransaction) error
 	Delete(ctx context.Context, id int) error
+	ProcessPendingRecurrences(ctx context.Context, systemUser domain.User) error
 }
 
 type AccountService interface {
@@ -80,4 +81,8 @@ type TaxPayerService interface {
 	Create(ctx context.Context, tp *domain.TaxPayer) error
 	Update(ctx context.Context, tp *domain.TaxPayer) error
 	GetPaginated(ctx context.Context, page, pageSize int, search string) (*domain.PaginatedResult[domain.TaxPayer], error)
+}
+
+type IssuerService interface {
+	GetActive(ctx context.Context) (*domain.Issuer, error)
 }

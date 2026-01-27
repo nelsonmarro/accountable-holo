@@ -17,7 +17,9 @@ func NewIssuerService(repo IssuerRepository, epRepo EmissionPointRepository) *Is
 	return &IssuerService{repo: repo, epRepo: epRepo}
 }
 
-// ... existing methods ...
+func (s *IssuerService) GetActive(ctx context.Context) (*domain.Issuer, error) {
+	return s.repo.GetActive(ctx)
+}
 
 func (s *IssuerService) GetEmissionPoints(ctx context.Context) ([]domain.EmissionPoint, error) {
 	issuer, err := s.repo.GetActive(ctx)
@@ -49,6 +51,24 @@ func (s *IssuerService) SaveIssuerConfig(ctx context.Context, issuer *domain.Iss
 	} else {
 		if err := s.repo.Create(ctx, issuer); err != nil {
 			return fmt.Errorf("error creando emisor: %w", err)
+		}
+	}
+
+	// 1.5 Pre-inicializar Puntos de Emisión si no existen
+	// Esto permite que el usuario pueda migrar secuenciales inmediatamente después de guardar
+	receiptTypes := []string{"01", "04"} // Factura y Nota de Crédito
+	for _, rt := range receiptTypes {
+		ep, err := s.epRepo.GetByPoint(ctx, issuer.ID, issuer.EstablishmentCode, issuer.EmissionPointCode, rt)
+		if err == nil && ep == nil {
+			newEP := &domain.EmissionPoint{
+				IssuerID:          issuer.ID,
+				EstablishmentCode: issuer.EstablishmentCode,
+				EmissionPointCode: issuer.EmissionPointCode,
+				ReceiptType:       rt,
+				CurrentSequence:   0,
+				IsActive:          true,
+			}
+			_ = s.epRepo.Create(ctx, newEP)
 		}
 	}
 

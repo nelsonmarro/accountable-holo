@@ -38,7 +38,7 @@ func TestEmitirNotaCredito(t *testing.T) {
 	mockReceiptRepo := new(mocks.MockElectronicReceiptRepository)
 	mockClientRepo := new(mocks.MockTaxPayerRepository)
 	mockEpRepo := new(mocks.MockEmissionPointRepository)
-	mockSriClient := new(mocks.MockSriClient)
+	mockSriClient := new(mocks.MockSRIClient)
 	mockMailService := new(mocks.MockMailService)
 	logger := log.New(io.Discard, "", 0)
 

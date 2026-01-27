@@ -12,17 +12,19 @@ import (
 
 // ItemsListManager maneja la visualización y edición de la lista de ítems en memoria.
 type ItemsListManager struct {
-	items     []domain.TransactionItem
-	container *fyne.Container
-	parent    fyne.Window
-	onUpdate  func(items []domain.TransactionItem) // Callback cuando cambia la lista
+	items          []domain.TransactionItem
+	defaultTaxRate int
+	container      *fyne.Container
+	parent         fyne.Window
+	onUpdate       func(items []domain.TransactionItem) // Callback cuando cambia la lista
 }
 
-func NewItemsListManager(parent fyne.Window, onUpdate func([]domain.TransactionItem)) *ItemsListManager {
+func NewItemsListManager(defaultTaxRate int, parent fyne.Window, onUpdate func([]domain.TransactionItem)) *ItemsListManager {
 	m := &ItemsListManager{
-		items:    make([]domain.TransactionItem, 0),
-		parent:   parent,
-		onUpdate: onUpdate,
+		items:          make([]domain.TransactionItem, 0),
+		defaultTaxRate: defaultTaxRate,
+		parent:         parent,
+		onUpdate:       onUpdate,
 	}
 	m.container = container.NewVBox()
 	return m
@@ -91,6 +93,6 @@ func (m *ItemsListManager) showAddItemDialog() {
 	d := NewItemDialog(m.parent, func(item domain.TransactionItem) {
 		m.items = append(m.items, item)
 		m.refreshList()
-	})
+	}, m.defaultTaxRate)
 	d.Show()
 }

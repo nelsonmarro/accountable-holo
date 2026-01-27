@@ -33,7 +33,10 @@ func setupTestService(t *testing.T) (*LocalStorageService, string) {
 	require.NoError(t, err, "NewLocalStorageService should not return an error")
 	require.NotNil(t, service, "Service should not be nil")
 
-	expectedPath := filepath.Join(tempHome, "verith", attachmentsDir)
+	// Get real config dir to match service logic
+	configDir, err := os.UserConfigDir()
+	require.NoError(t, err)
+	expectedPath := filepath.Join(configDir, "Verith", attachmentsDir)
 	return service, expectedPath
 }
 

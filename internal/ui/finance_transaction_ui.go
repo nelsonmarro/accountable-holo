@@ -86,120 +86,144 @@ func (ui *UI) makeTransactionUI() fyne.CanvasObject {
 		},
 	)
 
-	// Add Transaction Button
-	txAddBtn := widget.NewButtonWithIcon("Agregar Transacción", theme.ContentAddIcon(), func() {
-		dialogHanlder := transaction.NewAddTransactionDialog(
-			ui.mainWindow,
-			ui.errorLogger,
-			ui.Services.TxService,
-			ui.Services.RecurService,
-			ui.Services.CatService,
-			ui.Services.TaxService, // Injected
-			func() {
-				ui.loadTransactions(1, ui.transactionPaginator.GetPageSize())
-			},
-			ui.selectedAccountID,
-			*ui.currentUser,
-		)
-
-		dialogHanlder.Show()
-	})
-	txAddBtn.Importance = widget.HighImportance
-
-	// Filtres Buttom
-	advancedFiltersBtn := widget.NewButtonWithIcon("Filtros Avanzados", theme.MoreVerticalIcon(), func() {
-		filtersDialog := transaction.NewFiltersDialog(
-			ui.mainWindow,
-			ui.Services.CatService,
-			func(filters domain.TransactionFilters,
-			) {
-				ui.currentTransactionFilters = filters
-				ui.loadTransactions(1, ui.transactionPaginator.GetPageSize())
-			},
-			ui.errorLogger,
-		)
-
-		filtersDialog.Show()
-	})
-	advancedFiltersBtn.Importance = widget.HighImportance
-
-	// Report Buttom
-	generateReportBtn := widget.NewButtonWithIcon("Reportes", theme.DocumentPrintIcon(), func() {
-		reportDialog := componets.NewReportDialog(
-			ui.mainWindow,
-			func(format string, outputPath string) {
-				go ui.generateReportFile(format, outputPath)
-			},
-			func(format string, outputPath string) {
-				go ui.generateDailyReportFile(format, outputPath)
-			},
-		)
-		reportDialog.Show()
-	})
-	generateReportBtn.Importance = widget.SuccessImportance
-	if !ui.currentUser.CanViewReports() {
-		generateReportBtn.Hide()
-	}
-
-	reconciliationBtn := widget.NewButtonWithIcon("Reconciliar", theme.ContentPasteIcon(), func() {
-		dialogHandler := transaction.NewReconciliationDialog(
-			ui.mainWindow,
-			ui.errorLogger,
-			ui.Services.TxService,
-			ui.Services.CatService,
-			ui.Services.ReportService,
-			ui.accounts,
-			func() {
+			// Add Sale Button (Income)
+			addSaleBtn := widget.NewButtonWithIcon("Venta", theme.ContentAddIcon(), func() {
+				if ui.selectedAccountID == 0 {
+					dialog.ShowError(fmt.Errorf("seleccione una cuenta primero"), ui.mainWindow)
+					return
+				}
+				dialogHanlder := transaction.NewAddTransactionDialog(
+					ui.mainWindow,
+					ui.errorLogger,
+					ui.Services.TxService,
+					ui.Services.RecurService,
+					ui.Services.CatService,
+					ui.Services.TaxService,
+					ui.Services.IssuerService,
+					func() {
+						ui.loadTransactions(1, ui.transactionPaginator.GetPageSize())
+					},
+					ui.selectedAccountID,
+					*ui.currentUser,
+				)
+				dialogHanlder.Show()
+			})
+			addSaleBtn.Importance = widget.SuccessImportance
+		
+			// Add Expense Button (Outcome)
+			addExpenseBtn := widget.NewButtonWithIcon("Gasto", theme.ContentRemoveIcon(), func() {
+				if ui.selectedAccountID == 0 {
+					dialog.ShowError(fmt.Errorf("seleccione una cuenta primero"), ui.mainWindow)
+					return
+				}
+				dialogHanlder := transaction.NewAddExpenseDialog(
+					ui.mainWindow,
+					ui.errorLogger,
+					ui.Services.TxService,
+					ui.Services.RecurService,
+					ui.Services.CatService,
+					func() {
+						ui.loadTransactions(1, ui.transactionPaginator.GetPageSize())
+					},
+					ui.selectedAccountID,
+					*ui.currentUser,
+				)
+				dialogHanlder.Show()
+			})
+			addExpenseBtn.Importance = widget.WarningImportance
+		
+			// Filtres Button
+			advancedFiltersBtn := widget.NewButtonWithIcon("", theme.MoreVerticalIcon(), func() {
+				filtersDialog := transaction.NewFiltersDialog(
+					ui.mainWindow,
+					ui.Services.CatService,
+					func(filters domain.TransactionFilters) {
+						ui.currentTransactionFilters = filters
+						ui.loadTransactions(1, ui.transactionPaginator.GetPageSize())
+					},
+					ui.errorLogger,
+				)
+				filtersDialog.Show()
+			})
+			advancedFiltersBtn.Importance = widget.HighImportance
+			advancedFiltersBtn.SetText("Filtros")
+		
+			// --- Tools Menu ---
+			var toolsMenu *fyne.Menu
+			var toolsBtn *widget.Button
+		
+			menuItems := []*fyne.MenuItem{}
+		
+			// 1. Reportes
+			if ui.currentUser.CanViewReports() {
+				menuItems = append(menuItems, fyne.NewMenuItem("Reportes", func() {
+					reportDialog := componets.NewReportDialog(
+						ui.mainWindow,
+						func(format string, outputPath string) { go ui.generateReportFile(format, outputPath) },
+						func(format string, outputPath string) { go ui.generateDailyReportFile(format, outputPath) },
+					)
+					reportDialog.Show()
+				}))
+			}
+		
+			// 2. Reconciliar
+			if ui.currentUser.CanReconcile() {
+				menuItems = append(menuItems, fyne.NewMenuItem("Reconciliar", func() {
+					dialogHandler := transaction.NewReconciliationDialog(
+						ui.mainWindow, ui.errorLogger, ui.Services.TxService, ui.Services.CatService,
+						ui.Services.ReportService, ui.accounts,
+						func() { go ui.loadTransactions(1, ui.transactionPaginator.GetPageSize()) },
+						ui.currentUser,
+					)
+					dialogHandler.Show()
+				}))
+			}
+		
+			// 3. Recurrentes
+			// (Visible to all based on recent change, or restrict if needed)
+			menuItems = append(menuItems, fyne.NewMenuItem("Recurrentes", func() {
+				dialog := transaction.NewRecurringManagerDialog(
+					ui.mainWindow,
+					ui.Services.RecurService,
+					ui.Services.AccService,
+					ui.Services.CatService,
+					*ui.currentUser,
+					func() {
+						ui.loadTransactions(ui.transactionPaginator.GetCurrentPage(), ui.transactionPaginator.GetPageSize())
+					},
+				)
+				dialog.Show()
+			}))
+		
+			// 4. Cola SRI
+			if ui.currentUser.CanConfigureSystem() {
+				menuItems = append(menuItems, fyne.NewMenuItem("Cola SRI", func() {
+					dialog := transaction.NewSriQueueDialog(ui.mainWindow, ui.Services.SriService, ui.Services.TxService)
+					dialog.Show()
+				}))
+			}
+		
+			// 5. Recargar (Siempre útil)
+			menuItems = append(menuItems, fyne.NewMenuItem("Recargar Datos", func() {
+				ui.currentTransactionFilters = domain.TransactionFilters{}
+				ui.transactionSearchText = ""
+				searchBar.SetText("")
 				go ui.loadTransactions(1, ui.transactionPaginator.GetPageSize())
-			},
-			ui.currentUser,
-		)
-
-		dialogHandler.Show()
-	})
-	reconciliationBtn.Importance = widget.WarningImportance
-	if !ui.currentUser.CanReconcile() {
-		reconciliationBtn.Hide()
-	}
-
-	// SRI Queue Button
-	sriQueueBtn := widget.NewButtonWithIcon("Cola SRI", theme.ListIcon(), func() {
-		dialog := transaction.NewSriQueueDialog(ui.mainWindow, ui.Services.SriService, ui.Services.TxService)
-		dialog.Show()
-	})
-	if !ui.currentUser.CanConfigureSystem() {
-		sriQueueBtn.Hide()
-	}
-
-
-	// Reload Data Button
-	reloadDataBtn := widget.NewButtonWithIcon("Recargar Datos", theme.ViewRefreshIcon(), func() {
-		ui.currentTransactionFilters = domain.TransactionFilters{} // Reset filters
-		ui.transactionSearchText = ""                              // Reset search text
-		searchBar.SetText("")
-		go ui.loadTransactions(1, ui.transactionPaginator.GetPageSize())
-	})
-	reloadDataBtn.Importance = widget.SuccessImportance
-
-	recurBtn := widget.NewButtonWithIcon("Recurrentes", theme.HistoryIcon(), func() {
-		dialog := transaction.NewRecurringManagerDialog(
-			ui.mainWindow,
-			ui.Services.RecurService,
-			ui.Services.AccService,
-			ui.Services.CatService,
-		)
-		dialog.Show()
-	})
-	if !ui.currentUser.CanReconcile() {
-		recurBtn.Hide()
-	}
-
-	// Containers
-	topBar := container.NewBorder(nil, nil,
-		container.NewHBox(txAddBtn, recurBtn, reloadDataBtn),
-		container.NewHBox(advancedFiltersBtn, generateReportBtn, reconciliationBtn, sriQueueBtn), // Added sriQueueBtn
-		searchBar,
-	)
+			}))
+		
+			toolsMenu = fyne.NewMenu("", menuItems...)
+		
+			toolsBtn = widget.NewButtonWithIcon("Herramientas", theme.SettingsIcon(), func() {
+				widget.ShowPopUpMenuAtPosition(toolsMenu, ui.mainWindow.Canvas(), fyne.CurrentApp().Driver().AbsolutePositionForObject(toolsBtn).Add(fyne.NewPos(0, toolsBtn.Size().Height)))
+			})
+		
+			// Containers
+			topBar := container.NewBorder(nil, nil,
+				container.NewHBox(addSaleBtn, addExpenseBtn),
+				container.NewHBox(advancedFiltersBtn, toolsBtn),
+				searchBar,
+			)
+			
 	filters := container.NewBorder(
 		nil,
 		nil,
@@ -320,7 +344,7 @@ func (ui *UI) updateTransactionItem(i widget.ListItemID, o fyne.CanvasObject) {
 	background.Refresh()
 
 	rowContainer.Objects[0].(*widget.Label).SetText(tx.TransactionNumber)
-	rowContainer.Objects[1].(*widget.Label).SetText(tx.TransactionDate.Format("01/02/2006"))
+	rowContainer.Objects[1].(*widget.Label).SetText(tx.TransactionDate.Format(componets.AppDateFormat))
 	rowContainer.Objects[2].(*widget.Label).SetText(helpers.PrepareForTruncation(tx.Description))
 
 	if tx.Category != nil {
@@ -397,22 +421,40 @@ func (ui *UI) updateTransactionItem(i widget.ListItemID, o fyne.CanvasObject) {
 	voidBtn := actionsContainer.Objects[1].(*widget.Button)
 
 	editBtn.OnTapped = func() {
-		dialigHandler := transaction.NewEditTransactionDialog(
-			ui.mainWindow,
-			ui.errorLogger,
-			ui.Services.TxService,
-			ui.Services.RecurService, // Injected Recurrence Service
-			ui.Services.CatService,
-			ui.Services.TaxService, // Injected Tax Service
-			func() {
-				ui.loadTransactions(1, ui.transactionPaginator.GetPageSize())
-			},
-			tx.ID,
-			ui.selectedAccountID,
-			*ui.currentUser,
-		)
-
-		dialigHandler.Show()
+		// DECISIÓN: Abrir diálogo simplificado para Egresos o complejo para Ventas
+		if tx.Category != nil && tx.Category.Type == domain.Outcome {
+			dialigHandler := transaction.NewEditExpenseDialog(
+				ui.mainWindow,
+				ui.errorLogger,
+				ui.Services.TxService,
+				ui.Services.RecurService,
+				ui.Services.CatService,
+				func() {
+					ui.loadTransactions(1, ui.transactionPaginator.GetPageSize())
+				},
+				tx.ID,
+				ui.selectedAccountID,
+				*ui.currentUser,
+			)
+			dialigHandler.Show()
+		} else {
+			dialigHandler := transaction.NewEditTransactionDialog(
+				ui.mainWindow,
+				ui.errorLogger,
+				ui.Services.TxService,
+				ui.Services.RecurService,
+				ui.Services.CatService,
+				ui.Services.TaxService,
+				ui.Services.IssuerService,
+				func() {
+					ui.loadTransactions(1, ui.transactionPaginator.GetPageSize())
+				},
+				tx.ID,
+				ui.selectedAccountID,
+				*ui.currentUser,
+			)
+			dialigHandler.Show()
+		}
 	}
 
 	voidBtn.OnTapped = func() {
@@ -442,16 +484,17 @@ func (ui *UI) updateTransactionItem(i widget.ListItemID, o fyne.CanvasObject) {
 		editBtn.Show()
 	}
 
-		// Logic for Void Button: Hide if already voided, adjustment, OR NO PERMISSION.
-		// SHOW if authorized (to allow Credit Note flow) AND user has permission.
-		if tx.IsVoided || tx.VoidsTransactionID != nil ||
-			strings.Contains(tx.Category.Name, "Ajuste") || !ui.currentUser.CanVoidTransactions() {
-			voidBtn.Hide()
-		} else {
-			voidBtn.Show()
-		}
+	// Logic for Void Button: Hide if already voided, adjustment, OR NO PERMISSION.
+	// SHOW if authorized (to allow Credit Note flow) AND user has permission.
+	if tx.IsVoided || tx.VoidsTransactionID != nil ||
+		strings.Contains(tx.Category.Name, "Ajuste") || !ui.currentUser.CanVoidTransactions() {
+		voidBtn.Hide()
+	} else {
+		voidBtn.Show()
 	}
-	func (ui *UI) loadTransactions(page int, pageSize int) {
+}
+
+func (ui *UI) loadTransactions(page int, pageSize int) {
 	if ui.selectedAccountID == 0 {
 		return
 	}

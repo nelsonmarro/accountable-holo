@@ -19,7 +19,7 @@ func NewAccountRepository(db *pgxpool.Pool) *AccountRepositoryImpl {
 }
 
 func (r *AccountRepositoryImpl) GetAllAccounts(ctx context.Context) ([]domain.Account, error) {
-	query := `select id, name, number, type, initial_balance, created_at, updated_at 
+	query := `select id, name, COALESCE(number, ''), type, initial_balance, created_at, updated_at 
 	          from accounts
 	          order by name asc`
 
@@ -48,7 +48,7 @@ func (r *AccountRepositoryImpl) GetAllAccounts(ctx context.Context) ([]domain.Ac
 }
 
 func (r *AccountRepositoryImpl) GetAccountByID(ctx context.Context, id int) (*domain.Account, error) {
-	query := `select id, name, number, type, initial_balance, created_at, updated_at
+	query := `select id, name, COALESCE(number, ''), type, initial_balance, created_at, updated_at
 	          from accounts
 	          where id = $1`
 

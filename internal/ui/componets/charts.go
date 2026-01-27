@@ -3,6 +3,7 @@ package componets
 import (
 	"fmt"
 	"image/color"
+	"sort"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/canvas"
@@ -10,117 +11,148 @@ import (
 	"fyne.io/fyne/v2/widget"
 	"github.com/nelsonmarro/verith/internal/domain"
 	"github.com/shopspring/decimal"
+	"github.com/vicanso/go-charts/v2"
 )
 
-// NewIncomeExpenseChart creates a simple vertical bar chart comparing Income vs Expenses.
-func NewIncomeExpenseChart(income, expense decimal.Decimal) fyne.CanvasObject {
-	maxVal := income
-	if expense.GreaterThan(income) {
-		maxVal = expense
+// RenderIncomeExpenseChart genera un gráfico de barras comparativo.
+func RenderIncomeExpenseChart(income, expense decimal.Decimal) fyne.CanvasObject {
+	incFloat, _ := income.Float64()
+	expFloat, _ := expense.Float64()
+
+	if incFloat == 0 && expFloat == 0 {
+		return container.NewCenter(widget.NewLabel("Sin datos financieros"))
 	}
 
-	if maxVal.IsZero() {
-		return widget.NewLabel("Sin datos para mostrar")
-	}
+	// Definir colores personalizados compatibles con go-charts (drawing.Color)
+	green := color.NRGBA{R: 34, G: 197, B: 94, A: 255}
+	red := color.NRGBA{R: 239, G: 68, B: 68, A: 255}
 
-	// Helper to calculate height factor (0.0 to 1.0)
-	getFactor := func(val decimal.Decimal) float32 {
-		f, _ := val.Div(maxVal).Float64()
-		return float32(f)
-	}
-
-	incomeFactor := getFactor(income)
-	expenseFactor := getFactor(expense)
-
-	// Let's use a fixed height container for the chart area, e.g., 200px.
-	chartHeight := float32(200)
-
-	createAlignedBar := func(_ decimal.Decimal, factor float32, col color.Color) fyne.CanvasObject {
-		barPixelHeight := chartHeight * factor
-		if barPixelHeight < 2 {
-			barPixelHeight = 2
-		}
-
-		rect := canvas.NewRectangle(col)
-		rect.SetMinSize(fyne.NewSize(40, barPixelHeight))
-
-		// Invisible spacer to take up the rest of the space
-		spacerHeight := chartHeight - barPixelHeight
-		spacer := canvas.NewRectangle(color.Transparent)
-		spacer.SetMinSize(fyne.NewSize(40, spacerHeight))
-
-		return container.NewVBox(spacer, rect)
-	}
-
-	incomeCol := container.NewVBox(
-		widget.NewLabelWithStyle(fmt.Sprintf("$%s", income.StringFixed(0)), fyne.TextAlignCenter, fyne.TextStyle{}),
-		createAlignedBar(income, incomeFactor, color.NRGBA{R: 0, G: 150, B: 0, A: 255}),
-		widget.NewLabelWithStyle("Ingresos", fyne.TextAlignCenter, fyne.TextStyle{Bold: true}),
+	p, err := charts.BarRender(
+		[][]float64{{incFloat}, {expFloat}},
+		charts.LegendOptionFunc(charts.LegendOption{
+			Data: []string{"Ingresos", "Egresos"},
+			Left: charts.PositionCenter,
+			Top:  charts.PositionBottom,
+		}),
+		charts.XAxisDataOptionFunc([]string{"Periodo Seleccionado"}),
+		charts.ThemeOptionFunc("grafiti"),
+		// Aplicamos colores manualmente a través de una función anónima (OptionFunc)
+		func(opt *charts.ChartOption) {
+			if len(opt.SeriesList) >= 2 {
+				opt.SeriesList[0].Style.FillColor = charts.Color{R: green.R, G: green.G, B: green.B, A: green.A}
+				opt.SeriesList[1].Style.FillColor = charts.Color{R: red.R, G: red.G, B: red.B, A: red.A}
+				// También el borde para que se vea consistente
+				opt.SeriesList[0].Style.StrokeColor = opt.SeriesList[0].Style.FillColor
+				opt.SeriesList[1].Style.StrokeColor = opt.SeriesList[1].Style.FillColor
+			}
+		},
+		charts.WidthOptionFunc(900), // Resolución optimizada para legibilidad de texto
+		charts.HeightOptionFunc(550),
+		charts.PaddingOptionFunc(charts.Box{
+			Top:    20,
+			Right:  20,
+			Bottom: 50,
+			Left:   50,
+		}),
 	)
+	if err != nil {
+		return widget.NewLabel("Error: " + err.Error())
+	}
 
-	expenseCol := container.NewVBox(
-		widget.NewLabelWithStyle(fmt.Sprintf("$%s", expense.StringFixed(0)), fyne.TextAlignCenter, fyne.TextStyle{}),
-		createAlignedBar(expense, expenseFactor, color.NRGBA{R: 200, G: 0, B: 0, A: 255}),
-		widget.NewLabelWithStyle("Egresos", fyne.TextAlignCenter, fyne.TextStyle{Bold: true}),
-	)
+	buf, err := p.Bytes()
+	if err != nil {
+		return widget.NewLabel("Error renderizando: " + err.Error())
+	}
 
-	return container.NewGridWithColumns(2, incomeCol, expenseCol)
+	res := fyne.NewStaticResource("bar_chart.png", buf)
+	img := canvas.NewImageFromResource(res)
+	img.FillMode = canvas.ImageFillContain
+	img.SetMinSize(fyne.NewSize(700, 400)) // Más grande en pantalla
+
+	return img
 }
 
-// NewCategoryBreakdownChart creates a horizontal bar chart for top categories with optional 'Ver Más' button.
-func NewCategoryBreakdownChart(data []domain.CategoryAmount, total decimal.Decimal, onSeeMore func()) fyne.CanvasObject {
+// RenderCategoryPieChart genera un gráfico de donut para distribución de gastos.
+func RenderCategoryPieChart(data []domain.CategoryAmount) fyne.CanvasObject {
 	if len(data) == 0 {
-		return widget.NewLabel("Sin datos de gastos")
+		return container.NewCenter(widget.NewLabel("Sin datos de gastos"))
 	}
 
+	// Ordenar y Limitar
+	sort.Slice(data, func(i, j int) bool {
+		return data[i].Amount.GreaterThan(data[j].Amount)
+	})
+
+	var values []float64
+	var labels []string
+	var otherTotal decimal.Decimal
 	limit := 5
-	displayData := data
-	showButton := false
 
-	if onSeeMore != nil && len(data) > limit {
-		displayData = data[:limit]
-		showButton = true
+	// Calcular total para porcentajes manuales
+	var totalAmount decimal.Decimal
+	for _, item := range data {
+		totalAmount = totalAmount.Add(item.Amount)
 	}
 
-	// Container for rows
-	rows := container.NewVBox()
+	for i, item := range data {
+		if i < limit {
+			val, _ := item.Amount.Float64()
+			values = append(values, val)
 
-	for _, item := range displayData {
-		percent := item.Amount.Div(total).Mul(decimal.NewFromFloat(100))
-		percentFloat, _ := percent.Float64()
-
-		// Label: "Category (25%)"
-		label := widget.NewLabel(fmt.Sprintf("%s (%.1f%%)", item.CategoryName, percentFloat))
-		label.TextStyle = fyne.TextStyle{Bold: true}
-
-		// Bar (Progress Bar is perfect for horizontal bars!)
-		progressBar := widget.NewProgressBar()
-		progressBar.Min = 0
-		totalFloat, _ := total.Float64()
-		progressBar.Max = totalFloat
-		valFloat, _ := item.Amount.Float64()
-		progressBar.SetValue(valFloat)
-		progressBar.TextFormatter = func() string { return "" } // Hide percentage text inside bar
-
-		// Amount Label
-		amountLabel := widget.NewLabel(fmt.Sprintf("$%s", item.Amount.StringFixed(2)))
-		amountLabel.Alignment = fyne.TextAlignTrailing
-
-		// Row Layout
-		header := container.NewBorder(nil, nil, label, amountLabel)
-		rows.Add(container.NewVBox(header, progressBar))
+			// Porcentaje manual para el label
+			percent := item.Amount.Div(totalAmount).Mul(decimal.NewFromInt(100)).StringFixed(1)
+			labels = append(labels, fmt.Sprintf("%s (%s%%)", item.CategoryName, percent))
+		} else {
+			otherTotal = otherTotal.Add(item.Amount)
+		}
 	}
 
-	if showButton {
-		btn := widget.NewButton("Ver Más...", onSeeMore)
-		btn.Importance = widget.LowImportance
-		rows.Add(container.NewPadded(btn))
+	if otherTotal.IsPositive() {
+		val, _ := otherTotal.Float64()
+		values = append(values, val)
+		percent := otherTotal.Div(totalAmount).Mul(decimal.NewFromInt(100)).StringFixed(1)
+		labels = append(labels, fmt.Sprintf("Otros (%s%%)", percent))
 	}
 
-	return rows
+	p, err := charts.PieRender(
+		values,
+		charts.LegendOptionFunc(charts.LegendOption{
+			Orient: charts.OrientHorizontal, // Horizontal para abajo
+			Left:   charts.PositionCenter,
+			Top:    charts.PositionBottom,
+			Data:   labels,
+		}),
+		charts.PieSeriesShowLabel(),
+		charts.ThemeOptionFunc("grafiti"),
+		charts.WidthOptionFunc(900), // Resolución optimizada para legibilidad de texto
+		charts.HeightOptionFunc(550),
+		charts.PaddingOptionFunc(charts.Box{
+			Top:    20,
+			Right:  20,
+			Bottom: 20,
+			Left:   20,
+		}),
+	)
+	if err != nil {
+		return widget.NewLabel("Error: " + err.Error())
+	}
+
+	buf, err := p.Bytes()
+	if err != nil {
+		return widget.NewLabel("Error renderizando: " + err.Error())
+	}
+
+	res := fyne.NewStaticResource("pie_chart.png", buf)
+	img := canvas.NewImageFromResource(res)
+	img.FillMode = canvas.ImageFillContain
+	img.SetMinSize(fyne.NewSize(700, 400)) // Más grande en pantalla
+
+	return img
 }
 
-// budgetBarLayout es un layout personalizado para que la barra de progreso sea responsiva
+// --- BUDGET COMPONENT (Sin cambios) ---
+// (Mantenemos el código anterior del NewBudgetStatusChart que ya funcionaba bien y era nativo)
+
 type budgetBarLayout struct {
 	ratio float32
 }
@@ -129,21 +161,18 @@ func (l *budgetBarLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
 	if len(objects) < 2 {
 		return
 	}
-	// El fondo (bg) ocupa todo el espacio
 	objects[0].Resize(size)
 	objects[0].Move(fyne.NewPos(0, 0))
 
-	// El frente (fg) ocupa solo el porcentaje indicado
 	fgWidth := size.Width * l.ratio
 	objects[1].Resize(fyne.NewSize(fgWidth, size.Height))
 	objects[1].Move(fyne.NewPos(0, 0))
 }
 
 func (l *budgetBarLayout) MinSize(objects []fyne.CanvasObject) fyne.Size {
-	return fyne.NewSize(100, 12) // Tamaño mínimo razonable
+	return fyne.NewSize(100, 12)
 }
 
-// NewBudgetStatusChart crea una lista visual de estados de presupuesto con barras responsivas y botón 'Ver Más' opcional.
 func NewBudgetStatusChart(statuses []domain.BudgetStatus, onSeeMore func()) fyne.CanvasObject {
 	if len(statuses) == 0 {
 		return widget.NewLabel("No hay presupuestos definidos para este periodo.")
@@ -166,19 +195,16 @@ func NewBudgetStatusChart(statuses []domain.BudgetStatus, onSeeMore func()) fyne
 			progressVal = 1.0
 		}
 
-		// Colores mejorados
-		barColor := color.NRGBA{R: 34, G: 197, B: 94, A: 255}  // Verde esmeralda
-		trackColor := color.NRGBA{R: 38, G: 38, B: 38, A: 255} // Gris carbón muy oscuro
+		barColor := color.NRGBA{R: 34, G: 197, B: 94, A: 255}
+		trackColor := color.NRGBA{R: 38, G: 38, B: 38, A: 255}
 
 		if status.IsOverBudget {
-			barColor = color.NRGBA{R: 220, G: 38, B: 38, A: 255} // Rojo vibrante
+			barColor = color.NRGBA{R: 220, G: 38, B: 38, A: 255}
 		}
 
-		// Etiqueta de Categoría
 		nameLabel := widget.NewLabel(status.CategoryName)
 		nameLabel.TextStyle = fyne.TextStyle{Bold: true}
 
-		// Texto informativo: monto y porcentaje
 		statusText := fmt.Sprintf("$%s / $%s (%.1f%%)",
 			status.SpentAmount.StringFixed(0),
 			status.BudgetAmount.StringFixed(0),
@@ -187,14 +213,11 @@ func NewBudgetStatusChart(statuses []domain.BudgetStatus, onSeeMore func()) fyne
 		infoLabel := widget.NewLabel(statusText)
 		infoLabel.Alignment = fyne.TextAlignTrailing
 
-		// Construcción de la barra responsiva
 		bgBar := canvas.NewRectangle(trackColor)
 		bgBar.CornerRadius = 6
-
 		fgBar := canvas.NewRectangle(barColor)
 		fgBar.CornerRadius = 6
 
-		// Usamos nuestro layout personalizado
 		barLayout := container.New(&budgetBarLayout{ratio: progressVal}, bgBar, fgBar)
 
 		rowContent := container.NewVBox(
@@ -203,12 +226,10 @@ func NewBudgetStatusChart(statuses []domain.BudgetStatus, onSeeMore func()) fyne
 		)
 
 		if status.IsOverBudget {
-			// Alerta más grande y con mejor espaciado
 			warningText := canvas.NewText("🚨 ¡PRESUPUESTO EXCEDIDO!", color.NRGBA{R: 239, G: 68, B: 68, A: 255})
 			warningText.TextSize = 18
 			warningText.TextStyle = fyne.TextStyle{Bold: true}
 			warningText.Alignment = fyne.TextAlignTrailing
-
 			rowContent.Add(container.NewPadded(warningText))
 		}
 

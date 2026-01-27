@@ -1,0 +1,1 @@
+ALTER TABLE issuers ADD COLUMN default_tax_rate INTEGER DEFAULT 4;

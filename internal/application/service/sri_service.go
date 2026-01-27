@@ -74,6 +74,11 @@ func (s *SriService) SetSignerFactory(factory func(path, password string) Docume
 	s.signerFactory = factory
 }
 
+// SetClient allows injecting a mock SRI client for testing.
+func (s *SriService) SetClient(client sri.Client) {
+	s.sriClient = client
+}
+
 // GenerateRide genera el PDF (RIDE) de una factura ya emitida.
 // Retorna la ruta absoluta del archivo generado.
 func (s *SriService) GenerateRide(ctx context.Context, transactionID int) (string, error) {

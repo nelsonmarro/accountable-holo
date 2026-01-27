@@ -35,4 +35,3 @@ AL INSTALAR, COPIAR O UTILIZAR DE CUALQUIER OTRA MANERA EL SOFTWARE, USTED ACEPT
 
 9. INFORMACIÓN DE CONTACTO
    Si tiene alguna pregunta sobre este Acuerdo, por favor contáctenos en <soporte@verith.app>.
-

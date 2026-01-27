@@ -1,26 +1,26 @@
 // @ts-check
 // Note: type annotations allow type checking and IDEs autocompletion
 
-const {themes} = require('prism-react-renderer');
+const { themes } = require("prism-react-renderer");
 const lightCodeTheme = themes.github;
 const darkCodeTheme = themes.dracula;
 
 /** @type {import('@docusaurus/types').Config} */
 const config = {
-  title: 'Verith',
-  tagline: 'Gestión Financiera y Facturación SRI Simplificada',
-  favicon: 'img/favicon.ico',
+  title: "Verith",
+  tagline: "Gestión Financiera y Facturación SRI Simplificada",
+  favicon: "img/favicon.ico",
 
   // Set the production url of your site here
-  url: 'https://docs.verith.naphsoft.dev',
-  baseUrl: '/',
+  url: "https://docs.verith.naphsoft.dev",
+  baseUrl: "/",
 
   // GitHub pages deployment config.
-  organizationName: 'nelsonmarro', 
-  projectName: 'verith', 
+  organizationName: "nelsonmarro",
+  projectName: "verith",
 
-  onBrokenLinks: 'throw',
-  onBrokenMarkdownLinks: 'warn',
+  onBrokenLinks: "throw",
+  onBrokenMarkdownLinks: "warn",
 
   // Habilitar Mermaid en Markdown
   markdown: {
@@ -28,11 +28,11 @@ const config = {
   },
 
   // Activar el tema de Mermaid
-  themes: ['@docusaurus/theme-mermaid'],
+  themes: ["@docusaurus/theme-mermaid"],
 
   i18n: {
-    defaultLocale: 'es',
-    locales: ['es'],
+    defaultLocale: "es",
+    locales: ["es"],
   },
 
   plugins: [
@@ -49,16 +49,16 @@ const config = {
 
   presets: [
     [
-      'classic',
+      "classic",
       /** @type {import('@docusaurus/preset-classic').Options} */
       ({
         docs: {
-          sidebarPath: require.resolve('./sidebars.js'),
-          routeBasePath: '/', // Serve the docs at the site's root
+          sidebarPath: require.resolve("./sidebars.js"),
+          routeBasePath: "/", // Serve the docs at the site's root
         },
         blog: false, // Desactivamos el blog para un manual de usuario
         theme: {
-          customCss: require.resolve('./src/css/custom.css'),
+          customCss: require.resolve("./src/css/custom.css"),
         },
       }),
     ],
@@ -68,43 +68,43 @@ const config = {
     /** @type {import('@docusaurus/preset-classic').ThemeConfig} */
     ({
       colorMode: {
-        defaultMode: 'dark',
+        defaultMode: "dark",
         disableSwitch: true,
         respectPrefersColorScheme: false,
       },
       navbar: {
-        title: 'Verith Manual',
+        title: "Verith Manual",
         logo: {
-          alt: 'Verith Logo',
-          src: 'img/logo.png',
+          alt: "Verith Logo",
+          src: "img/logo.png",
         },
         items: [
           {
-            type: 'docSidebar',
-            sidebarId: 'tutorialSidebar',
-            position: 'left',
-            label: 'Documentación',
+            type: "docSidebar",
+            sidebarId: "tutorialSidebar",
+            position: "left",
+            label: "Documentación",
           },
         ],
       },
       footer: {
-        style: 'dark',
+        style: "dark",
         links: [
           {
-            title: 'Docs',
+            title: "Docs",
             items: [
               {
-                label: 'Manual de Usuario',
-                to: '/',
+                label: "Manual de Usuario",
+                to: "/",
               },
             ],
           },
           {
-            title: 'Comunidad',
+            title: "Comunidad",
             items: [
               {
-                label: 'Soporte',
-                href: 'mailto:soporte@verith.app',
+                label: "Soporte",
+                href: "mailto:soporte@naphsoft.dev",
               },
             ],
           },
@@ -117,7 +117,7 @@ const config = {
       },
       // Configuración visual de Mermaid
       mermaid: {
-        theme: {light: 'neutral', dark: 'dark'},
+        theme: { light: "neutral", dark: "dark" },
       },
       tableOfContents: {
         minHeadingLevel: 2,

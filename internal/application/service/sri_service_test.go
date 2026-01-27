@@ -19,7 +19,7 @@ import (
 func TestSyncReceipt(t *testing.T) {
 	// Mocks
 	mockReceiptRepo := new(mocks.MockElectronicReceiptRepository)
-	mockSriClient := new(mocks.MockSriClient)
+	mockSriClient := new(mocks.MockSRIClient)
 	mockTxRepo := new(mocks.MockTransactionRepository)
 	mockIssuerRepo := new(mocks.MockIssuerRepository)
 	mockClientRepo := new(mocks.MockTaxPayerRepository)
@@ -150,7 +150,7 @@ func TestSyncReceipt(t *testing.T) {
 
 func TestProcessBackgroundSync(t *testing.T) {
 	mockReceiptRepo := new(mocks.MockElectronicReceiptRepository)
-	mockSriClient := new(mocks.MockSriClient)
+	mockSriClient := new(mocks.MockSRIClient)
 	mockTxRepo := new(mocks.MockTransactionRepository)
 	mockIssuerRepo := new(mocks.MockIssuerRepository)
 	mockClientRepo := new(mocks.MockTaxPayerRepository)

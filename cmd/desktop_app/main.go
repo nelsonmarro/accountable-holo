@@ -22,10 +22,13 @@ import (
 	"github.com/nelsonmarro/verith/internal/ui"
 )
 
-// Esta variable la llenará el compilador (linker)
 var ResendAPIKeyEncrypted string
 
 func main() {
+	// Forzar idioma español
+	os.Setenv("FYNE_LANG", "es")
+	ui.LoadSpanishTranslations()
+
 	// ---- Logging ----
 	infoLogger, errorLogger, err := logging.Init()
 	if err != nil {

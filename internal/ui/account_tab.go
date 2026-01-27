@@ -44,6 +44,9 @@ func (ui *UI) makeAccountTab() fyne.CanvasObject {
 		dialogHandler.Show()
 	})
 	accountAddBtn.Importance = widget.HighImportance
+	if !ui.currentUser.CanConfigureSystem() {
+		accountAddBtn.Hide()
+	}
 
 	// Containers
 	titleContainer := container.NewVBox(
@@ -142,5 +145,11 @@ func (ui *UI) fillAccountListData(i widget.ListItemID, o fyne.CanvasObject) {
 			acc.ID,
 		)
 		dialogHandler.Show()
+	}
+
+	if !ui.currentUser.CanConfigureSystem() {
+		deleteBtn.Hide()
+	} else {
+		deleteBtn.Show()
 	}
 }
