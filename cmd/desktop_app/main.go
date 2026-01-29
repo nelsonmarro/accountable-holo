@@ -63,6 +63,13 @@ func main() {
 	defer pool.Close()
 	infoLogger.Println("Connected to the database successfully")
 
+	// ---- Database Migrations ----
+	infoLogger.Println("Running database migrations...")
+	if err := database.RunMigrations(pool); err != nil {
+		errorLogger.Fatalf("failed to run database migrations: %v", err)
+	}
+	infoLogger.Println("Database migrations applied successfully")
+
 	// ---- UI (Fyne) ----
 	infoLogger.Println("Initializing Fyne App...")
 	// 1. Create the Fyne App first.

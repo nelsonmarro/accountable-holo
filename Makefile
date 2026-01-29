@@ -21,6 +21,12 @@ db-down: ## Stop the database container
 db-logs: ## View database logs
 	docker-compose logs -f db
 
+migration-create: ## Create a new migration: make migration-create name=description
+	@migrate create -ext sql -dir migrations -format unix $(name)
+
+migration-force: ## Force a specific version (use if dirty): make migration-force v=version
+	@migrate -path migrations -database "postgres://$(shell grep user config/config.yaml | cut -d' ' -f2):$(shell grep password config/config.yaml | cut -d' ' -f2)@localhost:5432/verith?sslmode=disable" force $(v)
+
 dist-windows: ## Build and package for Windows with Portable Postgres
 	@echo "Building for Windows and preparing Portable Postgres..."
 	@rm -rf dist/windows
@@ -51,20 +57,12 @@ dist-windows: ## Build and package for Windows with Portable Postgres
 	@cp -r assets dist/windows/
 	@mkdir -p dist/windows/config
 	@cp config/config.yaml dist/windows/config/config.yaml
-	
-	# 4. Generar schema para inicialización
-	@echo "Generating database schema..."
-	@rm -f dist/windows/schema.sql
-	@for f in migrations/2*.up.sql; do \
-		cat "$$f" >> dist/windows/schema.sql; \
-		echo "" >> dist/windows/schema.sql; \
-	done
 
 dist-windows-installer: dist-windows ## Generate Windows EXE Installer (Requires NSIS)
 	@echo "Attempting to generate installer with NSIS..."
 	@mkdir -p dist
 	@if command -v makensis >/dev/null 2>&1; then \
-		makensis build/windows/installer.nsi; \
+		makensis build/windows/installer.nsi && \
 		echo "Installer created: dist/Verith_Setup.exe"; \
 	else \
 		echo "Error: 'makensis' not found. Please install NSIS (sudo apt install nsis) to generate the setup file."; \
